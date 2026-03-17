@@ -1,0 +1,62 @@
+/* 全局样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  font-size: 14px;
+  color: #333;
+  background-color: #f0f2f5;
+}
+
+a {
+  text-decoration: none;
+  color: #409eff;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #909399;
+}
+
+/* NProgress 样式 */
+#nprogress .bar {
+  background: #409eff !important;
+  height: 3px !important;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #409eff, 0 0 5px #409eff !important;
+}
+
+/* Element Plus 覆盖样式 */
+.el-card {
+  border-radius: 8px;
+}
+
+.el-table {
+  border-radius: 8px;
+}
+
+.el-button {
+  border-radius: 6px;
+}

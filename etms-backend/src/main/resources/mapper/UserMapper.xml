@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.etms.mapper.UserMapper">
+    
+    <resultMap id="UserResult" type="com.etms.entity.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="realName" column="real_name"/>
+        <result property="gender" column="gender"/>
+        <result property="email" column="email"/>
+        <result property="phone" column="phone"/>
+        <result property="avatar" column="avatar"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="positionId" column="position_id"/>
+        <result property="status" column="status"/>
+        <result property="loginIp" column="login_ip"/>
+        <result property="loginTime" column="login_time"/>
+        <result property="pwdExpireTime" column="pwd_expire_time"/>
+        <result property="lockTime" column="lock_time"/>
+        <result property="lockCount" column="lock_count"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="positionName" column="position_name"/>
+    </resultMap>
+    
+    <select id="selectByUsername" resultMap="UserResult">
+        SELECT u.*, d.dept_name, p.position_name
+        FROM sys_user u
+        LEFT JOIN sys_dept d ON u.dept_id = d.id
+        LEFT JOIN sys_position p ON u.position_id = p.id
+        WHERE u.username = #{username}
+    </select>
+    
+    <select id="selectRolesByUserId" resultType="java.lang.String">
+        SELECT r.role_code
+        FROM sys_role r
+        INNER JOIN sys_user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+    </select>
+    
+    <select id="selectPermissionsByUserId" resultType="java.lang.String">
+        SELECT DISTINCT p.perm_code
+        FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+    </select>
+    
+</mapper>
