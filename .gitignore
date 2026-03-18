@@ -1,0 +1,39 @@
+# 后端忽略文件
+etms-backend/target/
+etms-backend/.mvn/
+etms-backend/mvnw
+etms-backend/mvnw.cmd
+etms-backend/*.iml
+etms-backend/.idea/
+etms-backend/*.log
+etms-backend/logs/
+
+# 前端忽略文件
+etms-frontend/node_modules/
+etms-frontend/dist/
+etms-frontend/.env.local
+etms-frontend/.env.*.local
+etms-frontend/*.local
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE文件
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
