@@ -6,7 +6,7 @@
   <h3>Enterprise Training Management System</h3>
   <p>一套功能完善的企业级培训管理平台</p>
   
-  [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+  [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.7.18-brightgreen.svg)](https://spring.io/projects/spring-boot)
   [![Vue](https://img.shields.io/badge/Vue-3.4.0-4fc08d.svg)](https://vuejs.org/)
   [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
   [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -20,7 +20,7 @@
 
 ### 主要特点
 
-- 🚀 **前后端分离架构**：Spring Boot 3 + Vue 3
+- 🚀 **前后端分离架构**：Spring Boot 2.7 + Vue 3
 - 🔐 **安全认证**：Spring Security + JWT
 - 📊 **数据可视化**：ECharts图表展示
 - 📱 **响应式设计**：支持多终端访问
@@ -34,13 +34,15 @@
 
 | 技术 | 版本 | 说明 |
 |------|------|------|
-| Spring Boot | 3.2.0 | 核心框架 |
+| Spring Boot | 2.7.18 | 核心框架 |
 | Spring Security | - | 安全认证 |
-| JWT | 0.12.3 | Token认证 |
-| MyBatis-Plus | 3.5.5 | ORM框架 |
+| JWT | 0.11.5 | Token认证 |
+| MyBatis-Plus | 3.5.3.1 | ORM框架 |
 | MySQL | 8.0 | 数据库 |
 | Redis | 6.0+ | 缓存 |
-| Swagger | 2.3.0 | API文档 |
+| Knife4j | 3.0.3 | API文档 |
+| Hutool | 5.8.24 | 工具库 |
+| FastJSON2 | 2.0.43 | JSON处理 |
 
 ### 前端技术
 
@@ -53,6 +55,7 @@
 | Pinia | 2.1.7 | 状态管理 |
 | Vue Router | 4.2.5 | 路由管理 |
 | ECharts | 5.4.3 | 图表库 |
+| Axios | 1.6.2 | HTTP请求 |
 
 ---
 
@@ -63,17 +66,57 @@ ETMS/
 ├── etms-backend/                 # 后端项目
 │   ├── src/main/java/com/etms/
 │   │   ├── config/              # 配置类
+│   │   │   ├── SecurityConfig.java      # Spring Security安全配置
+│   │   │   ├── JwtTokenProvider.java    # JWT令牌提供者
+│   │   │   ├── MyBatisPlusConfig.java   # MyBatis-Plus配置
+│   │   │   └── SwaggerConfig.java       # Swagger API文档配置
 │   │   ├── controller/          # 控制器
+│   │   │   ├── AuthController.java      # 认证控制器
+│   │   │   ├── UserController.java      # 用户管理控制器
+│   │   │   ├── RoleController.java      # 角色管理控制器
+│   │   │   ├── DeptController.java      # 部门管理控制器
+│   │   │   ├── CourseController.java    # 课程管理控制器
+│   │   │   ├── TrainingPlanController.java # 培训计划控制器
+│   │   │   ├── QuestionController.java  # 题库管理控制器
+│   │   │   ├── PaperController.java     # 试卷管理控制器
+│   │   │   └── AttendanceRecordController.java # 签到记录控制器
 │   │   ├── service/             # 服务层
+│   │   │   └── impl/            # 服务实现
 │   │   ├── mapper/              # 数据访问层
 │   │   ├── entity/              # 实体类
+│   │   │   ├── User.java               # 用户实体
+│   │   │   ├── Role.java               # 角色实体
+│   │   │   ├── Dept.java               # 部门实体
+│   │   │   ├── Permission.java         # 权限实体
+│   │   │   ├── RolePermission.java     # 角色权限关联实体
+│   │   │   ├── Course.java             # 课程实体
+│   │   │   ├── TrainingPlan.java       # 培训计划实体
+│   │   │   ├── Question.java           # 题目实体
+│   │   │   ├── Paper.java              # 试卷实体
+│   │   │   └── AttendanceRecord.java   # 签到记录实体
 │   │   ├── dto/                 # 数据传输对象
+│   │   │   ├── LoginDTO.java           # 登录请求DTO
+│   │   │   └── UserDTO.java            # 用户数据传输对象
 │   │   ├── vo/                  # 视图对象
+│   │   │   ├── LoginVO.java            # 登录响应VO
+│   │   │   ├── UserVO.java             # 用户视图对象
+│   │   │   ├── RoleVO.java             # 角色视图对象
+│   │   │   ├── CourseVO.java           # 课程视图对象
+│   │   │   ├── TrainingPlanVO.java     # 培训计划视图对象
+│   │   │   ├── QuestionVO.java         # 题目视图对象
+│   │   │   ├── AttendanceRecordVO.java # 签到记录视图对象
+│   │   │   └── AttendanceStatsVO.java  # 签到统计视图对象
 │   │   ├── common/              # 公共类
+│   │   │   ├── Result.java             # 统一响应结果
+│   │   │   └── PageResult.java         # 分页结果封装
 │   │   ├── security/            # 安全相关
-│   │   └── utils/               # 工具类
+│   │   │   ├── JwtAuthenticationFilter.java      # JWT认证过滤器
+│   │   │   ├── JwtAuthenticationEntryPoint.java  # 认证入口点
+│   │   │   └── UserDetailsServiceImpl.java       # 用户详情服务
+│   │   └── EtmsApplication.java        # 启动类
 │   └── src/main/resources/
 │       ├── mapper/              # MyBatis XML
+│       │   └── UserMapper.xml          # 用户Mapper XML
 │       ├── application.yml      # 配置文件
 │       ├── schema.sql           # 数据库建表脚本
 │       └── data.sql             # 初始数据脚本
@@ -81,14 +124,57 @@ ETMS/
 ├── etms-frontend/               # 前端项目
 │   ├── src/
 │   │   ├── api/                 # API接口
+│   │   │   ├── auth.ts                 # 认证API
+│   │   │   ├── user.ts                 # 用户API
+│   │   │   ├── course.ts               # 课程API
+│   │   │   ├── training.ts             # 培训计划API
+│   │   │   ├── exam.ts                 # 考试API
+│   │   │   └── attendance.ts           # 签到API
 │   │   ├── assets/              # 静态资源
 │   │   ├── components/          # 公共组件
 │   │   ├── layouts/             # 布局组件
+│   │   │   └── MainLayout.vue          # 主布局组件
 │   │   ├── router/              # 路由配置
+│   │   │   └── index.ts                # 路由配置文件
 │   │   ├── stores/              # 状态管理
+│   │   │   └── user.ts                 # 用户状态管理
 │   │   ├── styles/              # 样式文件
 │   │   ├── utils/               # 工具函数
+│   │   │   └── request.ts               # Axios请求封装
 │   │   └── views/               # 页面组件
+│   │       ├── login/                  # 登录页面
+│   │       ├── dashboard/              # 首页仪表盘
+│   │       ├── system/                 # 系统管理
+│   │       │   ├── user/               # 用户管理
+│   │       │   ├── role/               # 角色管理
+│   │       │   ├── dept/               # 部门管理
+│   │       │   ├── position/           # 岗位管理
+│   │       │   ├── config/             # 系统配置
+│   │       │   ├── dict/               # 字典管理
+│   │       │   └── log/                # 日志管理
+│   │       ├── training/               # 培训管理
+│   │       │   ├── course/             # 课程管理
+│   │       │   ├── category/           # 课程分类
+│   │       │   ├── plan/               # 培训计划
+│   │       │   └── progress/           # 学习进度
+│   │       ├── attendance/             # 签到管理
+│   │       │   ├── record/             # 签到记录
+│   │       │   └── apply/              # 补签申请
+│   │       ├── exam/                   # 考核管理
+│   │       │   ├── question/           # 题库管理
+│   │       │   ├── paper/              # 试卷管理
+│   │       │   ├── record/             # 考试记录
+│   │       │   └── result/             # 成绩管理
+│   │       ├── report/                 # 报表分析
+│   │       │   ├── training/           # 培训报表
+│   │       │   └── exam/               # 考核报表
+│   │       ├── my/                     # 我的培训
+│   │       │   ├── course/             # 我的课程
+│   │       │   ├── exam/               # 我的考试
+│   │       │   ├── progress/           # 学习记录
+│   │       │   └── result/             # 我的成绩
+│   │       └── error/                  # 错误页面
+│   │           └── 404.vue             # 404页面
 │   ├── index.html
 │   ├── vite.config.ts
 │   └── package.json
@@ -150,7 +236,7 @@ ETMS/
 
 | 软件 | 版本要求 |
 |------|---------|
-| JDK | 17+ |
+| JDK | 1.8+ |
 | MySQL | 8.0+ |
 | Redis | 6.0+ |
 | Node.js | 18+ |
@@ -159,19 +245,14 @@ ETMS/
 ### 后端启动
 
 ```bash
-# 1. 创建数据库
-mysql -u root -p
-CREATE DATABASE etms DEFAULT CHARACTER SET utf8mb4;
+# 1. 创建数据库并执行脚本（使用强制编码参数）
+mysql -u root -p123456 --default-character-set=utf8mb4 < etms-backend/src/main/resources/schema.sql
+mysql -u root -p123456 --default-character-set=utf8mb4 < etms-backend/src/main/resources/data.sql
 
-# 2. 执行数据库脚本
-cd etms-backend/src/main/resources
-mysql -u root -p etms < schema.sql
-mysql -u root -p etms < data.sql
-
-# 3. 修改配置文件
+# 2. 修改配置文件（如需要）
 # 编辑 application.yml，修改数据库和Redis连接信息
 
-# 4. 启动后端
+# 3. 启动后端
 cd etms-backend
 mvn spring-boot:run
 ```
@@ -202,6 +283,7 @@ npm run dev
 | admin | 123456 | 超级管理员 |
 | trainadmin | 123456 | 培训管理员 |
 | zhangsan | 123456 | 普通员工 |
+| lisi | 123456 | 普通员工 |
 
 ---
 
@@ -242,9 +324,6 @@ mvn clean package -DskipTests
 
 # 运行测试
 mvn test
-
-# 生成API文档
-mvn swagger2markup:convertSwagger2markup
 ```
 
 ### 前端开发

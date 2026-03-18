@@ -27,6 +27,16 @@
 | 字符编码 | UTF-8 |
 | 接口文档 | http://localhost:8080/api/swagger-ui.html |
 
+### 后端技术栈
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| Spring Boot | 2.7.18 | 核心框架 |
+| Spring Security | - | 安全认证 |
+| JWT | 0.11.5 | Token认证 |
+| MyBatis-Plus | 3.5.3.1 | ORM框架 |
+| Knife4j | 3.0.3 | API文档 |
+
 ### 请求方式
 
 | 方法 | 说明 |
@@ -38,7 +48,7 @@
 
 ### 响应格式
 
-所有接口统一返回以下格式：
+所有接口统一返回以下格式（对应 `com.etms.common.Result`）：
 
 ```json
 {
@@ -89,7 +99,9 @@
 
 **接口地址：** `POST /api/auth/login`
 
-**请求参数：**
+**对应控制器：** `com.etms.controller.AuthController`
+
+**请求参数：**（对应 `com.etms.dto.LoginDTO`）
 
 ```json
 {
@@ -103,7 +115,7 @@
 | username | String | 是 | 用户名 |
 | password | String | 是 | 密码 |
 
-**响应示例：**
+**响应示例：**（对应 `com.etms.vo.LoginVO`）
 
 ```json
 {
@@ -128,6 +140,8 @@
 
 **接口地址：** `POST /api/auth/logout`
 
+**对应控制器：** `com.etms.controller.AuthController`
+
 **请求头：**
 
 | 参数 | 类型 | 必填 | 说明 |
@@ -147,6 +161,8 @@
 ### 获取当前用户信息
 
 **接口地址：** `GET /api/auth/info`
+
+**对应控制器：** `com.etms.controller.AuthController`
 
 **请求头：**
 
@@ -200,6 +216,8 @@
 
 ## 用户模块
 
+**对应控制器：** `com.etms.controller.UserController`
+
 ### 获取用户列表
 
 **接口地址：** `GET /api/users`
@@ -216,7 +234,7 @@
 | deptId | Long | 否 | 部门ID |
 | status | Integer | 否 | 状态 |
 
-**响应示例：**
+**响应示例：**（对应 `com.etms.vo.UserVO`）
 
 ```json
 {
@@ -294,7 +312,7 @@
 
 **接口地址：** `POST /api/users`
 
-**请求参数：**
+**请求参数：**（对应 `com.etms.dto.UserDTO`）
 
 ```json
 {
@@ -404,6 +422,8 @@
 
 ## 课程模块
 
+**对应控制器：** `com.etms.controller.CourseController`
+
 ### 获取课程列表
 
 **接口地址：** `GET /api/courses`
@@ -419,7 +439,7 @@
 | status | Integer | 否 | 状态 |
 | difficulty | Integer | 否 | 难度等级 |
 
-**响应示例：**
+**响应示例：**（对应 `com.etms.vo.CourseVO`）
 
 ```json
 {
@@ -515,6 +535,8 @@
 
 ## 培训计划模块
 
+**对应控制器：** `com.etms.controller.TrainingPlanController`
+
 ### 获取培训计划列表
 
 **接口地址：** `GET /api/plans`
@@ -529,7 +551,7 @@
 | status | Integer | 否 | 状态 |
 | planType | Integer | 否 | 类型(1必修/2选修) |
 
-**响应示例：**
+**响应示例：**（对应 `com.etms.vo.TrainingPlanVO`）
 
 ```json
 {
@@ -610,6 +632,8 @@
 
 ## 签到模块
 
+**对应控制器：** `com.etms.controller.AttendanceRecordController`
+
 ### 获取签到记录列表
 
 **接口地址：** `GET /api/attendance/records`
@@ -624,7 +648,7 @@
 | userId | Long | 否 | 用户ID |
 | status | Integer | 否 | 签到状态 |
 
-**响应示例：**
+**响应示例：**（对应 `com.etms.vo.AttendanceRecordVO`）
 
 ```json
 {
@@ -670,9 +694,34 @@
 }
 ```
 
+### 获取签到统计
+
+**接口地址：** `GET /api/attendance/stats`
+
+**响应示例：**（对应 `com.etms.vo.AttendanceStatsVO`）
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "totalCount": 100,
+    "normalCount": 85,
+    "lateCount": 10,
+    "earlyCount": 3,
+    "absentCount": 2,
+    "normalRate": 85.0
+  }
+}
+```
+
 ---
 
 ## 考核模块
+
+**对应控制器：**
+- 题库管理：`com.etms.controller.QuestionController`
+- 试卷管理：`com.etms.controller.PaperController`
 
 ### 获取题库列表
 
@@ -689,7 +738,7 @@
 | difficulty | Integer | 否 | 难度(1简单/2中等/3困难) |
 | courseId | Long | 否 | 关联课程ID |
 
-**响应示例：**
+**响应示例：**（对应 `com.etms.vo.QuestionVO`）
 
 ```json
 {
@@ -784,6 +833,10 @@
 
 ## 系统管理模块
 
+### 角色管理
+
+**对应控制器：** `com.etms.controller.RoleController`
+
 ### 获取角色列表
 
 **接口地址：** `GET /api/system/roles`
@@ -804,6 +857,10 @@
   "status": 1
 }
 ```
+
+### 部门管理
+
+**对应控制器：** `com.etms.controller.DeptController`
 
 ### 获取部门树
 
@@ -832,6 +889,8 @@
   ]
 }
 ```
+
+### 字典管理
 
 ### 获取字典列表
 
@@ -868,6 +927,8 @@
 }
 ```
 
+### 系统配置
+
 ### 获取系统配置
 
 **接口地址：** `GET /api/system/configs`
@@ -875,6 +936,8 @@
 ### 更新系统配置
 
 **接口地址：** `PUT /api/system/configs/{key}`
+
+### 日志管理
 
 ### 获取操作日志
 
@@ -930,7 +993,37 @@
 
 **地址：** http://localhost:8080/api/swagger-ui.html
 
-![Swagger界面示例](swagger-example.png)
+---
+
+## 安全配置说明
+
+### JWT认证流程
+
+1. 用户登录成功后，服务端生成JWT Token
+2. 前端将Token存储在本地（localStorage或vuex/pinia）
+3. 后续请求在Header中携带Token：`Authorization: Bearer {token}`
+4. 服务端通过 `JwtAuthenticationFilter` 验证Token有效性
+5. 验证通过后，将用户信息存入SecurityContext
+
+### 安全配置类
+
+- `SecurityConfig`：Spring Security主配置类
+- `JwtTokenProvider`：JWT Token生成与验证
+- `JwtAuthenticationFilter`：JWT认证过滤器
+- `JwtAuthenticationEntryPoint`：认证失败处理
+- `UserDetailsServiceImpl`：用户详情加载服务
+
+### 忽略认证的路径
+
+以下路径不需要JWT认证（在 `application.yml` 中配置）：
+
+- `/auth/login` - 登录接口
+- `/auth/captcha` - 验证码接口
+- `/auth/register` - 注册接口
+- `/files/**` - 文件访问路径
+- `/swagger-ui/**` - Swagger UI
+- `/v3/api-docs/**` - API文档
+- `/doc.html` - Knife4j文档
 
 ---
 

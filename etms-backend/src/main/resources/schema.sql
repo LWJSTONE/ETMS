@@ -5,8 +5,11 @@
 -- 字符集: utf8mb4
 -- =============================================
 
+-- 删除已存在的同名数据库（避免重复创建导致的问题）
+DROP DATABASE IF EXISTS etms;
+
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS etms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE DATABASE etms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE etms;
 
 -- =============================================

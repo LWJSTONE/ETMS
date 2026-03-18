@@ -44,11 +44,11 @@ INSERT INTO sys_role (id, role_code, role_name, role_desc, data_scope, sort_orde
 -- 初始化用户数据 (密码为: 123456，BCrypt加密)
 -- =============================================
 INSERT INTO sys_user (id, username, password, real_name, gender, email, phone, dept_id, position_id, status) VALUES
-(1, 'admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', 1, 'admin@etms.com', '13800138000', 1, 1, 1),
-(2, 'zhangsan', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '张三', 1, 'zhangsan@etms.com', '13800138001', 2, 3, 1),
-(3, 'lisi', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '李四', 1, 'lisi@etms.com', '13800138002', 2, 4, 1),
-(4, 'wangwu', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '王五', 2, 'wangwu@etms.com', '13800138003', 3, 4, 1),
-(5, 'trainadmin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '培训管理员', 1, 'train@etms.com', '13800138004', 4, 7, 1);
+(1, 'admin', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '系统管理员', 1, 'admin@etms.com', '13800138000', 1, 1, 1),
+(2, 'zhangsan', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '张三', 1, 'zhangsan@etms.com', '13800138001', 2, 3, 1),
+(3, 'lisi', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '李四', 1, 'lisi@etms.com', '13800138002', 2, 4, 1),
+(4, 'wangwu', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '王五', 2, 'wangwu@etms.com', '13800138003', 3, 4, 1),
+(5, 'trainadmin', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '培训管理员', 1, 'train@etms.com', '13800138004', 4, 7, 1);
 
 -- =============================================
 -- 初始化用户角色关联
