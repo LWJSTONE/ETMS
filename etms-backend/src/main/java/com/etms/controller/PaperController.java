@@ -5,15 +5,15 @@ import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.Paper;
 import com.etms.service.PaperService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 /**
  * 试卷管理控制器
  */
-@Tag(name = "试卷管理")
+@Api(tags = "试卷管理")
 @RestController
 @RequestMapping("/exam/papers")
 @RequiredArgsConstructor
@@ -21,7 +21,7 @@ public class PaperController {
     
     private final PaperService paperService;
     
-    @Operation(summary = "分页查询试卷列表")
+    @ApiOperation(value = "分页查询试卷列表")
     @GetMapping
     public Result<PageResult<?>> page(
             @RequestParam(defaultValue = "1") Long current,
@@ -36,20 +36,20 @@ public class PaperController {
         return Result.success(pageResult);
     }
     
-    @Operation(summary = "获取试卷详情")
+    @ApiOperation(value = "获取试卷详情")
     @GetMapping("/{id}")
     public Result<?> get(@PathVariable Long id) {
         return Result.success(paperService.getPaperDetail(id));
     }
     
-    @Operation(summary = "新增试卷")
+    @ApiOperation(value = "新增试卷")
     @PostMapping
     public Result<Void> add(@RequestBody Paper paper) {
         paperService.addPaper(paper);
         return Result.success();
     }
     
-    @Operation(summary = "更新试卷")
+    @ApiOperation(value = "更新试卷")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody Paper paper) {
         paper.setId(id);
@@ -57,21 +57,21 @@ public class PaperController {
         return Result.success();
     }
     
-    @Operation(summary = "删除试卷")
+    @ApiOperation(value = "删除试卷")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         paperService.deletePaper(id);
         return Result.success();
     }
     
-    @Operation(summary = "发布试卷")
+    @ApiOperation(value = "发布试卷")
     @PostMapping("/{id}/publish")
     public Result<Void> publish(@PathVariable Long id) {
         paperService.publishPaper(id);
         return Result.success();
     }
     
-    @Operation(summary = "停用试卷")
+    @ApiOperation(value = "停用试卷")
     @PostMapping("/{id}/disable")
     public Result<Void> disable(@PathVariable Long id) {
         paperService.disablePaper(id);

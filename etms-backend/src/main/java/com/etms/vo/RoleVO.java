@@ -22,4 +22,16 @@ public class RoleVO implements Serializable {
     
     /** 角色描述 */
     private String roleDesc;
+    
+    /** 数据范围(1全部 2本部门 3本人) */
+    private Integer dataScope;
+    
+    /** 排序顺序 */
+    private Integer sortOrder;
+    
+    /** 状态(0禁用 1正常) */
+    private Integer status;
+    
+    /** 权限数量 */
+    private Long permissionCount;
 }

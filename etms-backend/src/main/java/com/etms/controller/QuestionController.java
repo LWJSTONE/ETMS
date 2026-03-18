@@ -6,8 +6,8 @@ import com.etms.common.Result;
 import com.etms.entity.Question;
 import com.etms.service.QuestionService;
 import com.etms.vo.QuestionVO;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * 题库管理控制器
  */
-@Tag(name = "题库管理")
+@Api(tags = "题库管理")
 @RestController
 @RequestMapping("/exam/questions")
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class QuestionController {
     
     private final QuestionService questionService;
     
-    @Operation(summary = "分页查询题目列表")
+    @ApiOperation(value = "分页查询题目列表")
     @GetMapping
     public Result<PageResult<QuestionVO>> page(
             @RequestParam(defaultValue = "1") Long current,
@@ -40,21 +40,21 @@ public class QuestionController {
         return Result.success(pageResult);
     }
     
-    @Operation(summary = "获取题目详情")
+    @ApiOperation(value = "获取题目详情")
     @GetMapping("/{id}")
     public Result<QuestionVO> get(@PathVariable Long id) {
         QuestionVO vo = questionService.getQuestionDetail(id);
         return Result.success(vo);
     }
     
-    @Operation(summary = "新增题目")
+    @ApiOperation(value = "新增题目")
     @PostMapping
     public Result<Void> add(@RequestBody Question question) {
         questionService.addQuestion(question);
         return Result.success();
     }
     
-    @Operation(summary = "更新题目")
+    @ApiOperation(value = "更新题目")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody Question question) {
         question.setId(id);
@@ -62,14 +62,14 @@ public class QuestionController {
         return Result.success();
     }
     
-    @Operation(summary = "删除题目")
+    @ApiOperation(value = "删除题目")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         questionService.deleteQuestion(id);
         return Result.success();
     }
     
-    @Operation(summary = "随机抽取题目")
+    @ApiOperation(value = "随机抽取题目")
     @GetMapping("/random")
     public Result<List<QuestionVO>> randomQuestions(
             @RequestParam(required = false) Integer questionType,

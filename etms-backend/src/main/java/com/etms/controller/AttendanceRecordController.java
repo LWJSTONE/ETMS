@@ -6,15 +6,15 @@ import com.etms.common.Result;
 import com.etms.entity.AttendanceRecord;
 import com.etms.service.AttendanceRecordService;
 import com.etms.vo.AttendanceRecordVO;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 /**
  * 签到记录控制器
  */
-@Tag(name = "签到管理")
+@Api(tags = "签到管理")
 @RestController
 @RequestMapping("/attendance/records")
 @RequiredArgsConstructor
@@ -22,7 +22,7 @@ public class AttendanceRecordController {
     
     private final AttendanceRecordService attendanceRecordService;
     
-    @Operation(summary = "分页查询签到记录")
+    @ApiOperation(value = "分页查询签到记录")
     @GetMapping
     public Result<PageResult<AttendanceRecordVO>> page(
             @RequestParam(defaultValue = "1") Long current,
@@ -38,7 +38,7 @@ public class AttendanceRecordController {
         return Result.success(pageResult);
     }
     
-    @Operation(summary = "签到")
+    @ApiOperation(value = "签到")
     @PostMapping("/sign")
     public Result<Void> signIn(
             @RequestParam Long planId,
@@ -48,7 +48,7 @@ public class AttendanceRecordController {
         return Result.success();
     }
     
-    @Operation(summary = "补签审核")
+    @ApiOperation(value = "补签审核")
     @PostMapping("/{id}/audit")
     public Result<Void> audit(
             @PathVariable Long id,
@@ -58,7 +58,7 @@ public class AttendanceRecordController {
         return Result.success();
     }
     
-    @Operation(summary = "获取个人签到统计")
+    @ApiOperation(value = "获取个人签到统计")
     @GetMapping("/stats/{userId}")
     public Result<?> getPersonalStats(@PathVariable Long userId) {
         return Result.success(attendanceRecordService.getPersonalStats(userId));

@@ -7,6 +7,7 @@ import com.etms.entity.AttendanceRecord;
 import com.etms.mapper.AttendanceRecordMapper;
 import com.etms.service.AttendanceRecordService;
 import com.etms.vo.AttendanceRecordVO;
+import com.etms.vo.AttendanceStatsVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
