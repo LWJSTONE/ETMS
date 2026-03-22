@@ -50,9 +50,18 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             AttendanceRecordVO vo = new AttendanceRecordVO();
             BeanUtils.copyProperties(record, vo);
             vo.setSignTypeName(getSignTypeName(record.getSignType()));
+            vo.setSignCategoryName(getSignCategoryName(record.getSignCategory()));
             vo.setStatusName(getStatusName(record.getStatus()));
             vo.setReason(record.getReason());
             vo.setAuditRemark(record.getAuditRemark());
+            
+            // 设置用户信息
+            User user = userMapper.selectById(record.getUserId());
+            if (user != null) {
+                vo.setUserName(user.getUsername());
+                vo.setRealName(user.getRealName());
+            }
+            
             return vo;
         }).collect(Collectors.toList());
         
@@ -239,6 +248,15 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             case 1: return "二维码";
             case 2: return "GPS定位";
             case 3: return "人脸识别";
+            default: return "未知";
+        }
+    }
+    
+    private String getSignCategoryName(Integer signCategory) {
+        if (signCategory == null) return "未知";
+        switch (signCategory) {
+            case 1: return "签到";
+            case 2: return "签退";
             default: return "未知";
         }
     }

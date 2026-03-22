@@ -50,11 +50,11 @@
             <span v-else class="text-gray">待完成</span>
           </template>
         </el-table-column>
-        <el-table-column prop="isPass" label="是否通过" width="100" align="center">
+        <el-table-column prop="passed" label="是否通过" width="100" align="center">
           <template #default="{ row }">
             <template v-if="row.status === 2">
-              <el-tag :type="row.isPass ? 'success' : 'danger'">
-                {{ row.isPass ? '通过' : '未通过' }}
+              <el-tag :type="row.passed === 1 ? 'success' : 'danger'">
+                {{ row.passed === 1 ? '通过' : '未通过' }}
               </el-tag>
             </template>
             <span v-else class="text-gray">-</span>
@@ -111,8 +111,8 @@
           <el-descriptions-item label="考试得分">{{ detailData.totalScore ?? '-' }}</el-descriptions-item>
           <el-descriptions-item label="是否通过">
             <template v-if="detailData.status === 2">
-              <el-tag :type="detailData.isPass ? 'success' : 'danger'">
-                {{ detailData.isPass ? '通过' : '未通过' }}
+              <el-tag :type="detailData.passed === 1 ? 'success' : 'danger'">
+                {{ detailData.passed === 1 ? '通过' : '未通过' }}
               </el-tag>
             </template>
             <span v-else>-</span>
@@ -206,7 +206,9 @@ interface ExamRecord {
   submitTime: string
   duration: number
   totalScore: number
-  isPass: boolean
+  userScore: number
+  passScore: number
+  passed: number
   status: number
   answers?: Answer[]
 }
@@ -341,7 +343,7 @@ const handleExport = () => {
     '试卷名称': item.paperName,
     '考试时长(分钟)': item.duration || '',
     '得分': item.status === 2 ? item.totalScore : '',
-    '是否通过': item.status === 2 ? (item.isPass ? '是' : '否') : '',
+    '是否通过': item.status === 2 ? (item.passed === 1 ? '是' : '否') : '',
     '考试状态': getStatusName(item.status),
     '开始时间': formatDateTime(item.startTime),
     '提交时间': formatDateTime(item.submitTime) || ''

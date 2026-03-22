@@ -87,6 +87,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             if (paper != null) {
                 vo.setPaperName(paper.getPaperName());
                 vo.setTotalScore(paper.getTotalScore());
+                vo.setPassScore(paper.getPassScore());
+                vo.setDuration(paper.getExamDuration());
             }
             
             User user = userMap.get(record.getUserId());
@@ -117,6 +119,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         if (paper != null) {
             vo.setPaperName(paper.getPaperName());
             vo.setTotalScore(paper.getTotalScore());
+            vo.setPassScore(paper.getPassScore());
+            vo.setDuration(paper.getExamDuration());
         }
         
         // 获取用户信息
@@ -415,6 +419,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                     if (user != null) {
                         vo.setUserName(user.getUsername());
                         vo.setRealName(user.getRealName());
+                        vo.setDeptId(user.getDeptId());
                         vo.setDeptName(deptNameMap.get(user.getDeptId()));
                     }
                     
@@ -460,6 +465,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         if (user != null) {
             vo.setUserName(user.getUsername());
             vo.setRealName(user.getRealName());
+            vo.setDeptId(user.getDeptId());
             if (user.getDeptId() != null) {
                 Dept dept = deptMapper.selectById(user.getDeptId());
                 if (dept != null) {

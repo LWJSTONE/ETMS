@@ -47,6 +47,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         List<CourseVO> voList = coursePage.getRecords().stream().map(course -> {
             CourseVO vo = new CourseVO();
             BeanUtils.copyProperties(course, vo);
+            vo.setCourseTypeName(getCourseTypeName(course.getCourseType()));
             vo.setDifficultyName(getDifficultyName(course.getDifficulty()));
             vo.setStatusName(getStatusName(course.getStatus()));
             return vo;
@@ -65,6 +66,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         
         CourseVO vo = new CourseVO();
         BeanUtils.copyProperties(course, vo);
+        vo.setCourseTypeName(getCourseTypeName(course.getCourseType()));
         vo.setDifficultyName(getDifficultyName(course.getDifficulty()));
         vo.setStatusName(getStatusName(course.getStatus()));
         
@@ -230,6 +232,16 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             vo.setStatusName(getStatusName(course.getStatus()));
             return vo;
         }).collect(Collectors.toList());
+    }
+    
+    private String getCourseTypeName(Integer courseType) {
+        if (courseType == null) return "未知";
+        switch (courseType) {
+            case 1: return "视频";
+            case 2: return "文档";
+            case 3: return "直播";
+            default: return "未知";
+        }
     }
     
     private String getDifficultyName(Integer difficulty) {

@@ -30,8 +30,14 @@ public class Course extends BaseEntity {
     /** 分类ID */
     private Long categoryId;
     
+    /** 课程类型(1视频 2文档 3直播) */
+    private Integer courseType;
+    
     /** 课程时长(分钟) */
     private Integer duration;
+    
+    /** 学分 */
+    private Integer credit;
     
     /** 难度等级(1入门 2初级 3中级 4高级 5专家) */
     private Integer difficulty;

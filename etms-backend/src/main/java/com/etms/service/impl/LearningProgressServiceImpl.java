@@ -90,10 +90,28 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             planMap = plans.stream().collect(Collectors.toMap(TrainingPlan::getId, p -> p));
         }
         
+        // 批量获取课程信息
+        Set<Long> courseIds = userPlanPage.getRecords().stream()
+                .map(UserPlan::getCourseId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        // 从培训计划中获取关联的课程ID
+        for (TrainingPlan plan : planMap.values()) {
+            if (plan.getCourseId() != null) {
+                courseIds.add(plan.getCourseId());
+            }
+        }
+        Map<Long, Course> courseMap = new HashMap<>();
+        if (!courseIds.isEmpty()) {
+            List<Course> courses = courseMapper.selectBatchIds(courseIds);
+            courseMap = courses.stream().collect(Collectors.toMap(Course::getId, c -> c));
+        }
+        
         // 过滤不符合条件的记录
         final Map<Long, User> finalUserMap = userMap;
         final Map<Long, String> finalDeptNameMap = deptNameMap;
         final Map<Long, TrainingPlan> finalPlanMap = planMap;
+        final Map<Long, Course> finalCourseMap = courseMap;
         
         List<LearningProgressVO> voList = userPlanPage.getRecords().stream()
                 .filter(up -> {
@@ -130,6 +148,22 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
                     TrainingPlan plan = finalPlanMap.get(up.getPlanId());
                     if (plan != null) {
                         vo.setPlanName(plan.getPlanName());
+                    }
+                    
+                    // 设置课程信息
+                    Long courseId = up.getCourseId() != null ? up.getCourseId() : 
+                                   (plan != null ? plan.getCourseId() : null);
+                    if (courseId != null) {
+                        Course course = finalCourseMap.get(courseId);
+                        if (course != null) {
+                            vo.setCourseId(courseId);
+                            vo.setCourseName(course.getCourseName());
+                            vo.setCourseType(course.getCourseType());
+                            vo.setCoverImage(course.getCoverImage());
+                            vo.setCourseDesc(course.getCourseDesc());
+                            vo.setDuration(course.getDuration());
+                            vo.setCredit(course.getCredit());
+                        }
                     }
                     
                     // 设置状态名称

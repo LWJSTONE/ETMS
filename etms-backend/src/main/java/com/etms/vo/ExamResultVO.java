@@ -34,6 +34,9 @@ public class ExamResultVO implements Serializable {
     /** 部门名称 */
     private String deptName;
     
+    /** 部门ID */
+    private Long deptId;
+    
     /** 总分 */
     private Integer totalScore;
     

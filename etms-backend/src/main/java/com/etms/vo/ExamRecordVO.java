@@ -34,7 +34,18 @@ public class ExamRecordVO {
     
     private Integer userScore;
     
+    private Integer passScore;
+    
     private Integer passed;
+    
+    /** 考试时长(分钟) */
+    private Integer duration;
+    
+    /** 正确题数 */
+    private Integer correctCount;
+    
+    /** 总题数 */
+    private Integer totalCount;
     
     private LocalDateTime startTime;
     

@@ -130,10 +130,10 @@
 
       <el-table :data="tableData" v-loading="loading" stripe border>
         <el-table-column prop="planName" label="培训计划" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="signTypeName" label="签到类型" width="100">
+        <el-table-column prop="signCategoryName" label="签到类别" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.signType === 1 ? 'success' : 'warning'" size="small">
-              {{ row.signType === 1 ? '签到' : '签退' }}
+            <el-tag :type="row.signCategory === 1 ? 'success' : 'warning'" size="small">
+              {{ row.signCategory === 1 ? '签到' : '签退' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -289,9 +289,9 @@
     <el-dialog v-model="detailDialogVisible" title="签到详情" width="600px">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="培训计划" :span="2">{{ currentRecord.planName }}</el-descriptions-item>
-        <el-descriptions-item label="签到类型">
-          <el-tag :type="currentRecord.signType === 1 ? 'success' : 'warning'" size="small">
-            {{ currentRecord.signType === 1 ? '签到' : '签退' }}
+        <el-descriptions-item label="签到类别">
+          <el-tag :type="currentRecord.signCategory === 1 ? 'success' : 'warning'" size="small">
+            {{ currentRecord.signCategory === 1 ? '签到' : '签退' }}
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="签到状态">
@@ -553,7 +553,8 @@ const handleApplySubmit = async () => {
   try {
     await applySupplementary({
       planId: applyForm.planId!,
-      signType: applyForm.signCategory, // 签到类型：1签到 2签退
+      signType: 1, // 签到方式，默认二维码
+      signCategory: applyForm.signCategory, // 签到类别：1签到 2签退
       signTime: applyForm.signTime,
       reason: applyForm.reason
     })

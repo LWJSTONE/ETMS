@@ -35,8 +35,17 @@ public class CourseVO implements Serializable {
     /** 分类名称 */
     private String categoryName;
     
+    /** 课程类型(1视频 2文档 3直播) */
+    private Integer courseType;
+    
+    /** 课程类型名称 */
+    private String courseTypeName;
+    
     /** 课程时长(分钟) */
     private Integer duration;
+    
+    /** 学分 */
+    private Integer credit;
     
     /** 难度等级 */
     private Integer difficulty;

@@ -41,6 +41,12 @@ public class AttendanceRecordVO implements Serializable {
     /** 签到类型名称 */
     private String signTypeName;
     
+    /** 签到类别(1签到 2签退) */
+    private Integer signCategory;
+    
+    /** 签到类别名称 */
+    private String signCategoryName;
+    
     /** 签到位置 */
     private String location;
     

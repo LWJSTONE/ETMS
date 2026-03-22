@@ -76,7 +76,7 @@
           />
         </el-form-item>
         <el-form-item label="通过状态">
-          <el-select v-model="searchForm.passStatus" placeholder="请选择" clearable style="width: 140px">
+          <el-select v-model="searchForm.passed" placeholder="请选择" clearable style="width: 140px">
             <el-option label="全部" :value="null" />
             <el-option label="已通过" :value="1" />
             <el-option label="未通过" :value="0" />
@@ -125,17 +125,17 @@
         </el-table-column>
         <el-table-column prop="deptName" label="所属部门" width="140" show-overflow-tooltip />
         <el-table-column prop="paperName" label="试卷名称" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="examScore" label="得分" width="100" align="center">
+        <el-table-column prop="userScore" label="得分" width="100" align="center">
           <template #default="{ row }">
-            <span :class="getScoreClass(row)">{{ row.examScore }}</span>
+            <span :class="getScoreClass(row)">{{ row.userScore }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="totalScore" label="满分" width="80" align="center" />
         <el-table-column prop="passScore" label="及格分" width="80" align="center" />
-        <el-table-column prop="passStatus" label="是否通过" width="100" align="center">
+        <el-table-column prop="passed" label="是否通过" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.passStatus === 1 ? 'success' : 'danger'" effect="dark">
-              {{ row.passStatus === 1 ? '通过' : '未通过' }}
+            <el-tag :type="row.passed === 1 ? 'success' : 'danger'" effect="dark">
+              {{ row.passed === 1 ? '通过' : '未通过' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -147,14 +147,14 @@
             <span v-else>0次</span>
           </template>
         </el-table-column>
-        <el-table-column prop="examTime" label="考试时间" width="180" align="center">
+        <el-table-column prop="submitTime" label="考试时间" width="180" align="center">
           <template #default="{ row }">
-            {{ formatDateTime(row.examTime) }}
+            {{ formatDateTime(row.submitTime) }}
           </template>
         </el-table-column>
-        <el-table-column prop="durationUsed" label="用时" width="90" align="center">
+        <el-table-column prop="examDuration" label="用时" width="90" align="center">
           <template #default="{ row }">
-            {{ formatDuration(row.durationUsed) }}
+            {{ formatDuration(row.examDuration) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right" align="center">
@@ -191,20 +191,17 @@
           <el-descriptions-item label="所属部门">{{ detailData.deptName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="试卷名称">{{ detailData.paperName }}</el-descriptions-item>
           <el-descriptions-item label="考试得分">
-            <span :class="getScoreClass(detailData)">{{ detailData.examScore }} / {{ detailData.totalScore }}</span>
+            <span :class="getScoreClass(detailData)">{{ detailData.userScore }} / {{ detailData.totalScore }}</span>
           </el-descriptions-item>
           <el-descriptions-item label="及格分数">{{ detailData.passScore }}分</el-descriptions-item>
           <el-descriptions-item label="考试结果">
-            <el-tag :type="detailData.passStatus === 1 ? 'success' : 'danger'" effect="dark">
-              {{ detailData.passStatus === 1 ? '通过' : '未通过' }}
+            <el-tag :type="detailData.passed === 1 ? 'success' : 'danger'" effect="dark">
+              {{ detailData.passed === 1 ? '通过' : '未通过' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="客观题得分">{{ detailData.objectiveScore ?? '-' }}分</el-descriptions-item>
-          <el-descriptions-item label="主观题得分">{{ detailData.subjectiveScore ?? '-' }}分</el-descriptions-item>
-          <el-descriptions-item label="补考次数">{{ detailData.retakeCount || 0 }}次</el-descriptions-item>
-          <el-descriptions-item label="考试时间">{{ formatDateTime(detailData.examTime) }}</el-descriptions-item>
-          <el-descriptions-item label="考试用时">{{ formatDuration(detailData.durationUsed) }}</el-descriptions-item>
-          <el-descriptions-item label="提交时间">{{ formatDateTime(detailData.submitTime) }}</el-descriptions-item>
+          <el-descriptions-item label="考试时间">{{ formatDateTime(detailData.submitTime) }}</el-descriptions-item>
+          <el-descriptions-item label="考试用时">{{ formatDuration(detailData.examDuration) }}</el-descriptions-item>
+          <el-descriptions-item label="开始时间">{{ formatDateTime(detailData.startTime) }}</el-descriptions-item>
         </el-descriptions>
 
         <!-- 答题详情 -->
@@ -303,7 +300,7 @@ const stats = reactive({
 const searchForm = reactive({
   userName: '',
   paperName: '',
-  passStatus: null as number | null,
+  passed: null as number | null,
   examTimeRange: [] as string[]
 })
 
@@ -333,11 +330,11 @@ const getList = async () => {
       size: pagination.size,
       userName: searchForm.userName || undefined,
       paperName: searchForm.paperName || undefined,
-      passStatus: searchForm.passStatus
+      passed: searchForm.passed
     }
     if (searchForm.examTimeRange && searchForm.examTimeRange.length === 2) {
-      params.examStartTime = searchForm.examTimeRange[0]
-      params.examEndTime = searchForm.examTimeRange[1]
+      params.startTime = searchForm.examTimeRange[0]
+      params.endTime = searchForm.examTimeRange[1]
     }
     const res = await getResultList(params)
     tableData.value = res.data?.records || []
@@ -358,11 +355,11 @@ const calculateStats = () => {
   stats.totalCount = pagination.total
   
   if (data.length > 0) {
-    const passCount = data.filter(item => item.passStatus === 1).length
+    const passCount = data.filter(item => item.passed === 1).length
     stats.passCount = passCount
     stats.failCount = data.length - passCount
     stats.passRate = data.length > 0 ? ((passCount / data.length) * 100).toFixed(1) : '0'
-    const totalScore = data.reduce((sum, item) => sum + (item.examScore || 0), 0)
+    const totalScore = data.reduce((sum, item) => sum + (item.userScore || 0), 0)
     stats.avgScore = (totalScore / data.length).toFixed(1)
   } else {
     stats.passCount = 0
@@ -383,7 +380,7 @@ const handleReset = () => {
   Object.assign(searchForm, {
     userName: '',
     paperName: '',
-    passStatus: null,
+    passed: null,
     examTimeRange: []
   })
   handleSearch()
@@ -398,13 +395,12 @@ const handleExport = async () => {
       '考生姓名': item.userName || item.realName || '-',
       '所属部门': item.deptName || '-',
       '试卷名称': item.paperName,
-      '得分': item.examScore,
+      '得分': item.userScore,
       '满分': item.totalScore,
       '及格分': item.passScore,
-      '是否通过': item.passStatus === 1 ? '通过' : '未通过',
-      '补考次数': item.retakeCount || 0,
-      '考试时间': formatDateTime(item.examTime),
-      '考试用时': formatDuration(item.durationUsed)
+      '是否通过': item.passed === 1 ? '通过' : '未通过',
+      '考试时间': formatDateTime(item.submitTime),
+      '考试用时': formatDuration(item.examDuration)
     }))
 
     // 使用原生方法导出CSV
@@ -472,7 +468,7 @@ const formatDuration = (minutes: number) => {
 
 // 获取分数样式类
 const getScoreClass = (row: any) => {
-  if (row.passStatus === 1) return 'score-pass'
+  if (row.passed === 1) return 'score-pass'
   return 'score-fail'
 }
 

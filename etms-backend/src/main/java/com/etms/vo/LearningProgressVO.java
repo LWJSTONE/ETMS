@@ -40,8 +40,29 @@ public class LearningProgressVO implements Serializable {
     /** 课程名称 */
     private String courseName;
     
+    /** 课程类型(1视频 2文档 3直播) */
+    private Integer courseType;
+    
+    /** 封面图片 */
+    private String coverImage;
+    
+    /** 课程描述 */
+    private String courseDesc;
+    
+    /** 课程时长(分钟) */
+    private Integer duration;
+    
+    /** 学分 */
+    private Integer credit;
+    
     /** 学习进度（百分比） */
     private Integer progress;
+    
+    /** 学习时长(分钟) */
+    private Integer studyTime;
+    
+    /** 最后学习时间 */
+    private LocalDateTime lastStudyTime;
     
     /** 学习状态：0-未开始 1-进行中 2-已完成 */
     private Integer status;
