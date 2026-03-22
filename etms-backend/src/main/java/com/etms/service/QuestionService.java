@@ -14,7 +14,7 @@ public interface QuestionService extends IService<Question> {
     /**
      * 分页查询题目列表
      */
-    Page<QuestionVO> pageQuestions(Page<Question> page, String questionContent, Integer questionType, Integer difficulty, Long courseId);
+    Page<QuestionVO> pageQuestions(Page<Question> page, String questionContent, Integer questionType, Integer difficulty, Long courseId, Integer status);
     
     /**
      * 获取题目详情

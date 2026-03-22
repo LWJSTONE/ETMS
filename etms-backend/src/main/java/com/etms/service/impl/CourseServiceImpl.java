@@ -23,10 +23,12 @@ import java.util.stream.Collectors;
 public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> implements CourseService {
     
     @Override
-    public Page<CourseVO> pageCourses(Page<Course> page, String courseName, Long categoryId, Integer status, Integer difficulty) {
+    public Page<CourseVO> pageCourses(Page<Course> page, String courseName, String courseCode, Long categoryId, Integer courseType, Integer status, Integer difficulty) {
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(courseName), Course::getCourseName, courseName)
+               .like(StringUtils.hasText(courseCode), Course::getCourseCode, courseCode)
                .eq(categoryId != null, Course::getCategoryId, categoryId)
+               .eq(courseType != null, Course::getCourseType, courseType)
                .eq(status != null, Course::getStatus, status)
                .eq(difficulty != null, Course::getDifficulty, difficulty)
                .orderByDesc(Course::getCreateTime);

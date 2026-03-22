@@ -29,11 +29,13 @@ public class CourseController {
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
             @RequestParam(required = false) String courseName,
+            @RequestParam(required = false) String courseCode,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Integer courseType,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) Integer difficulty) {
         Page<Course> page = new Page<>(current, size);
-        Page<CourseVO> voPage = courseService.pageCourses(page, courseName, categoryId, status, difficulty);
+        Page<CourseVO> voPage = courseService.pageCourses(page, courseName, courseCode, categoryId, courseType, status, difficulty);
         PageResult<CourseVO> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );

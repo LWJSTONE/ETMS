@@ -22,12 +22,13 @@ import java.util.stream.Collectors;
 public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> implements QuestionService {
     
     @Override
-    public Page<QuestionVO> pageQuestions(Page<Question> page, String questionContent, Integer questionType, Integer difficulty, Long courseId) {
+    public Page<QuestionVO> pageQuestions(Page<Question> page, String questionContent, Integer questionType, Integer difficulty, Long courseId, Integer status) {
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(questionContent), Question::getQuestionContent, questionContent)
                .eq(questionType != null, Question::getQuestionType, questionType)
                .eq(difficulty != null, Question::getDifficulty, difficulty)
                .eq(courseId != null, Question::getCourseId, courseId)
+               .eq(status != null, Question::getStatus, status)
                .orderByDesc(Question::getCreateTime);
         
         Page<Question> questionPage = baseMapper.selectPage(page, wrapper);

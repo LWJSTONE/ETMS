@@ -20,9 +20,10 @@ import java.util.List;
 public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements PaperService {
     
     @Override
-    public Page<Paper> pagePapers(Page<Paper> page, String paperName, Integer status) {
+    public Page<Paper> pagePapers(Page<Paper> page, String paperName, String paperCode, Integer status) {
         LambdaQueryWrapper<Paper> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(paperName), Paper::getPaperName, paperName)
+               .like(StringUtils.hasText(paperCode), Paper::getPaperCode, paperCode)
                .eq(status != null, Paper::getStatus, status)
                .orderByDesc(Paper::getCreateTime);
         return baseMapper.selectPage(page, wrapper);

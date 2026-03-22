@@ -6,7 +6,7 @@ import request from '@/utils/request'
 
 // 获取题目列表
 export function getQuestionList(params: any) {
-  return request.get('/exam/questions', { params })
+  return request.get('/exam/questions', params)
 }
 
 // 获取题目详情
@@ -31,7 +31,7 @@ export function deleteQuestion(id: number) {
 
 // 随机抽取题目
 export function randomQuestions(params: any) {
-  return request.get('/exam/questions/random', { params })
+  return request.get('/exam/questions/random', params)
 }
 
 /**
@@ -40,7 +40,7 @@ export function randomQuestions(params: any) {
 
 // 获取试卷列表
 export function getPaperList(params: any) {
-  return request.get('/exam/papers', { params })
+  return request.get('/exam/papers', params)
 }
 
 // 获取试卷详情
@@ -79,7 +79,7 @@ export function disablePaper(id: number) {
 
 // 获取考试记录列表
 export function getExamRecordList(params: any) {
-  return request.get('/exam/records', { params })
+  return request.get('/exam/records', params)
 }
 
 // 开始考试
@@ -103,10 +103,10 @@ export function getExamRecordDetail(id: number) {
 
 // 获取成绩列表
 export function getResultList(params: any) {
-  return request.get('/exam/results', { params })
+  return request.get('/exam/results', params)
 }
 
 // 获取个人成绩
 export function getMyResults(params: any) {
-  return request.get('/exam/results/my', { params })
+  return request.get('/exam/results/my', params)
 }

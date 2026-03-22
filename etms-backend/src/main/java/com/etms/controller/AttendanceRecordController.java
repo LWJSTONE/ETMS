@@ -29,9 +29,10 @@ public class AttendanceRecordController {
             @RequestParam(defaultValue = "10") Long size,
             @RequestParam(required = false) Long planId,
             @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Integer auditStatus) {
         Page<AttendanceRecord> page = new Page<>(current, size);
-        Page<AttendanceRecordVO> voPage = attendanceRecordService.pageRecords(page, planId, userId, status);
+        Page<AttendanceRecordVO> voPage = attendanceRecordService.pageRecords(page, planId, userId, status, auditStatus);
         PageResult<AttendanceRecordVO> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );

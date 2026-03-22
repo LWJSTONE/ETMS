@@ -27,9 +27,10 @@ public class PaperController {
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
             @RequestParam(required = false) String paperName,
+            @RequestParam(required = false) String paperCode,
             @RequestParam(required = false) Integer status) {
         Page<Paper> page = new Page<>(current, size);
-        Page<Paper> voPage = paperService.pagePapers(page, paperName, status);
+        Page<Paper> voPage = paperService.pagePapers(page, paperName, paperCode, status);
         PageResult<Paper> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );

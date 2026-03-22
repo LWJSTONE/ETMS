@@ -6,7 +6,7 @@ import request from '@/utils/request'
 
 // 获取培训计划列表
 export function getPlanList(params: any) {
-  return request.get('/plans', { params })
+  return request.get('/plans', params)
 }
 
 // 获取培训计划详情
@@ -45,7 +45,7 @@ export function archivePlan(id: number) {
 
 // 获取学习进度列表
 export function getProgressList(params: any) {
-  return request.get('/progress', { params })
+  return request.get('/progress', params)
 }
 
 // 更新学习进度
@@ -55,5 +55,5 @@ export function updateProgress(data: any) {
 
 // 获取我的学习进度
 export function getMyProgress(params: any) {
-  return request.get('/progress/my', { params })
+  return request.get('/progress/my', params)
 }

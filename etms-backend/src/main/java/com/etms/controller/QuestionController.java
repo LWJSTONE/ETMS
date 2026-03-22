@@ -31,9 +31,10 @@ public class QuestionController {
             @RequestParam(required = false) String questionContent,
             @RequestParam(required = false) Integer questionType,
             @RequestParam(required = false) Integer difficulty,
-            @RequestParam(required = false) Long courseId) {
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Integer status) {
         Page<Question> page = new Page<>(current, size);
-        Page<QuestionVO> voPage = questionService.pageQuestions(page, questionContent, questionType, difficulty, courseId);
+        Page<QuestionVO> voPage = questionService.pageQuestions(page, questionContent, questionType, difficulty, courseId, status);
         PageResult<QuestionVO> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );

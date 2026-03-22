@@ -14,7 +14,7 @@ public interface AttendanceRecordService extends IService<AttendanceRecord> {
     /**
      * 分页查询签到记录
      */
-    Page<AttendanceRecordVO> pageRecords(Page<AttendanceRecord> page, Long planId, Long userId, Integer status);
+    Page<AttendanceRecordVO> pageRecords(Page<AttendanceRecord> page, Long planId, Long userId, Integer status, Integer auditStatus);
     
     /**
      * 签到

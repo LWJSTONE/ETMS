@@ -23,11 +23,12 @@ import java.util.stream.Collectors;
 public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMapper, AttendanceRecord> implements AttendanceRecordService {
     
     @Override
-    public Page<AttendanceRecordVO> pageRecords(Page<AttendanceRecord> page, Long planId, Long userId, Integer status) {
+    public Page<AttendanceRecordVO> pageRecords(Page<AttendanceRecord> page, Long planId, Long userId, Integer status, Integer auditStatus) {
         LambdaQueryWrapper<AttendanceRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(planId != null, AttendanceRecord::getPlanId, planId)
                .eq(userId != null, AttendanceRecord::getUserId, userId)
                .eq(status != null, AttendanceRecord::getStatus, status)
+               .eq(auditStatus != null, AttendanceRecord::getAuditStatus, auditStatus)
                .orderByDesc(AttendanceRecord::getSignTime);
         
         Page<AttendanceRecord> recordPage = baseMapper.selectPage(page, wrapper);

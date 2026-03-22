@@ -12,7 +12,7 @@ public interface PaperService extends IService<Paper> {
     /**
      * 分页查询试卷列表
      */
-    Page<Paper> pagePapers(Page<Paper> page, String paperName, Integer status);
+    Page<Paper> pagePapers(Page<Paper> page, String paperName, String paperCode, Integer status);
     
     /**
      * 获取试卷详情（含题目）

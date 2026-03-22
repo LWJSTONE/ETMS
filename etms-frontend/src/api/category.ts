@@ -29,7 +29,7 @@ export function getCategoryTree(): Promise<ApiResponse<Category[]>> {
 
 // 获取分类列表
 export function getCategoryList(parentId?: number): Promise<ApiResponse<Category[]>> {
-  return request.get('/training/categories', { params: { parentId } })
+  return request.get('/training/categories', parentId ? { parentId } : undefined)
 }
 
 // 获取分类详情

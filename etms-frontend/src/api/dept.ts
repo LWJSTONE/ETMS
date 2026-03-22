@@ -14,7 +14,7 @@ export function getDeptTree(): Promise<ApiResponse<any[]>> {
 
 // 获取部门列表
 export function getDeptList(parentId?: number): Promise<ApiResponse<any[]>> {
-  return request.get('/system/depts', { params: { parentId } })
+  return request.get('/system/depts', parentId ? { parentId } : undefined)
 }
 
 // 获取部门详情

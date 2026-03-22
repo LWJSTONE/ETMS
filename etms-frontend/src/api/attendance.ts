@@ -6,7 +6,7 @@ import request from '@/utils/request'
 
 // 获取签到记录列表
 export function getAttendanceList(params: any) {
-  return request.get('/attendance/records', { params })
+  return request.get('/attendance/records', params)
 }
 
 // 签到

@@ -23,7 +23,7 @@ interface PageParams {
 
 // 获取角色列表
 export function getRoleList(params: PageParams): Promise<ApiResponse<PageResult<any>>> {
-  return request.get('/system/roles', { params })
+  return request.get('/system/roles', params)
 }
 
 // 获取所有角色列表(不分页)
