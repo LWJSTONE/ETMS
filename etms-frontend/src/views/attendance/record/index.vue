@@ -373,7 +373,7 @@ const detailDialogVisible = ref(false)
 // 获取统计
 const getStats = async () => {
   try {
-    const userId = userStore.userInfo?.userId
+    const userId = userStore.userInfo?.id
     if (userId) {
       const res = await getAttendanceStats(userId)
       if (res.data) {

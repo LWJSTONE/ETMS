@@ -420,7 +420,7 @@ const currentRecord = ref<any>({})
 // 获取统计
 const getStats = async () => {
   try {
-    const userId = userStore.userInfo?.userId
+    const userId = userStore.userInfo?.id
     if (userId) {
       const res = await getAttendanceStats(userId)
       if (res.data) {
@@ -454,7 +454,7 @@ const getList = async () => {
     const params: any = {
       current: pagination.current,
       size: pagination.size,
-      userId: userStore.userInfo?.userId
+      userId: userStore.userInfo?.id
     }
     if (searchForm.planId) params.planId = searchForm.planId
     if (searchForm.status !== null) params.status = searchForm.status
