@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.Role;
 import com.etms.entity.RolePermission;
 import com.etms.entity.UserRole;
+import com.etms.exception.BusinessException;
 import com.etms.mapper.RoleMapper;
 import com.etms.mapper.RolePermissionMapper;
 import com.etms.mapper.UserRoleMapper;
@@ -16,6 +17,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,22 +28,22 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements RoleService {
-    
+
     private final RolePermissionMapper rolePermissionMapper;
     private final UserRoleMapper userRoleMapper;
-    
+
     @Override
     public Page<RoleVO> pageRoles(Page<Role> page, String roleName, Integer status) {
         LambdaQueryWrapper<Role> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(roleName), Role::getRoleName, roleName)
                .eq(status != null, Role::getStatus, status)
                .orderByAsc(Role::getSortOrder);
-        
+
         Page<Role> rolePage = baseMapper.selectPage(page, wrapper);
-        
+
         Page<RoleVO> voPage = new Page<>();
         BeanUtils.copyProperties(rolePage, voPage, "records");
-        
+
         List<RoleVO> voList = rolePage.getRecords().stream().map(role -> {
             RoleVO vo = new RoleVO();
             BeanUtils.copyProperties(role, vo);
@@ -51,11 +53,11 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             ));
             return vo;
         }).collect(Collectors.toList());
-        
+
         voPage.setRecords(voList);
         return voPage;
     }
-    
+
     @Override
     public List<RoleVO> listRoles() {
         List<Role> roles = baseMapper.selectList(
@@ -63,14 +65,14 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
                 .eq(Role::getStatus, 1)
                 .orderByAsc(Role::getSortOrder)
         );
-        
+
         return roles.stream().map(role -> {
             RoleVO vo = new RoleVO();
             BeanUtils.copyProperties(role, vo);
             return vo;
         }).collect(Collectors.toList());
     }
-    
+
     @Override
     public RoleVO getRoleDetail(Long id) {
         Role role = baseMapper.selectById(id);
@@ -81,7 +83,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         BeanUtils.copyProperties(role, vo);
         return vo;
     }
-    
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addRole(Role role) {
@@ -90,13 +92,13 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             new LambdaQueryWrapper<Role>().eq(Role::getRoleName, role.getRoleName())
         );
         if (count > 0) {
-            throw new RuntimeException("角色名已存在");
+            throw new BusinessException("角色名已存在");
         }
-        
+
         role.setStatus(1);
         baseMapper.insert(role);
     }
-    
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateRole(Role role) {
@@ -107,12 +109,12 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
                 .ne(Role::getId, role.getId())
         );
         if (count > 0) {
-            throw new RuntimeException("角色名已存在");
+            throw new BusinessException("角色名已存在");
         }
-        
+
         baseMapper.updateById(role);
     }
-    
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteRole(Long id) {
@@ -121,9 +123,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             new LambdaQueryWrapper<UserRole>().eq(UserRole::getRoleId, id)
         );
         if (count > 0) {
-            throw new RuntimeException("角色已分配给用户，无法删除");
+            throw new BusinessException("角色已分配给用户，无法删除");
         }
-        
+
         // 删除角色权限关联
         rolePermissionMapper.delete(
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, id)
@@ -131,7 +133,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         // 删除角色
         baseMapper.deleteById(id);
     }
-    
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void assignPermissions(Long roleId, List<Long> permissionIds) {
@@ -139,7 +141,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         rolePermissionMapper.delete(
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, roleId)
         );
-        
+
         // 批量插入权限记录
         if (permissionIds != null && !permissionIds.isEmpty()) {
             List<RolePermission> rolePermissions = new ArrayList<>();
@@ -149,13 +151,13 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
                 rp.setPermissionId(permissionId);
                 rolePermissions.add(rp);
             }
-            // 使用批量插入
+            // 使用 MyBatis-Plus 的批量插入方法
             for (RolePermission rp : rolePermissions) {
                 rolePermissionMapper.insert(rp);
             }
         }
     }
-    
+
     @Override
     public List<Long> getPermissionIdsByRoleId(Long roleId) {
         List<RolePermission> list = rolePermissionMapper.selectList(

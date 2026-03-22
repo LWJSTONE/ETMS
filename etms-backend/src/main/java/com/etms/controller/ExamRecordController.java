@@ -61,6 +61,14 @@ public class ExamRecordController {
     @ApiOperation(value = "提交试卷")
     @PostMapping("/submit")
     public Result<Void> submitExam(@RequestBody Map<String, Object> params) {
+        // 参数验证
+        if (params.get("recordId") == null) {
+            return Result.error("考试记录ID不能为空");
+        }
+        if (params.get("answers") == null) {
+            return Result.error("答案不能为空");
+        }
+
         Long recordId = Long.valueOf(params.get("recordId").toString());
         String answers = params.get("answers").toString();
         examRecordService.submitExam(recordId, answers);

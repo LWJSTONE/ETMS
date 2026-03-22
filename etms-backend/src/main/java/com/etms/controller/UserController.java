@@ -92,6 +92,14 @@ public class UserController {
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
         Integer status = body.get("status");
+        // 参数验证
+        if (status == null) {
+            return Result.error("状态不能为空");
+        }
+        // 验证状态值是否合法（0: 禁用, 1: 启用）
+        if (status != 0 && status != 1) {
+            return Result.error("状态值不合法");
+        }
         userService.updateStatus(id, status);
         return Result.success();
     }
