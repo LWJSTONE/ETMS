@@ -144,8 +144,20 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="关联课程ID" prop="courseId">
-              <el-input v-model.number="form.courseId" placeholder="请输入关联课程ID" type="number" />
+            <el-form-item label="关联课程" prop="courseId">
+              <el-select
+                v-model="form.courseId"
+                placeholder="请选择关联课程"
+                filterable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="course in courseList"
+                  :key="course.id"
+                  :label="course.courseName"
+                  :value="course.id"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -285,6 +297,7 @@ import {
   updateQuestion,
   deleteQuestion
 } from '@/api/exam'
+import { getCourseListAll } from '@/api/course'
 
 const route = useRoute()
 const pageTitle = route.meta?.title || '题库管理'
@@ -305,6 +318,9 @@ const pagination = reactive({
   size: 10,
   total: 0
 })
+
+// 课程列表
+const courseList = ref<any[]>([])
 
 // 对话框
 const dialogVisible = ref(false)
@@ -556,8 +572,19 @@ const handleDelete = async (row: any) => {
   }
 }
 
+// 获取课程列表
+const getCourses = async () => {
+  try {
+    const res = await getCourseListAll()
+    courseList.value = res.data || []
+  } catch (error) {
+    console.error('获取课程列表失败:', error)
+  }
+}
+
 onMounted(() => {
   getList()
+  getCourses()
 })
 </script>
 

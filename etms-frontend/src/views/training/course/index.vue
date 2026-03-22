@@ -140,8 +140,18 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="分类ID" prop="categoryId">
-              <el-input v-model.number="form.categoryId" placeholder="请输入分类ID" type="number" />
+            <el-form-item label="课程分类" prop="categoryId">
+              <el-tree-select
+                v-model="form.categoryId"
+                :data="categoryTreeOptions"
+                :props="{ value: 'id', label: 'categoryName', children: 'children' }"
+                value-key="id"
+                placeholder="请选择课程分类"
+                check-strictly
+                clearable
+                :render-after-expand="false"
+                style="width: 100%"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -229,6 +239,7 @@ import {
   publishCourse,
   unpublishCourse
 } from '@/api/course'
+import { getCategoryTree, type Category } from '@/api/category'
 
 const route = useRoute()
 const pageTitle = route.meta?.title || '课程管理'
@@ -249,6 +260,9 @@ const pagination = reactive({
   size: 10,
   total: 0
 })
+
+// 分类树选项
+const categoryTreeOptions = ref<Category[]>([])
 
 // 对话框
 const dialogVisible = ref(false)
@@ -523,8 +537,23 @@ const handleUnpublish = async (row: any) => {
   }
 }
 
+// 获取分类树
+const getCategoryTreeData = async () => {
+  try {
+    const res = await getCategoryTree()
+    const treeData = res.data || []
+    // 设置分类树选项（添加顶级节点选项）
+    categoryTreeOptions.value = [
+      { id: 0, parentId: null, categoryName: '顶级分类', categoryCode: '', level: 0, sortOrder: 0, icon: null, status: 1, children: treeData }
+    ] as Category[]
+  } catch (error) {
+    console.error('获取分类树失败:', error)
+  }
+}
+
 onMounted(() => {
   getList()
+  getCategoryTreeData()
 })
 </script>
 

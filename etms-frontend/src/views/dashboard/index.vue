@@ -151,10 +151,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
+import { getUserList } from '@/api/user'
+import { getCourseList } from '@/api/course'
+import { getPlanList, getProgressList } from '@/api/training'
+import { getPaperList, getExamRecordList } from '@/api/exam'
 
 const userStore = useUserStore()
 
@@ -162,37 +166,81 @@ const currentDate = dayjs().format('YYYY年MM月DD日 dddd')
 
 // 统计数据
 const stats = ref({
-  courseCount: 5,
-  examCount: 2,
+  courseCount: 0,
+  examCount: 0,
   progress: 68
 })
 
 const overview = ref({
-  userCount: 128,
-  courseCount: 45,
-  planCount: 12,
-  examCount: 356
+  userCount: 0,
+  courseCount: 0,
+  planCount: 0,
+  examCount: 0
 })
 
 // 最近培训
-const recentTrainings = ref([
-  { id: 1, name: 'Java编程基础', time: '2024-01-15', progress: 80 },
-  { id: 2, name: 'Spring Boot实战', time: '2024-01-14', progress: 45 },
-  { id: 3, name: 'Vue3前端开发', time: '2024-01-13', progress: 100 }
-])
+const recentTrainings = ref<any[]>([])
 
 // 待办事项
-const todos = ref([
-  { id: 1, title: '完成《数据库优化》课程学习', type: 'course', deadline: '今天', urgent: true },
-  { id: 2, title: '参加《Java基础》考试', type: 'exam', deadline: '明天', urgent: true },
-  { id: 3, title: '完成《沟通技巧》培训签到', type: 'course', deadline: '后天', urgent: false }
-])
+const todos = ref<any[]>([])
 
 // 图表引用
 const progressChartRef = ref<HTMLElement>()
 const passRateChartRef = ref<HTMLElement>()
 
+// 获取统计数据
+const getStatistics = async () => {
+  try {
+    // 获取用户总数
+    const userRes = await getUserList({ current: 1, size: 1 })
+    overview.value.userCount = userRes.data?.total || 0
+
+    // 获取课程总数
+    const courseRes = await getCourseList({ current: 1, size: 1, status: 2 })
+    overview.value.courseCount = courseRes.data?.total || 0
+
+    // 获取培训计划总数
+    const planRes = await getPlanList({ current: 1, size: 1 })
+    overview.value.planCount = planRes.data?.total || 0
+
+    // 获取考试记录总数
+    const examRes = await getExamRecordList({ current: 1, size: 1, status: 2 })
+    overview.value.examCount = examRes.data?.total || 0
+
+    // 获取我的待学习课程数
+    const progressRes = await getProgressList({ current: 1, size: 100, status: 1 })
+    stats.value.courseCount = progressRes.data?.records?.filter((r: any) => r.status === 1).length || 0
+
+    // 获取待参加考试数
+    const paperRes = await getPaperList({ current: 1, size: 100, status: 1 })
+    stats.value.examCount = paperRes.data?.records?.length || 0
+
+    // 设置最近培训数据
+    if (progressRes.data?.records) {
+      recentTrainings.value = progressRes.data.records.slice(0, 5).map((item: any) => ({
+        id: item.id,
+        name: item.courseName || item.planName,
+        time: item.lastStudyTime || item.createTime,
+        progress: item.progress || 0
+      }))
+    }
+
+    // 设置待办事项
+    const inProgressCourses = progressRes.data?.records?.filter((r: any) => r.status === 1) || []
+    todos.value = inProgressCourses.slice(0, 5).map((item: any) => ({
+      id: item.id,
+      title: `完成《${item.courseName}》课程学习`,
+      type: 'course',
+      deadline: '进行中',
+      urgent: item.progress > 80
+    }))
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+  }
+}
+
 onMounted(() => {
+  getStatistics()
   initProgressChart()
   initPassRateChart()
 })

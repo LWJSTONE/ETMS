@@ -218,8 +218,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="签到方式" prop="signType">
-          <el-radio-group v-model="signForm.signType">
+        <el-form-item label="签到方式" prop="signMethod">
+          <el-radio-group v-model="signForm.signMethod">
             <el-radio :value="1">二维码签到</el-radio>
             <el-radio :value="2">GPS定位签到</el-radio>
           </el-radio-group>
@@ -252,8 +252,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="签到类型" prop="signType">
-          <el-radio-group v-model="applyForm.signType">
+        <el-form-item label="签到类型" prop="signCategory">
+          <el-radio-group v-model="applyForm.signCategory">
             <el-radio :value="1">签到</el-radio>
             <el-radio :value="2">签退</el-radio>
           </el-radio-group>
@@ -386,13 +386,13 @@ const signLoading = ref(false)
 const isSignOut = ref(false)
 const signForm = reactive({
   planId: null as number | null,
-  signType: 1,
+  signMethod: 1, // 签到方式：1二维码 2GPS定位
   location: ''
 })
 
 const signRules: FormRules = {
   planId: [{ required: true, message: '请选择培训计划', trigger: 'change' }],
-  signType: [{ required: true, message: '请选择签到方式', trigger: 'change' }]
+  signMethod: [{ required: true, message: '请选择签到方式', trigger: 'change' }]
 }
 
 // 补签申请
@@ -401,14 +401,14 @@ const applyFormRef = ref<FormInstance>()
 const applyLoading = ref(false)
 const applyForm = reactive({
   planId: null as number | null,
-  signType: 1,
+  signCategory: 1, // 签到类型：1签到 2签退
   signTime: '',
   reason: ''
 })
 
 const applyRules: FormRules = {
   planId: [{ required: true, message: '请选择培训计划', trigger: 'change' }],
-  signType: [{ required: true, message: '请选择签到类型', trigger: 'change' }],
+  signCategory: [{ required: true, message: '请选择签到类型', trigger: 'change' }],
   signTime: [{ required: true, message: '请选择补签时间', trigger: 'change' }],
   reason: [{ required: true, message: '请输入补签原因', trigger: 'blur' }]
 }
@@ -490,7 +490,7 @@ const handleReset = () => {
 const handleSignIn = () => {
   isSignOut.value = false
   signDialogTitle.value = '签到'
-  Object.assign(signForm, { planId: null, signType: 1, location: '' })
+  Object.assign(signForm, { planId: null, signMethod: 1, location: '' })
   signDialogVisible.value = true
 }
 
@@ -498,7 +498,7 @@ const handleSignIn = () => {
 const handleSignOut = () => {
   isSignOut.value = true
   signDialogTitle.value = '签退'
-  Object.assign(signForm, { planId: null, signType: 1, location: '' })
+  Object.assign(signForm, { planId: null, signMethod: 1, location: '' })
   signDialogVisible.value = true
 }
 
@@ -509,9 +509,12 @@ const handleSignSubmit = async () => {
 
   signLoading.value = true
   try {
+    // signType: 签到方式(1二维码 2GPS定位)
+    // 签到/签退由后端根据时间判断
     await signIn({
-      ...signForm,
-      signType: isSignOut.value ? 2 : 1
+      planId: signForm.planId!,
+      signType: signForm.signMethod,
+      location: signForm.location
     })
     ElMessage.success(isSignOut.value ? '签退成功' : '签到成功')
     signDialogVisible.value = false
@@ -528,7 +531,7 @@ const handleSignSubmit = async () => {
 const handleApply = () => {
   Object.assign(applyForm, {
     planId: null,
-    signType: 1,
+    signCategory: 1,
     signTime: '',
     reason: ''
   })
@@ -548,8 +551,8 @@ const handleApplySubmit = async () => {
   applyLoading.value = true
   try {
     await applySupplementary({
-      planId: applyForm.planId,
-      signType: applyForm.signType,
+      planId: applyForm.planId!,
+      signType: applyForm.signCategory, // 签到类型：1签到 2签退
       signTime: applyForm.signTime,
       reason: applyForm.reason
     })

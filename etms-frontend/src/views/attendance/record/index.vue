@@ -202,8 +202,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="签到方式" prop="signType">
-          <el-radio-group v-model="signForm.signType">
+        <el-form-item label="签到方式" prop="signMethod">
+          <el-radio-group v-model="signForm.signMethod">
             <el-radio :value="1">二维码签到</el-radio>
             <el-radio :value="2">GPS定位签到</el-radio>
             <el-radio :value="3">人脸识别签到</el-radio>
@@ -344,13 +344,13 @@ const signLoading = ref(false)
 const isSignOut = ref(false)
 const signForm = reactive({
   planId: null as number | null,
-  signType: 1,
+  signMethod: 1, // 签到方式：1二维码 2GPS定位 3人脸识别
   location: ''
 })
 
 const signRules: FormRules = {
   planId: [{ required: true, message: '请选择培训计划', trigger: 'change' }],
-  signType: [{ required: true, message: '请选择签到方式', trigger: 'change' }]
+  signMethod: [{ required: true, message: '请选择签到方式', trigger: 'change' }]
 }
 
 // 审核
@@ -437,7 +437,7 @@ const handleReset = () => {
 const handleSignIn = () => {
   isSignOut.value = false
   signDialogTitle.value = '签到'
-  Object.assign(signForm, { planId: null, signType: 1, location: '' })
+  Object.assign(signForm, { planId: null, signMethod: 1, location: '' })
   signDialogVisible.value = true
 }
 
@@ -445,7 +445,7 @@ const handleSignIn = () => {
 const handleSignOut = () => {
   isSignOut.value = true
   signDialogTitle.value = '签退'
-  Object.assign(signForm, { planId: null, signType: 1, location: '' })
+  Object.assign(signForm, { planId: null, signMethod: 1, location: '' })
   signDialogVisible.value = true
 }
 
@@ -456,7 +456,12 @@ const handleSignSubmit = async () => {
 
   signLoading.value = true
   try {
-    await signIn(signForm)
+    // signType参数传递给后端表示签到方式
+    await signIn({
+      planId: signForm.planId!,
+      signType: signForm.signMethod,
+      location: signForm.location
+    })
     ElMessage.success(isSignOut.value ? '签退成功' : '签到成功')
     signDialogVisible.value = false
     getList()
