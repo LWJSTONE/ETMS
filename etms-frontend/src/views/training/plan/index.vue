@@ -265,7 +265,7 @@ import { Plus } from '@element-plus/icons-vue'
 import {
   getPlanList,
   getPlanDetail,
-  addPlan,
+  createPlan,
   updatePlan,
   deletePlan,
   publishPlan,
@@ -525,7 +525,7 @@ const handleSubmit = async () => {
       await updatePlan(form.id!, data)
       ElMessage.success('更新成功')
     } else {
-      await addPlan(data)
+      await createPlan(data)
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false

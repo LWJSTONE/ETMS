@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.Dept;
+import com.etms.entity.User;
 import com.etms.mapper.DeptMapper;
+import com.etms.mapper.UserMapper;
 import com.etms.service.DeptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements DeptService {
+    
+    private final UserMapper userMapper;
     
     @Override
     public List<Dept> getDeptTree() {
@@ -44,10 +48,12 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
             dept.setAncestors("0");
         } else {
             Dept parentDept = baseMapper.selectById(dept.getParentId());
-            if (parentDept != null) {
-                dept.setLevel(parentDept.getLevel() + 1);
-                dept.setAncestors(parentDept.getAncestors() + "," + parentDept.getId());
+            // 添加父部门不存在的处理
+            if (parentDept == null) {
+                throw new RuntimeException("父部门不存在");
             }
+            dept.setLevel(parentDept.getLevel() + 1);
+            dept.setAncestors(parentDept.getAncestors() + "," + parentDept.getId());
         }
         baseMapper.insert(dept);
     }
@@ -62,12 +68,21 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
     @Transactional(rollbackFor = Exception.class)
     public void deleteDept(Long id) {
         // 检查是否有子部门
-        Long count = baseMapper.selectCount(
+        Long childCount = baseMapper.selectCount(
                 new LambdaQueryWrapper<Dept>().eq(Dept::getParentId, id)
         );
-        if (count > 0) {
+        if (childCount > 0) {
             throw new RuntimeException("存在子部门，无法删除");
         }
+        
+        // 检查部门下是否有用户
+        Long userCount = userMapper.selectCount(
+                new LambdaQueryWrapper<User>().eq(User::getDeptId, id)
+        );
+        if (userCount > 0) {
+            throw new RuntimeException("部门下存在用户，无法删除");
+        }
+        
         baseMapper.deleteById(id);
     }
     

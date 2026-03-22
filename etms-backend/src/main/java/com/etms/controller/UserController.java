@@ -10,7 +10,9 @@ import com.etms.vo.UserVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -18,8 +20,9 @@ import java.util.List;
  */
 @Api(tags = "用户管理")
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/system/users")
 @RequiredArgsConstructor
+@Validated
 public class UserController {
     
     private final UserService userService;
@@ -47,14 +50,14 @@ public class UserController {
     
     @ApiOperation(value = "新增用户")
     @PostMapping
-    public Result<Void> add(@RequestBody UserDTO userDTO) {
+    public Result<Void> add(@Valid @RequestBody UserDTO userDTO) {
         userService.addUser(userDTO);
         return Result.success();
     }
     
     @ApiOperation(value = "更新用户")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody UserDTO userDTO) {
         userDTO.setId(id);
         userService.updateUser(userDTO);
         return Result.success();
@@ -93,7 +96,7 @@ public class UserController {
     
     @ApiOperation(value = "分配角色")
     @PutMapping("/{id}/roles")
-    public Result<Void> assignRoles(@PathVariable Long id, @RequestBody List<Long> roleIds) {
+    public Result<Void> assignRoles(@PathVariable Long id, @Valid @RequestBody List<Long> roleIds) {
         userService.assignRoles(id, roleIds);
         return Result.success();
     }

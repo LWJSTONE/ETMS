@@ -293,7 +293,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import {
   getQuestionList,
   getQuestionDetail,
-  addQuestion,
+  createQuestion,
   updateQuestion,
   deleteQuestion
 } from '@/api/exam'
@@ -548,7 +548,7 @@ const handleSubmit = async () => {
       await updateQuestion(form.id!, submitData)
       ElMessage.success('更新成功')
     } else {
-      await addQuestion(submitData)
+      await createQuestion(submitData)
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false

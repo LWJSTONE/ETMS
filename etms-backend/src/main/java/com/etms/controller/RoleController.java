@@ -9,7 +9,9 @@ import com.etms.vo.RoleVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -19,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/system/roles")
 @RequiredArgsConstructor
+@Validated
 public class RoleController {
     
     private final RoleService roleService;
@@ -39,7 +42,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "获取所有角色列表")
-    @GetMapping("/list")
+    @GetMapping("/all")
     public Result<List<RoleVO>> list() {
         List<RoleVO> list = roleService.listRoles();
         return Result.success(list);
@@ -54,14 +57,14 @@ public class RoleController {
     
     @ApiOperation(value = "新增角色")
     @PostMapping
-    public Result<Void> add(@RequestBody Role role) {
+    public Result<Void> add(@Valid @RequestBody Role role) {
         roleService.addRole(role);
         return Result.success();
     }
     
     @ApiOperation(value = "更新角色")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody Role role) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Role role) {
         role.setId(id);
         roleService.updateRole(role);
         return Result.success();
@@ -76,7 +79,7 @@ public class RoleController {
     
     @ApiOperation(value = "分配权限")
     @PutMapping("/{id}/permissions")
-    public Result<Void> assignPermissions(@PathVariable Long id, @RequestBody List<Long> permissionIds) {
+    public Result<Void> assignPermissions(@PathVariable Long id, @Valid @RequestBody List<Long> permissionIds) {
         roleService.assignPermissions(id, permissionIds);
         return Result.success();
     }

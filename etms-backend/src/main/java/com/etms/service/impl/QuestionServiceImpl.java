@@ -3,13 +3,16 @@ package com.etms.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.etms.entity.PaperQuestion;
 import com.etms.entity.Question;
+import com.etms.mapper.PaperQuestionMapper;
 import com.etms.mapper.QuestionMapper;
 import com.etms.service.QuestionService;
 import com.etms.vo.QuestionVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +23,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> implements QuestionService {
+    
+    private final PaperQuestionMapper paperQuestionMapper;
     
     @Override
     public Page<QuestionVO> pageQuestions(Page<Question> page, String questionContent, Integer questionType, Integer difficulty, Long courseId, Integer status) {
@@ -62,31 +67,35 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean addQuestion(Question question) {
         question.setStatus(1);
         return baseMapper.insert(question) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateQuestion(Question question) {
         return baseMapper.updateById(question) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteQuestion(Long id) {
+        // 检查题目是否被试卷引用
+        Long count = paperQuestionMapper.selectCount(
+            new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getQuestionId, id)
+        );
+        if (count > 0) {
+            throw new RuntimeException("题目已被试卷引用，无法删除");
+        }
         return baseMapper.deleteById(id) > 0;
     }
     
     @Override
     public List<QuestionVO> randomQuestions(Integer questionType, Integer difficulty, Integer count, Long courseId) {
-        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(questionType != null, Question::getQuestionType, questionType)
-               .eq(difficulty != null, Question::getDifficulty, difficulty)
-               .eq(courseId != null, Question::getCourseId, courseId)
-               .eq(Question::getStatus, 1)
-               .last("ORDER BY RAND() LIMIT " + count);
-        
-        List<Question> questions = baseMapper.selectList(wrapper);
+        // 使用Mapper方法替代字符串拼接，避免SQL注入
+        List<Question> questions = baseMapper.selectRandomQuestions(questionType, difficulty, count, courseId);
         
         return questions.stream().map(question -> {
             QuestionVO vo = new QuestionVO();

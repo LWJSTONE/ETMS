@@ -1,41 +1,51 @@
 import request from '@/utils/request'
+import type {
+  ApiResponse,
+  PageResult,
+  PageParams,
+  AttendanceRecord,
+  AttendanceSignInParams,
+  AttendanceSupplementaryParams,
+  AttendanceAuditParams,
+  AttendanceStats
+} from './types'
 
 /**
  * 签到管理API
  */
 
 // 获取签到记录列表
-export function getAttendanceList(params: any) {
+export function getAttendanceList(params: PageParams): Promise<ApiResponse<PageResult<AttendanceRecord>>> {
   return request.get('/attendance/records', params)
 }
 
 // 签到/签退
-export function signIn(data: { planId: number; signType: number; location?: string }) {
-  return request.post('/attendance/records/sign', null, { params: data })
+export function signIn(data: AttendanceSignInParams): Promise<ApiResponse<AttendanceRecord>> {
+  return request.post('/attendance/records/sign', data)
 }
 
 // 签退
-export function signOut(data: { planId: number; signType: number; location?: string }) {
+export function signOut(data: Omit<AttendanceSignInParams, 'signType'>): Promise<ApiResponse<AttendanceRecord>> {
   // 签退时signType固定为2（签退类型）
-  return request.post('/attendance/records/sign', null, { params: { ...data, signType: 2 } })
+  return request.post('/attendance/records/sign', { ...data, signType: 2 })
 }
 
 // 补签申请
-export function applySupplementary(data: { planId: number; signType: number; signTime: string; reason: string }) {
-  return request.post('/attendance/records/supplementary', null, { params: data })
+export function applySupplementary(data: AttendanceSupplementaryParams): Promise<ApiResponse<void>> {
+  return request.post('/attendance/records/supplementary', data)
 }
 
 // 撤销补签申请
-export function cancelSupplementary(id: number) {
+export function cancelSupplementary(id: number): Promise<ApiResponse<void>> {
   return request.delete(`/attendance/records/supplementary/${id}`)
 }
 
 // 补签审核
-export function auditAttendance(id: number, data: { auditStatus: number; auditRemark?: string }) {
-  return request.post(`/attendance/records/${id}/audit`, null, { params: data })
+export function auditAttendance(id: number, data: AttendanceAuditParams): Promise<ApiResponse<void>> {
+  return request.post(`/attendance/records/${id}/audit`, data)
 }
 
 // 获取签到统计
-export function getAttendanceStats(userId: number) {
+export function getAttendanceStats(userId: number): Promise<ApiResponse<AttendanceStats>> {
   return request.get(`/attendance/records/stats/${userId}`)
 }

@@ -9,7 +9,9 @@ import com.etms.vo.QuestionVO;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -19,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/exam/questions")
 @RequiredArgsConstructor
+@Validated
 public class QuestionController {
     
     private final QuestionService questionService;
@@ -50,14 +53,14 @@ public class QuestionController {
     
     @ApiOperation(value = "新增题目")
     @PostMapping
-    public Result<Void> add(@RequestBody Question question) {
+    public Result<Void> add(@Valid @RequestBody Question question) {
         questionService.addQuestion(question);
         return Result.success();
     }
     
     @ApiOperation(value = "更新题目")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody Question question) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Question question) {
         question.setId(id);
         questionService.updateQuestion(question);
         return Result.success();

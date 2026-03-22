@@ -4,12 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.TrainingPlan;
+import com.etms.entity.UserPlan;
 import com.etms.mapper.TrainingPlanMapper;
+import com.etms.mapper.UserPlanMapper;
 import com.etms.service.TrainingPlanService;
 import com.etms.vo.TrainingPlanVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +23,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, TrainingPlan> implements TrainingPlanService {
+    
+    private final UserPlanMapper userPlanMapper;
     
     @Override
     public Page<TrainingPlanVO> pagePlans(Page<TrainingPlan> page, String planName, Integer status, Integer planType) {
@@ -62,22 +67,33 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean addPlan(TrainingPlan plan) {
         plan.setStatus(0); // 草稿状态
         return baseMapper.insert(plan) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updatePlan(TrainingPlan plan) {
         return baseMapper.updateById(plan) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deletePlan(Long id) {
+        // 检查培训计划是否有学习记录
+        Long count = userPlanMapper.selectCount(
+            new LambdaQueryWrapper<UserPlan>().eq(UserPlan::getPlanId, id)
+        );
+        if (count > 0) {
+            throw new RuntimeException("培训计划存在学习记录，无法删除");
+        }
         return baseMapper.deleteById(id) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean publishPlan(Long id) {
         TrainingPlan plan = new TrainingPlan();
         plan.setId(id);
@@ -86,6 +102,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean archivePlan(Long id) {
         TrainingPlan plan = new TrainingPlan();
         plan.setId(id);

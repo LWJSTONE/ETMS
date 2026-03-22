@@ -15,6 +15,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,7 +58,14 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean signIn(Long planId, Integer signType, String location) {
+        Long currentUserId = getCurrentUserId();
+        // 添加空指针处理
+        if (currentUserId == null) {
+            throw new RuntimeException("用户未登录，无法签到");
+        }
+        
         AttendanceRecord record = new AttendanceRecord();
         record.setPlanId(planId);
         record.setSignType(signType);
@@ -65,13 +73,20 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setSignTime(LocalDateTime.now());
         record.setStatus(1); // 正常
         record.setCreateTime(LocalDateTime.now());
-        record.setUserId(getCurrentUserId());
+        record.setUserId(currentUserId);
         
         return baseMapper.insert(record) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean applySupplementary(Long planId, Integer signType, String signTime, String reason) {
+        Long currentUserId = getCurrentUserId();
+        // 添加空指针处理
+        if (currentUserId == null) {
+            throw new RuntimeException("用户未登录，无法申请补签");
+        }
+        
         AttendanceRecord record = new AttendanceRecord();
         record.setPlanId(planId);
         record.setSignType(signType);
@@ -79,7 +94,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setStatus(5); // 补签
         record.setAuditStatus(0); // 待审核
         record.setCreateTime(LocalDateTime.now());
-        record.setUserId(getCurrentUserId());
+        record.setUserId(currentUserId);
         
         // 解析签到时间
         if (signTime != null && !signTime.isEmpty()) {
@@ -96,16 +111,21 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean cancelSupplementary(Long id) {
         // 只能撤销待审核的补签申请
         AttendanceRecord record = baseMapper.selectById(id);
-        if (record != null && record.getStatus() == 5 && record.getAuditStatus() == 0) {
-            return baseMapper.deleteById(id) > 0;
+        if (record == null) {
+            throw new RuntimeException("补签记录不存在");
         }
-        return false;
+        if (record.getStatus() != 5 || record.getAuditStatus() != 0) {
+            throw new RuntimeException("只能撤销待审核的补签申请");
+        }
+        return baseMapper.deleteById(id) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean auditSupplement(Long id, Integer auditStatus, String auditRemark) {
         AttendanceRecord record = new AttendanceRecord();
         record.setId(id);

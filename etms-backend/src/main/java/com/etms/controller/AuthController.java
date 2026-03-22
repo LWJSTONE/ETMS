@@ -9,7 +9,9 @@ import com.etms.vo.UserVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
 
 /**
  * 认证控制器
@@ -18,13 +20,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Validated
 public class AuthController {
     
     private final UserService userService;
     
     @ApiOperation(value = "用户登录")
     @PostMapping("/login")
-    public Result<LoginVO> login(@RequestBody LoginDTO loginDTO) {
+    public Result<LoginVO> login(@Valid @RequestBody LoginDTO loginDTO) {
         LoginVO loginVO = userService.login(loginDTO);
         return Result.success("登录成功", loginVO);
     }

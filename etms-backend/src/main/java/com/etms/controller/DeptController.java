@@ -8,7 +8,9 @@ import com.etms.service.DeptService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -18,12 +20,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/system/depts")
 @RequiredArgsConstructor
+@Validated
 public class DeptController {
     
     private final DeptService deptService;
     
     @ApiOperation(value = "获取部门树形结构")
-    @GetMapping("/tree")
+    @GetMapping("/tree-structure")
     public Result<List<Dept>> tree() {
         List<Dept> tree = deptService.getDeptTree();
         return Result.success(tree);
@@ -45,14 +48,14 @@ public class DeptController {
     
     @ApiOperation(value = "新增部门")
     @PostMapping
-    public Result<Void> add(@RequestBody Dept dept) {
+    public Result<Void> add(@Valid @RequestBody Dept dept) {
         deptService.addDept(dept);
         return Result.success();
     }
     
     @ApiOperation(value = "更新部门")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody Dept dept) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Dept dept) {
         dept.setId(id);
         deptService.updateDept(dept);
         return Result.success();

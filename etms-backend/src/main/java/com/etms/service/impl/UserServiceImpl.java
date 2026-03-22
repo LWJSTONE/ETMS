@@ -8,8 +8,10 @@ import com.etms.dto.LoginDTO;
 import com.etms.dto.UserDTO;
 import com.etms.entity.Role;
 import com.etms.entity.User;
+import com.etms.entity.UserRole;
 import com.etms.mapper.RoleMapper;
 import com.etms.mapper.UserMapper;
+import com.etms.mapper.UserRoleMapper;
 import com.etms.service.UserService;
 import com.etms.vo.LoginVO;
 import com.etms.vo.RoleVO;
@@ -25,8 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +41,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final RoleMapper roleMapper;
+    private final UserRoleMapper userRoleMapper;
     
     @Override
     public LoginVO login(LoginDTO loginDTO) {
@@ -55,6 +57,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         // 获取用户信息
         User user = baseMapper.selectByUsername(loginDTO.getUsername());
+        
+        // 添加用户不存在的检查
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
         
         // 获取角色和权限
         List<String> roles = baseMapper.selectRolesByUserId(user.getId());
@@ -96,20 +103,55 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         Page<UserVO> voPage = new Page<>();
         BeanUtils.copyProperties(userPage, voPage, "records");
         
+        // 修复N+1问题：批量查询用户角色
+        List<Long> userIds = userPage.getRecords().stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
+        
+        // 批量查询所有用户的角色
+        Map<Long, List<RoleVO>> userRoleMap = new HashMap<>();
+        if (!userIds.isEmpty()) {
+            // 批量查询用户角色关联
+            List<UserRole> userRoles = userRoleMapper.selectList(
+                new LambdaQueryWrapper<UserRole>().in(UserRole::getUserId, userIds)
+            );
+            
+            // 获取所有角色ID
+            Set<Long> roleIds = userRoles.stream()
+                    .map(UserRole::getRoleId)
+                    .collect(Collectors.toSet());
+            
+            // 批量查询角色
+            Map<Long, Role> roleMap = new HashMap<>();
+            if (!roleIds.isEmpty()) {
+                List<Role> roles = roleMapper.selectBatchIds(roleIds);
+                roleMap = roles.stream()
+                        .collect(Collectors.toMap(Role::getId, r -> r));
+            }
+            
+            // 组装用户角色映射
+            for (UserRole ur : userRoles) {
+                Long userId = ur.getUserId();
+                Role role = roleMap.get(ur.getRoleId());
+                if (role != null) {
+                    userRoleMap.computeIfAbsent(userId, k -> new ArrayList<>());
+                    RoleVO roleVO = new RoleVO();
+                    BeanUtils.copyProperties(role, roleVO);
+                    userRoleMap.get(userId).add(roleVO);
+                }
+            }
+        }
+        
+        final Map<Long, List<RoleVO>> finalUserRoleMap = userRoleMap;
         List<UserVO> voList = userPage.getRecords().stream().map(user -> {
             UserVO vo = new UserVO();
             BeanUtils.copyProperties(user, vo);
             vo.setGenderName(getGenderName(user.getGender()));
             vo.setStatusName(getStatusName(user.getStatus()));
             
-            // 查询角色
-            List<Role> roles = roleMapper.selectRolesByUserId(user.getId());
-            if (!CollectionUtils.isEmpty(roles)) {
-                List<RoleVO> roleVOs = roles.stream().map(role -> {
-                    RoleVO roleVO = new RoleVO();
-                    BeanUtils.copyProperties(role, roleVO);
-                    return roleVO;
-                }).collect(Collectors.toList());
+            // 从批量查询结果中获取角色
+            List<RoleVO> roleVOs = finalUserRoleMap.get(user.getId());
+            if (!CollectionUtils.isEmpty(roleVOs)) {
                 vo.setRoles(roleVOs);
             }
             
@@ -138,6 +180,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean addUser(UserDTO userDTO) {
+        // 检查用户名是否重复
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<User>().eq(User::getUsername, userDTO.getUsername())
+        );
+        if (count > 0) {
+            throw new RuntimeException("用户名已存在");
+        }
+        
         User user = new User();
         BeanUtils.copyProperties(userDTO, user);
         user.setPassword(passwordEncoder.encode("123456")); // 默认密码
@@ -156,6 +206,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateUser(UserDTO userDTO) {
+        // 检查用户名是否重复（排除自身）
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, userDTO.getUsername())
+                .ne(User::getId, userDTO.getId())
+        );
+        if (count > 0) {
+            throw new RuntimeException("用户名已存在");
+        }
+        
         User user = new User();
         BeanUtils.copyProperties(userDTO, user);
         
@@ -175,17 +235,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteUser(Long id) {
-        // 删除用户角色关联
-        baseMapper.deleteUserRoleByUserId(id);
+        // 检查用户是否有相关数据
+        // 可以根据实际业务添加更多检查，如：培训记录、考试记录、签到记录等
+        Long userRoleCount = userRoleMapper.selectCount(
+            new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, id)
+        );
+        if (userRoleCount > 0) {
+            // 删除用户角色关联
+            baseMapper.deleteUserRoleByUserId(id);
+        }
+        
         // 删除用户
         return baseMapper.deleteById(id) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updatePassword(Long userId, String oldPassword, String newPassword) {
         User user = baseMapper.selectById(userId);
         if (user == null) {
-            return false;
+            throw new RuntimeException("用户不存在");
         }
         
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
@@ -200,6 +269,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean resetPassword(Long userId) {
         User updateUser = new User();
         updateUser.setId(userId);
@@ -225,8 +295,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         
         // 批量插入用户角色关联
+        List<UserRole> userRoles = new ArrayList<>();
         for (Long roleId : roleIds) {
-            baseMapper.insertUserRole(userId, roleId);
+            UserRole ur = new UserRole();
+            ur.setUserId(userId);
+            ur.setRoleId(roleId);
+            userRoles.add(ur);
+        }
+        
+        // 批量插入
+        for (UserRole ur : userRoles) {
+            userRoleMapper.insert(ur);
         }
         
         return true;

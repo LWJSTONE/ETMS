@@ -8,7 +8,9 @@ import com.etms.service.PaperService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
 
 /**
  * 试卷管理控制器
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/exam/papers")
 @RequiredArgsConstructor
+@Validated
 public class PaperController {
     
     private final PaperService paperService;
@@ -45,14 +48,14 @@ public class PaperController {
     
     @ApiOperation(value = "新增试卷")
     @PostMapping
-    public Result<Void> add(@RequestBody Paper paper) {
+    public Result<Void> add(@Valid @RequestBody Paper paper) {
         paperService.addPaper(paper);
         return Result.success();
     }
     
     @ApiOperation(value = "更新试卷")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody Paper paper) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Paper paper) {
         paper.setId(id);
         paperService.updatePaper(paper);
         return Result.success();

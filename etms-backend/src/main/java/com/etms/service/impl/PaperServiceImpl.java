@@ -3,7 +3,9 @@ package com.etms.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.etms.entity.ExamRecord;
 import com.etms.entity.Paper;
+import com.etms.mapper.ExamRecordMapper;
 import com.etms.mapper.PaperMapper;
 import com.etms.service.PaperService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements PaperService {
+    
+    private final ExamRecordMapper examRecordMapper;
     
     @Override
     public Page<Paper> pagePapers(Page<Paper> page, String paperName, String paperCode, Integer status) {
@@ -39,6 +43,14 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addPaper(Paper paper) {
+        // 检查试卷编码是否重复
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<Paper>().eq(Paper::getPaperCode, paper.getPaperCode())
+        );
+        if (count > 0) {
+            throw new RuntimeException("试卷编码已存在");
+        }
+        
         paper.setStatus(0); // 草稿状态
         baseMapper.insert(paper);
     }
@@ -46,12 +58,30 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updatePaper(Paper paper) {
+        // 检查试卷编码是否重复（排除自身）
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<Paper>()
+                .eq(Paper::getPaperCode, paper.getPaperCode())
+                .ne(Paper::getId, paper.getId())
+        );
+        if (count > 0) {
+            throw new RuntimeException("试卷编码已存在");
+        }
+        
         baseMapper.updateById(paper);
     }
     
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deletePaper(Long id) {
+        // 检查试卷是否有考试记录
+        Long count = examRecordMapper.selectCount(
+            new LambdaQueryWrapper<ExamRecord>().eq(ExamRecord::getPaperId, id)
+        );
+        if (count > 0) {
+            throw new RuntimeException("试卷存在考试记录，无法删除");
+        }
+        
         baseMapper.deleteById(id);
     }
     

@@ -9,15 +9,18 @@ import com.etms.vo.TrainingPlanVO;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
 
 /**
  * 培训计划控制器
  */
 @Api(tags = "培训计划管理")
 @RestController
-@RequestMapping("/plans")
+@RequestMapping("/training/plans")
 @RequiredArgsConstructor
+@Validated
 public class TrainingPlanController {
     
     private final TrainingPlanService trainingPlanService;
@@ -47,14 +50,14 @@ public class TrainingPlanController {
     
     @ApiOperation(value = "新增培训计划")
     @PostMapping
-    public Result<Void> add(@RequestBody TrainingPlan plan) {
+    public Result<Void> add(@Valid @RequestBody TrainingPlan plan) {
         trainingPlanService.addPlan(plan);
         return Result.success();
     }
     
     @ApiOperation(value = "更新培训计划")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody TrainingPlan plan) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody TrainingPlan plan) {
         plan.setId(id);
         trainingPlanService.updatePlan(plan);
         return Result.success();

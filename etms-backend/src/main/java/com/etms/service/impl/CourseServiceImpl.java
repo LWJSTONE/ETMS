@@ -4,12 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.Course;
+import com.etms.entity.PlanCourse;
 import com.etms.mapper.CourseMapper;
+import com.etms.mapper.PlanCourseMapper;
 import com.etms.service.CourseService;
 import com.etms.vo.CourseVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +24,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> implements CourseService {
+    
+    private final PlanCourseMapper planCourseMapper;
     
     @Override
     public Page<CourseVO> pageCourses(Page<Course> page, String courseName, String courseCode, Long categoryId, Integer courseType, Integer status, Integer difficulty) {
@@ -73,7 +78,16 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean addCourse(Course course) {
+        // 检查课程编码是否重复
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<Course>().eq(Course::getCourseCode, course.getCourseCode())
+        );
+        if (count > 0) {
+            throw new RuntimeException("课程编码已存在");
+        }
+        
         course.setStatus(0); // 草稿状态
         course.setViewCount(0);
         course.setCollectCount(0);
@@ -82,16 +96,37 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateCourse(Course course) {
+        // 检查课程编码是否重复（排除自身）
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<Course>()
+                .eq(Course::getCourseCode, course.getCourseCode())
+                .ne(Course::getId, course.getId())
+        );
+        if (count > 0) {
+            throw new RuntimeException("课程编码已存在");
+        }
+        
         return baseMapper.updateById(course) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteCourse(Long id) {
+        // 检查课程是否被培训计划引用
+        Long count = planCourseMapper.selectCount(
+            new LambdaQueryWrapper<PlanCourse>().eq(PlanCourse::getCourseId, id)
+        );
+        if (count > 0) {
+            throw new RuntimeException("课程已被培训计划引用，无法删除");
+        }
+        
         return baseMapper.deleteById(id) > 0;
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean submitAudit(Long id) {
         Course course = new Course();
         course.setId(id);
@@ -100,6 +135,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean auditCourse(Long id, Integer status, String auditRemark) {
         Course course = new Course();
         course.setId(id);
@@ -111,6 +147,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean publishCourse(Long id) {
         Course course = new Course();
         course.setId(id);
@@ -119,6 +156,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean unpublishCourse(Long id) {
         Course course = new Course();
         course.setId(id);

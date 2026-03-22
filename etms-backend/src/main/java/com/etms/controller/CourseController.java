@@ -9,7 +9,9 @@ import com.etms.vo.CourseVO;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -17,8 +19,9 @@ import java.util.List;
  */
 @Api(tags = "课程管理")
 @RestController
-@RequestMapping("/courses")
+@RequestMapping("/training/courses")
 @RequiredArgsConstructor
+@Validated
 public class CourseController {
     
     private final CourseService courseService;
@@ -51,14 +54,14 @@ public class CourseController {
     
     @ApiOperation(value = "新增课程")
     @PostMapping
-    public Result<Void> add(@RequestBody Course course) {
+    public Result<Void> add(@Valid @RequestBody Course course) {
         courseService.addCourse(course);
         return Result.success();
     }
     
     @ApiOperation(value = "更新课程")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody Course course) {
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Course course) {
         course.setId(id);
         courseService.updateCourse(course);
         return Result.success();
@@ -103,7 +106,7 @@ public class CourseController {
     }
     
     @ApiOperation(value = "获取课程列表(不分页)")
-    @GetMapping("/list")
+    @GetMapping("/all")
     public Result<List<CourseVO>> list(@RequestParam(required = false) Long categoryId) {
         List<CourseVO> list = courseService.listCourses(categoryId);
         return Result.success(list);

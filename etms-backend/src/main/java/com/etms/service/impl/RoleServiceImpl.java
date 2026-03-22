@@ -5,8 +5,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.Role;
 import com.etms.entity.RolePermission;
+import com.etms.entity.UserRole;
 import com.etms.mapper.RoleMapper;
 import com.etms.mapper.RolePermissionMapper;
+import com.etms.mapper.UserRoleMapper;
 import com.etms.service.RoleService;
 import com.etms.vo.RoleVO;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements RoleService {
     
     private final RolePermissionMapper rolePermissionMapper;
+    private final UserRoleMapper userRoleMapper;
     
     @Override
     public Page<RoleVO> pageRoles(Page<Role> page, String roleName, Integer status) {
@@ -81,6 +85,14 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addRole(Role role) {
+        // 检查角色名是否重复
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<Role>().eq(Role::getRoleName, role.getRoleName())
+        );
+        if (count > 0) {
+            throw new RuntimeException("角色名已存在");
+        }
+        
         role.setStatus(1);
         baseMapper.insert(role);
     }
@@ -88,12 +100,30 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateRole(Role role) {
+        // 检查角色名是否重复（排除自身）
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<Role>()
+                .eq(Role::getRoleName, role.getRoleName())
+                .ne(Role::getId, role.getId())
+        );
+        if (count > 0) {
+            throw new RuntimeException("角色名已存在");
+        }
+        
         baseMapper.updateById(role);
     }
     
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteRole(Long id) {
+        // 检查角色是否已分配给用户
+        Long count = userRoleMapper.selectCount(
+            new LambdaQueryWrapper<UserRole>().eq(UserRole::getRoleId, id)
+        );
+        if (count > 0) {
+            throw new RuntimeException("角色已分配给用户，无法删除");
+        }
+        
         // 删除角色权限关联
         rolePermissionMapper.delete(
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, id)
@@ -110,12 +140,17 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, roleId)
         );
         
-        // 新增关联
+        // 批量插入权限记录
         if (permissionIds != null && !permissionIds.isEmpty()) {
+            List<RolePermission> rolePermissions = new ArrayList<>();
             for (Long permissionId : permissionIds) {
                 RolePermission rp = new RolePermission();
                 rp.setRoleId(roleId);
                 rp.setPermissionId(permissionId);
+                rolePermissions.add(rp);
+            }
+            // 使用批量插入
+            for (RolePermission rp : rolePermissions) {
                 rolePermissionMapper.insert(rp);
             }
         }

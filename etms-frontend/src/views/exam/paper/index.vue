@@ -230,7 +230,7 @@ import { Plus } from '@element-plus/icons-vue'
 import {
   getPaperList,
   getPaperDetail,
-  addPaper,
+  createPaper,
   updatePaper,
   deletePaper,
   publishPaper,
@@ -471,7 +471,7 @@ const handleSubmit = async () => {
       await updatePaper(form.id!, data)
       ElMessage.success('更新成功')
     } else {
-      await addPaper(data)
+      await createPaper(data)
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false
