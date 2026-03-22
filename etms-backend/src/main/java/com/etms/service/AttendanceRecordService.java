@@ -22,6 +22,16 @@ public interface AttendanceRecordService extends IService<AttendanceRecord> {
     boolean signIn(Long planId, Integer signType, String location);
     
     /**
+     * 补签申请
+     */
+    boolean applySupplementary(Long planId, Integer signType, String signTime, String reason);
+    
+    /**
+     * 撤销补签申请
+     */
+    boolean cancelSupplementary(Long id);
+    
+    /**
      * 补签审核
      */
     boolean auditSupplement(Long id, Integer auditStatus, String auditRemark);

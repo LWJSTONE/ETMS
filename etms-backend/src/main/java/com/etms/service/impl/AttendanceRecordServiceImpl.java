@@ -41,6 +41,8 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             BeanUtils.copyProperties(record, vo);
             vo.setSignTypeName(getSignTypeName(record.getSignType()));
             vo.setStatusName(getStatusName(record.getStatus()));
+            vo.setReason(record.getReason());
+            vo.setAuditRemark(record.getAuditRemark());
             return vo;
         }).collect(Collectors.toList());
         
@@ -56,9 +58,45 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setLocation(location);
         record.setSignTime(LocalDateTime.now());
         record.setStatus(1); // 正常
+        record.setCreateTime(LocalDateTime.now());
         // record.setUserId(getCurrentUserId());
         
         return baseMapper.insert(record) > 0;
+    }
+    
+    @Override
+    public boolean applySupplementary(Long planId, Integer signType, String signTime, String reason) {
+        AttendanceRecord record = new AttendanceRecord();
+        record.setPlanId(planId);
+        record.setSignType(signType);
+        record.setReason(reason);
+        record.setStatus(5); // 补签
+        record.setAuditStatus(0); // 待审核
+        record.setCreateTime(LocalDateTime.now());
+        // record.setUserId(getCurrentUserId());
+        
+        // 解析签到时间
+        if (signTime != null && !signTime.isEmpty()) {
+            try {
+                record.setSignTime(LocalDateTime.parse(signTime.replace(" ", "T")));
+            } catch (Exception e) {
+                record.setSignTime(LocalDateTime.now());
+            }
+        } else {
+            record.setSignTime(LocalDateTime.now());
+        }
+        
+        return baseMapper.insert(record) > 0;
+    }
+    
+    @Override
+    public boolean cancelSupplementary(Long id) {
+        // 只能撤销待审核的补签申请
+        AttendanceRecord record = baseMapper.selectById(id);
+        if (record != null && record.getStatus() == 5 && record.getAuditStatus() == 0) {
+            return baseMapper.deleteById(id) > 0;
+        }
+        return false;
     }
     
     @Override
@@ -66,6 +104,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         AttendanceRecord record = new AttendanceRecord();
         record.setId(id);
         record.setAuditStatus(auditStatus);
+        record.setAuditRemark(auditRemark);
         // record.setAuditBy(getCurrentUserId());
         record.setAuditTime(LocalDateTime.now());
         
@@ -82,9 +121,19 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         long total = baseMapper.selectCount(wrapper);
         stats.setTotalCount((int) total);
         
-        wrapper.eq(AttendanceRecord::getStatus, 1);
-        long normal = baseMapper.selectCount(wrapper);
+        LambdaQueryWrapper<AttendanceRecord> normalWrapper = new LambdaQueryWrapper<>();
+        normalWrapper.eq(AttendanceRecord::getUserId, userId)
+                     .eq(AttendanceRecord::getStatus, 1);
+        long normal = baseMapper.selectCount(normalWrapper);
         stats.setNormalCount((int) normal);
+        
+        // 待审核数量
+        LambdaQueryWrapper<AttendanceRecord> pendingWrapper = new LambdaQueryWrapper<>();
+        pendingWrapper.eq(AttendanceRecord::getUserId, userId)
+                      .eq(AttendanceRecord::getStatus, 5)
+                      .eq(AttendanceRecord::getAuditStatus, 0);
+        long pending = baseMapper.selectCount(pendingWrapper);
+        stats.setPendingCount((int) pending);
         
         if (total > 0) {
             stats.setAttendanceRate((double) normal / total * 100);

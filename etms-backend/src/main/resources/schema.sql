@@ -339,6 +339,8 @@ CREATE TABLE attendance_record (
     late_minutes INT(11) DEFAULT 0 COMMENT '迟到分钟数',
     early_minutes INT(11) DEFAULT 0 COMMENT '早退分钟数',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    reason VARCHAR(500) DEFAULT NULL COMMENT '补签原因',
+    audit_remark VARCHAR(500) DEFAULT NULL COMMENT '审核备注',
     audit_status TINYINT(1) DEFAULT 0 COMMENT '审核状态(0待审核 1通过 2驳回)',
     audit_by BIGINT(20) DEFAULT NULL COMMENT '审核人ID',
     audit_time DATETIME DEFAULT NULL COMMENT '审核时间',

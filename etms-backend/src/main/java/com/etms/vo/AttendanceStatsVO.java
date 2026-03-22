@@ -17,6 +17,9 @@ public class AttendanceStatsVO implements Serializable {
     /** 正常签到次数 */
     private Integer normalCount;
     
+    /** 待审核数量 */
+    private Integer pendingCount;
+    
     /** 出勤率(百分比) */
     private Double attendanceRate;
 }

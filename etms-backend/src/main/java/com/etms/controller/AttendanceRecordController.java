@@ -49,6 +49,24 @@ public class AttendanceRecordController {
         return Result.success();
     }
     
+    @ApiOperation(value = "补签申请")
+    @PostMapping("/supplementary")
+    public Result<Void> applySupplementary(
+            @RequestParam Long planId,
+            @RequestParam Integer signType,
+            @RequestParam(required = false) String signTime,
+            @RequestParam(required = false) String reason) {
+        attendanceRecordService.applySupplementary(planId, signType, signTime, reason);
+        return Result.success();
+    }
+    
+    @ApiOperation(value = "撤销补签申请")
+    @DeleteMapping("/supplementary/{id}")
+    public Result<Void> cancelSupplementary(@PathVariable Long id) {
+        attendanceRecordService.cancelSupplementary(id);
+        return Result.success();
+    }
+    
     @ApiOperation(value = "补签审核")
     @PostMapping("/{id}/audit")
     public Result<Void> audit(

@@ -70,7 +70,7 @@
             <el-option 
               v-for="plan in planList" 
               :key="plan.id" 
-              :label="plan.name" 
+              :label="plan.planName" 
               :value="plan.id" 
             />
           </el-select>
@@ -197,7 +197,7 @@
             <el-option 
               v-for="plan in activePlanList" 
               :key="plan.id" 
-              :label="plan.name" 
+              :label="plan.planName" 
               :value="plan.id" 
             />
           </el-select>

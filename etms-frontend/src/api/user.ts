@@ -53,7 +53,7 @@ export function resetPassword(id: number): Promise<ApiResponse<void>> {
 
 // 修改状态
 export function updateUserStatus(id: number, status: number): Promise<ApiResponse<void>> {
-  return request.put(`/users/${id}/status`, { status })
+  return request.put(`/users/${id}/status`, null, { params: { status } })
 }
 
 // 分配角色

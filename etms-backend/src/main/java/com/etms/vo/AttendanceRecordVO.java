@@ -56,8 +56,14 @@ public class AttendanceRecordVO implements Serializable {
     /** 早退分钟数 */
     private Integer earlyMinutes;
     
+    /** 补签原因 */
+    private String reason;
+    
     /** 审核状态 */
     private Integer auditStatus;
+    
+    /** 审核备注 */
+    private String auditRemark;
     
     /** 创建时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

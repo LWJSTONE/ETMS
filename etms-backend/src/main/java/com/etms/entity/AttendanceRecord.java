@@ -53,6 +53,12 @@ public class AttendanceRecord implements Serializable {
     /** 备注 */
     private String remark;
     
+    /** 补签原因 */
+    private String reason;
+    
+    /** 审核备注 */
+    private String auditRemark;
+    
     /** 审核状态(0待审核 1通过 2驳回) */
     private Integer auditStatus;
     
