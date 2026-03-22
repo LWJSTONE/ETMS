@@ -68,6 +68,11 @@ export function publishPaper(id: number) {
   return request.post(`/exam/papers/${id}/publish`)
 }
 
+// 停用试卷
+export function disablePaper(id: number) {
+  return request.post(`/exam/papers/${id}/disable`)
+}
+
 /**
  * 考试记录API
  */
@@ -85,6 +90,11 @@ export function startExam(paperId: number) {
 // 提交试卷
 export function submitExam(data: any) {
   return request.post('/exam/records/submit', data)
+}
+
+// 获取考试记录详情
+export function getExamRecordDetail(id: number) {
+  return request.get(`/exam/records/${id}`)
 }
 
 /**
