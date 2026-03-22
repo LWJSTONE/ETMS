@@ -260,9 +260,9 @@
         </template>
 
         <el-divider content-position="left">其他</el-divider>
-        <el-form-item label="答案解析" prop="analysis">
+        <el-form-item label="答案解析" prop="answerAnalysis">
           <el-input
-            v-model="form.analysis"
+            v-model="form.answerAnalysis"
             type="textarea"
             :rows="3"
             placeholder="请输入答案解析"
@@ -344,7 +344,7 @@ const form = reactive({
   optionB: '',
   optionC: '',
   optionD: '',
-  analysis: '',
+  answerAnalysis: '',
   score: 10,
   status: 1
 })
@@ -463,7 +463,7 @@ const resetForm = () => {
     optionB: '',
     optionC: '',
     optionD: '',
-    analysis: '',
+    answerAnalysis: '',
     score: 10,
     status: 1
   })
@@ -506,7 +506,7 @@ const handleEdit = async (row: any) => {
       optionB: data.optionB || '',
       optionC: data.optionC || '',
       optionD: data.optionD || '',
-      analysis: data.analysis || '',
+      answerAnalysis: data.answerAnalysis || '',
       score: data.score || 10,
       status: data.status ?? 1
     })

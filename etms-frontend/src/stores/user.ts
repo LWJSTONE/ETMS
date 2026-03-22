@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { login, logout, getUserInfo } from '@/api/auth'
 
 interface UserInfo {
-  userId: number
+  id: number
   username: string
   realName: string
   avatar: string
@@ -22,7 +22,7 @@ export const useUserStore = defineStore('user', () => {
     token.value = res.data.accessToken
     localStorage.setItem('token', res.data.accessToken)
     userInfo.value = {
-      userId: res.data.userId,
+      id: res.data.userId,
       username: res.data.username,
       realName: res.data.realName,
       avatar: res.data.avatar,

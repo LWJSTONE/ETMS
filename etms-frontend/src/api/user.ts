@@ -47,3 +47,10 @@ export function updateUserStatus(id: number, status: number): Promise<ApiRespons
 export function assignRoles(id: number, roleIds: number[]): Promise<ApiResponse<void>> {
   return request.put(`/system/users/${id}/roles`, roleIds)
 }
+
+// 修改密码
+export function updatePassword(id: number, oldPassword: string, newPassword: string): Promise<ApiResponse<void>> {
+  return request.put(`/system/users/${id}/password`, null, {
+    params: { oldPassword, newPassword }
+  })
+}
