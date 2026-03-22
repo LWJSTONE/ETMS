@@ -8,7 +8,7 @@ import type {
 
 // 获取部门树形结构
 export function getDeptTree(): Promise<ApiResponse<Dept[]>> {
-  return request.get('/system/depts/tree')
+  return request.get('/system/depts/tree-structure')
 }
 
 // 获取部门列表

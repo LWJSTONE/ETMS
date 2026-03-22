@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 用户控制器
@@ -89,7 +90,8 @@ public class UserController {
     
     @ApiOperation(value = "修改状态")
     @PutMapping("/{id}/status")
-    public Result<Void> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+    public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
+        Integer status = body.get("status");
         userService.updateStatus(id, status);
         return Result.success();
     }

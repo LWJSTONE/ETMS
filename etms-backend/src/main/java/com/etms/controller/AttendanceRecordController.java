@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 /**
  * 签到记录控制器
@@ -41,21 +42,21 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "签到")
     @PostMapping("/sign")
-    public Result<Void> signIn(
-            @RequestParam Long planId,
-            @RequestParam Integer signType,
-            @RequestParam(required = false) String location) {
+    public Result<Void> signIn(@RequestBody Map<String, Object> body) {
+        Long planId = Long.valueOf(body.get("planId").toString());
+        Integer signType = Integer.valueOf(body.get("signType").toString());
+        String location = body.get("location") != null ? body.get("location").toString() : null;
         attendanceRecordService.signIn(planId, signType, location);
         return Result.success();
     }
     
     @ApiOperation(value = "补签申请")
     @PostMapping("/supplementary")
-    public Result<Void> applySupplementary(
-            @RequestParam Long planId,
-            @RequestParam Integer signType,
-            @RequestParam(required = false) String signTime,
-            @RequestParam(required = false) String reason) {
+    public Result<Void> applySupplementary(@RequestBody Map<String, Object> body) {
+        Long planId = Long.valueOf(body.get("planId").toString());
+        Integer signType = Integer.valueOf(body.get("signType").toString());
+        String signTime = body.get("signTime") != null ? body.get("signTime").toString() : null;
+        String reason = body.get("reason") != null ? body.get("reason").toString() : null;
         attendanceRecordService.applySupplementary(planId, signType, signTime, reason);
         return Result.success();
     }
@@ -69,10 +70,9 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "补签审核")
     @PostMapping("/{id}/audit")
-    public Result<Void> audit(
-            @PathVariable Long id,
-            @RequestParam Integer auditStatus,
-            @RequestParam(required = false) String auditRemark) {
+    public Result<Void> audit(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Integer auditStatus = Integer.valueOf(body.get("auditStatus").toString());
+        String auditRemark = body.get("auditRemark") != null ? body.get("auditRemark").toString() : null;
         attendanceRecordService.auditSupplement(id, auditStatus, auditRemark);
         return Result.success();
     }

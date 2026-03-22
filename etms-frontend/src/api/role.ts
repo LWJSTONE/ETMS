@@ -15,7 +15,7 @@ export function getRoleList(params: PageParams): Promise<ApiResponse<PageResult<
 
 // 获取所有角色列表(不分页)
 export function getRoleListAll(): Promise<ApiResponse<Role[]>> {
-  return request.get('/system/roles/list')
+  return request.get('/system/roles/all')
 }
 
 // 获取角色详情

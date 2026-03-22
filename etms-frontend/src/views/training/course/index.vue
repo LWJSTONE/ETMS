@@ -485,7 +485,7 @@ const handleAudit = async (row: any, status: number) => {
     // 审核通过
     await ElMessageBox.confirm('确定审核通过吗？', '提示', { type: 'info' })
     try {
-      await auditCourse(row.id, status)
+      await auditCourse(row.id, { status })
       ElMessage.success('审核成功')
       getList()
     } catch (error) {
@@ -502,7 +502,7 @@ const confirmAudit = async () => {
   }
   auditLoading.value = true
   try {
-    await auditCourse(auditForm.id!, auditForm.status!, auditForm.auditRemark)
+    await auditCourse(auditForm.id!, { status: auditForm.status!, auditRemark: auditForm.auditRemark })
     ElMessage.success('审核成功')
     auditDialogVisible.value = false
     getList()

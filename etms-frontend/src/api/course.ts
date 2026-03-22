@@ -56,5 +56,5 @@ export function unpublishCourse(id: number): Promise<ApiResponse<void>> {
 
 // 获取课程列表（不分页）
 export function getCourseListAll(categoryId?: number): Promise<ApiResponse<Course[]>> {
-  return request.get('/training/courses/list', { categoryId })
+  return request.get('/training/courses/all', { categoryId })
 }
