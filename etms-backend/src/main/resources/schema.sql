@@ -332,6 +332,7 @@ CREATE TABLE attendance_record (
     plan_id BIGINT(20) NOT NULL COMMENT '计划ID',
     sign_time DATETIME NOT NULL COMMENT '签到时间',
     sign_type TINYINT(1) NOT NULL COMMENT '签到类型(1二维码 2GPS定位 3人脸识别)',
+    sign_category TINYINT(1) DEFAULT 1 COMMENT '签到类别(1签到 2签退)',
     location VARCHAR(100) DEFAULT NULL COMMENT '签到位置',
     ip_address VARCHAR(50) DEFAULT NULL COMMENT '签到IP地址',
     device_info VARCHAR(100) DEFAULT NULL COMMENT '设备信息',

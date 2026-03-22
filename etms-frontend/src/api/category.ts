@@ -7,13 +7,16 @@ import type {
 } from './types'
 
 // 获取分类树形结构
-export function getCategoryTree(): Promise<ApiResponse<Category[]>> {
-  return request.get('/training/categories/tree')
+export function getCategoryTree(categoryType?: number): Promise<ApiResponse<Category[]>> {
+  return request.get('/training/categories/tree', categoryType ? { categoryType } : undefined)
 }
 
 // 获取分类列表
-export function getCategoryList(parentId?: number): Promise<ApiResponse<Category[]>> {
-  return request.get('/training/categories', parentId ? { parentId } : undefined)
+export function getCategoryList(categoryType?: number, parentId?: number): Promise<ApiResponse<Category[]>> {
+  const params: Record<string, any> = {}
+  if (categoryType !== undefined) params.categoryType = categoryType
+  if (parentId !== undefined) params.parentId = parentId
+  return request.get('/training/categories', params)
 }
 
 // 获取分类详情
@@ -36,12 +39,7 @@ export function deleteCategory(id: number): Promise<ApiResponse<void>> {
   return request.delete(`/training/categories/${id}`)
 }
 
-// 检查分类编码是否存在
-export function checkCategoryCode(categoryCode: string, excludeId?: number): Promise<ApiResponse<boolean>> {
-  return request.get('/training/categories/check-code', { categoryCode, excludeId })
-}
-
-// 获取分类下课程数量
-export function getCategoryCourseCount(id: number): Promise<ApiResponse<number>> {
-  return request.get(`/training/categories/${id}/course-count`)
+// 更新分类状态
+export function updateCategoryStatus(id: number, status: number): Promise<ApiResponse<void>> {
+  return request.put(`/training/categories/${id}/status`, null, { params: { status } })
 }

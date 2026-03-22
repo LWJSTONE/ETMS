@@ -17,14 +17,14 @@ public interface AttendanceRecordService extends IService<AttendanceRecord> {
     Page<AttendanceRecordVO> pageRecords(Page<AttendanceRecord> page, Long planId, Long userId, Integer status, Integer auditStatus);
     
     /**
-     * 签到
+     * 签到/签退
      */
-    boolean signIn(Long planId, Integer signType, String location);
+    boolean signIn(Long planId, Integer signType, Integer signCategory, String location);
     
     /**
      * 补签申请
      */
-    boolean applySupplementary(Long planId, Integer signType, String signTime, String reason);
+    boolean applySupplementary(Long planId, Integer signType, Integer signCategory, String signTime, String reason);
     
     /**
      * 撤销补签申请

@@ -295,18 +295,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         
         // 批量插入用户角色关联
-        List<UserRole> userRoles = new ArrayList<>();
+        List<Map<String, Long>> userRoles = new ArrayList<>();
         for (Long roleId : roleIds) {
-            UserRole ur = new UserRole();
-            ur.setUserId(userId);
-            ur.setRoleId(roleId);
-            userRoles.add(ur);
+            Map<String, Long> map = new HashMap<>();
+            map.put("userId", userId);
+            map.put("roleId", roleId);
+            userRoles.add(map);
         }
         
-        // 批量插入
-        for (UserRole ur : userRoles) {
-            userRoleMapper.insert(ur);
-        }
+        // 使用批量插入
+        baseMapper.batchInsertUserRole(userRoles);
         
         return true;
     }

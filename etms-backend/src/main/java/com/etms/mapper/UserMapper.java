@@ -26,4 +26,14 @@ public interface UserMapper extends BaseMapper<User> {
      * 根据用户ID查询用户权限
      */
     List<String> selectPermissionsByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 删除用户角色关联
+     */
+    int deleteUserRoleByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 批量插入用户角色关联
+     */
+    int batchInsertUserRole(@Param("list") List<Map<String, Long>> list);
 }

@@ -97,13 +97,19 @@ export function getExamRecordList(params: PageParams): Promise<ApiResponse<PageR
   return request.get('/exam/records', params)
 }
 
+// 获取我的考试记录
+export function getMyExamRecordList(params: PageParams): Promise<ApiResponse<PageResult<ExamRecord>>> {
+  return request.get('/exam/records/my', params)
+}
+
 // 开始考试
-export function startExam(paperId: number): Promise<ApiResponse<ExamRecord>> {
-  return request.post(`/exam/records/start/${paperId}`)
+export function startExam(paperId: number, planId?: number): Promise<ApiResponse<ExamRecord>> {
+  const params = planId ? { planId } : undefined
+  return request.post(`/exam/records/start/${paperId}`, null, { params })
 }
 
 // 提交试卷
-export function submitExam(data: ExamSubmitParams): Promise<ApiResponse<ExamRecord>> {
+export function submitExam(data: ExamSubmitParams): Promise<ApiResponse<void>> {
   return request.post('/exam/records/submit', data)
 }
 

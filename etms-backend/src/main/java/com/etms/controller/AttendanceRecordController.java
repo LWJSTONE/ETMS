@@ -40,13 +40,14 @@ public class AttendanceRecordController {
         return Result.success(pageResult);
     }
     
-    @ApiOperation(value = "签到")
+    @ApiOperation(value = "签到/签退")
     @PostMapping("/sign")
     public Result<Void> signIn(@RequestBody Map<String, Object> body) {
         Long planId = Long.valueOf(body.get("planId").toString());
-        Integer signType = Integer.valueOf(body.get("signType").toString());
+        Integer signType = body.get("signType") != null ? Integer.valueOf(body.get("signType").toString()) : 1;
+        Integer signCategory = body.get("signCategory") != null ? Integer.valueOf(body.get("signCategory").toString()) : 1;
         String location = body.get("location") != null ? body.get("location").toString() : null;
-        attendanceRecordService.signIn(planId, signType, location);
+        attendanceRecordService.signIn(planId, signType, signCategory, location);
         return Result.success();
     }
     
@@ -54,10 +55,11 @@ public class AttendanceRecordController {
     @PostMapping("/supplementary")
     public Result<Void> applySupplementary(@RequestBody Map<String, Object> body) {
         Long planId = Long.valueOf(body.get("planId").toString());
-        Integer signType = Integer.valueOf(body.get("signType").toString());
+        Integer signType = body.get("signType") != null ? Integer.valueOf(body.get("signType").toString()) : 1;
+        Integer signCategory = body.get("signCategory") != null ? Integer.valueOf(body.get("signCategory").toString()) : 1;
         String signTime = body.get("signTime") != null ? body.get("signTime").toString() : null;
         String reason = body.get("reason") != null ? body.get("reason").toString() : null;
-        attendanceRecordService.applySupplementary(planId, signType, signTime, reason);
+        attendanceRecordService.applySupplementary(planId, signType, signCategory, signTime, reason);
         return Result.success();
     }
     

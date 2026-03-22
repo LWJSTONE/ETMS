@@ -32,6 +32,9 @@ public class AttendanceRecord implements Serializable {
     /** 签到类型(1二维码 2GPS定位 3人脸识别) */
     private Integer signType;
     
+    /** 签到类别(1签到 2签退) */
+    private Integer signCategory;
+    
     /** 签到位置 */
     private String location;
     

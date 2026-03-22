@@ -20,14 +20,8 @@ export function getAttendanceList(params: PageParams): Promise<ApiResponse<PageR
 }
 
 // 签到/签退
-export function signIn(data: AttendanceSignInParams): Promise<ApiResponse<AttendanceRecord>> {
+export function signIn(data: AttendanceSignInParams): Promise<ApiResponse<void>> {
   return request.post('/attendance/records/sign', data)
-}
-
-// 签退
-export function signOut(data: Omit<AttendanceSignInParams, 'signType'>): Promise<ApiResponse<AttendanceRecord>> {
-  // 签退时signType固定为2（签退类型）
-  return request.post('/attendance/records/sign', { ...data, signType: 2 })
 }
 
 // 补签申请

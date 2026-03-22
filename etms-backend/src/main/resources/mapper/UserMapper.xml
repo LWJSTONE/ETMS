@@ -51,4 +51,15 @@
         WHERE ur.user_id = #{userId}
     </select>
     
+    <delete id="deleteUserRoleByUserId">
+        DELETE FROM sys_user_role WHERE user_id = #{userId}
+    </delete>
+    
+    <insert id="batchInsertUserRole">
+        INSERT INTO sys_user_role (user_id, role_id) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.roleId})
+        </foreach>
+    </insert>
+    
 </mapper>
