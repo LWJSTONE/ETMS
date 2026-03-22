@@ -99,7 +99,7 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     public void disablePaper(Long id) {
         Paper paper = new Paper();
         paper.setId(id);
-        paper.setStatus(3); // 已停用
+        paper.setStatus(2); // 已停用（与前端状态码保持一致）
         baseMapper.updateById(paper);
     }
 }

@@ -1,6 +1,7 @@
 package com.etms.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -33,7 +34,8 @@ public class Paper extends BaseEntity {
     /** 及格分数 */
     private Integer passScore;
     
-    /** 考试时长(分钟) */
+    /** 考试时长(分钟) - 前端映射为duration */
+    @JsonProperty("duration")
     private Integer examDuration;
     
     /** 题目数量 */
@@ -54,7 +56,7 @@ public class Paper extends BaseEntity {
     /** 最大切屏次数 */
     private Integer maxSwitch;
     
-    /** 状态(0草稿 1已发布 2已使用 3已停用) */
+    /** 状态(0草稿 1已发布 2已停用) */
     private Integer status;
     
     @TableField(exist = false)

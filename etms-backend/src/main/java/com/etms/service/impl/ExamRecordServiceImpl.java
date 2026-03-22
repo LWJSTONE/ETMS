@@ -5,10 +5,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.ExamRecord;
 import com.etms.entity.Paper;
+import com.etms.entity.PaperQuestion;
+import com.etms.entity.Question;
 import com.etms.entity.User;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.ExamRecordMapper;
 import com.etms.mapper.PaperMapper;
+import com.etms.mapper.PaperQuestionMapper;
+import com.etms.mapper.QuestionMapper;
 import com.etms.mapper.UserMapper;
 import com.etms.service.ExamRecordService;
 import com.etms.service.UserService;
@@ -35,6 +39,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     private final UserMapper userMapper;
     private final UserService userService;
     private final ObjectMapper objectMapper;
+    private final PaperQuestionMapper paperQuestionMapper;
+    private final QuestionMapper questionMapper;
     
     @Override
     public Page<ExamRecordVO> pageExamRecords(Page<ExamRecord> page, Long paperId, Long userId, Integer status) {
@@ -213,11 +219,110 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     }
     
     /**
-     * 计算考试分数（简化实现）
+     * 计算考试分数
+     * @param paperId 试卷ID
+     * @param answers 用户答案（JSON格式）
+     * @return 用户得分
      */
     private int calculateScore(Long paperId, String answers) {
-        // TODO: 实现详细的评分逻辑
-        // 这里简化处理，返回一个默认分数
-        return 0;
+        if (answers == null || answers.isEmpty()) {
+            return 0;
+        }
+        
+        try {
+            // 解析用户答案
+            List<Map<String, Object>> answerList = objectMapper.readValue(answers, 
+                objectMapper.getTypeFactory().constructCollectionType(List.class, Map.class));
+            
+            if (answerList.isEmpty()) {
+                return 0;
+            }
+            
+            // 获取试卷关联的题目
+            List<PaperQuestion> paperQuestions = paperQuestionMapper.selectList(
+                new LambdaQueryWrapper<PaperQuestion>()
+                    .eq(PaperQuestion::getPaperId, paperId)
+                    .orderByAsc(PaperQuestion::getSortOrder)
+            );
+            
+            if (paperQuestions.isEmpty()) {
+                return 0;
+            }
+            
+            // 获取所有题目ID
+            List<Long> questionIds = paperQuestions.stream()
+                .map(PaperQuestion::getQuestionId)
+                .collect(Collectors.toList());
+            
+            // 批量查询题目
+            List<Question> questions = questionMapper.selectBatchIds(questionIds);
+            Map<Long, Question> questionMap = questions.stream()
+                .collect(Collectors.toMap(Question::getId, q -> q));
+            
+            // 构建题目ID与分数的映射
+            Map<Long, Integer> scoreMap = paperQuestions.stream()
+                .collect(Collectors.toMap(PaperQuestion::getQuestionId, PaperQuestion::getScore));
+            
+            // 计算总分
+            int totalScore = 0;
+            for (Map<String, Object> answer : answerList) {
+                Long questionId = Long.valueOf(answer.get("questionId").toString());
+                String userAnswer = answer.get("userAnswer") != null ? answer.get("userAnswer").toString().trim() : "";
+                
+                Question question = questionMap.get(questionId);
+                if (question == null || userAnswer.isEmpty()) {
+                    continue;
+                }
+                
+                // 比较答案（忽略大小写和空格）
+                String correctAnswer = question.getAnswer() != null ? question.getAnswer().trim() : "";
+                
+                // 判断题类型处理
+                if (question.getQuestionType() == 3) {
+                    // 判断题：将"正确/错误"与"A/B"互相转换
+                    userAnswer = normalizeJudgeAnswer(userAnswer);
+                    correctAnswer = normalizeJudgeAnswer(correctAnswer);
+                }
+                
+                // 单选题和多选题：答案可能是A,B,C格式
+                if (question.getQuestionType() == 1 || question.getQuestionType() == 2) {
+                    userAnswer = userAnswer.toUpperCase().replaceAll("[\\s,]+", ",");
+                    correctAnswer = correctAnswer.toUpperCase().replaceAll("[\\s,]+", ",");
+                    // 移除首尾逗号
+                    userAnswer = userAnswer.replaceAll("^,|,$", "");
+                    correctAnswer = correctAnswer.replaceAll("^,|,$", "");
+                }
+                
+                // 判断答案是否正确
+                if (userAnswer.equalsIgnoreCase(correctAnswer)) {
+                    Integer score = scoreMap.get(questionId);
+                    totalScore += score != null ? score : 0;
+                }
+            }
+            
+            return totalScore;
+        } catch (Exception e) {
+            // 解析失败返回0分
+            return 0;
+        }
+    }
+    
+    /**
+     * 标准化判断题答案
+     */
+    private String normalizeJudgeAnswer(String answer) {
+        if (answer == null) return "";
+        answer = answer.trim();
+        // 将"正确"、"对"、"T"、"True"转换为"A"
+        if (answer.equals("正确") || answer.equals("对") || answer.equalsIgnoreCase("T") 
+            || answer.equalsIgnoreCase("True") || answer.equals("A")) {
+            return "A";
+        }
+        // 将"错误"、"错"、"F"、"False"转换为"B"
+        if (answer.equals("错误") || answer.equals("错") || answer.equalsIgnoreCase("F") 
+            || answer.equalsIgnoreCase("False") || answer.equals("B")) {
+            return "B";
+        }
+        return answer;
     }
 }
