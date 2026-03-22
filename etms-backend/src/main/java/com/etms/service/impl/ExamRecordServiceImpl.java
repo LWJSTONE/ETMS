@@ -17,6 +17,9 @@ import com.etms.mapper.UserMapper;
 import com.etms.service.ExamRecordService;
 import com.etms.service.UserService;
 import com.etms.vo.ExamRecordVO;
+import com.etms.vo.ExamResultVO;
+import com.etms.entity.Dept;
+import com.etms.mapper.DeptMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -41,6 +44,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     private final ObjectMapper objectMapper;
     private final PaperQuestionMapper paperQuestionMapper;
     private final QuestionMapper questionMapper;
+    private final DeptMapper deptMapper;
     
     @Override
     public Page<ExamRecordVO> pageExamRecords(Page<ExamRecord> page, Long paperId, Long userId, Integer status) {
@@ -324,5 +328,146 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             return "B";
         }
         return answer;
+    }
+    
+    @Override
+    public Page<ExamResultVO> pageResults(Long current, Long size, Long paperId, Long userId, Integer passed, String userName, String paperName, String startTime, String endTime) {
+        Page<ExamRecord> page = new Page<>(current, size);
+        
+        LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ExamRecord::getStatus, 2) // 只查询已完成的考试
+               .eq(paperId != null, ExamRecord::getPaperId, paperId)
+               .eq(userId != null, ExamRecord::getUserId, userId)
+               .eq(passed != null, ExamRecord::getPassed, passed)
+               .orderByDesc(ExamRecord::getSubmitTime);
+        
+        Page<ExamRecord> recordPage = baseMapper.selectPage(page, wrapper);
+        
+        // 转换为VO
+        Page<ExamResultVO> voPage = new Page<>(current, size, recordPage.getTotal());
+        
+        if (recordPage.getRecords().isEmpty()) {
+            voPage.setRecords(new java.util.ArrayList<>());
+            return voPage;
+        }
+        
+        // 批量获取试卷和用户信息
+        java.util.Set<Long> paperIds = recordPage.getRecords().stream()
+                .map(ExamRecord::getPaperId)
+                .collect(java.util.stream.Collectors.toSet());
+        
+        java.util.Set<Long> userIds = recordPage.getRecords().stream()
+                .map(ExamRecord::getUserId)
+                .collect(java.util.stream.Collectors.toSet());
+        
+        java.util.Map<Long, Paper> paperMap = paperIds.isEmpty() ? new java.util.HashMap<>() :
+                paperMapper.selectBatchIds(paperIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(Paper::getId, p -> p));
+        
+        java.util.Map<Long, User> userMap = userIds.isEmpty() ? new java.util.HashMap<>() :
+                userMapper.selectBatchIds(userIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(User::getId, u -> u));
+        
+        // 批量获取部门信息
+        java.util.Set<Long> deptIds = userMap.values().stream()
+                .filter(u -> u.getDeptId() != null)
+                .map(User::getDeptId)
+                .collect(java.util.stream.Collectors.toSet());
+        
+        java.util.Map<Long, String> deptNameMap = deptIds.isEmpty() ? new java.util.HashMap<>() :
+                deptMapper.selectBatchIds(deptIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(Dept::getId, Dept::getDeptName));
+        
+        // 过滤和转换
+        java.util.List<ExamResultVO> voList = recordPage.getRecords().stream()
+                .filter(record -> {
+                    // 过滤用户名
+                    if (userName != null && !userName.isEmpty()) {
+                        User user = userMap.get(record.getUserId());
+                        if (user == null || 
+                            (user.getRealName() == null || !user.getRealName().contains(userName)) &&
+                            (user.getUsername() == null || !user.getUsername().contains(userName))) {
+                            return false;
+                        }
+                    }
+                    // 过滤试卷名
+                    if (paperName != null && !paperName.isEmpty()) {
+                        Paper paper = paperMap.get(record.getPaperId());
+                        if (paper == null || paper.getPaperName() == null || !paper.getPaperName().contains(paperName)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .map(record -> {
+                    ExamResultVO vo = new ExamResultVO();
+                    BeanUtils.copyProperties(record, vo);
+                    
+                    Paper paper = paperMap.get(record.getPaperId());
+                    if (paper != null) {
+                        vo.setPaperName(paper.getPaperName());
+                        vo.setTotalScore(paper.getTotalScore());
+                        vo.setPassScore(paper.getPassScore());
+                        vo.setExamDuration(paper.getExamDuration());
+                    }
+                    
+                    User user = userMap.get(record.getUserId());
+                    if (user != null) {
+                        vo.setUserName(user.getUsername());
+                        vo.setRealName(user.getRealName());
+                        vo.setDeptName(deptNameMap.get(user.getDeptId()));
+                    }
+                    
+                    return vo;
+                })
+                .collect(java.util.stream.Collectors.toList());
+        
+        voPage.setRecords(voList);
+        return voPage;
+    }
+    
+    @Override
+    public Page<ExamResultVO> getMyResults(Long current, Long size, Integer passed) {
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            throw new BusinessException("用户未登录");
+        }
+        
+        return pageResults(current, size, null, currentUser.getId(), passed, null, null, null, null);
+    }
+    
+    @Override
+    public ExamResultVO getResultDetail(Long id) {
+        ExamRecord record = baseMapper.selectById(id);
+        if (record == null || record.getStatus() != 2) {
+            return null;
+        }
+        
+        ExamResultVO vo = new ExamResultVO();
+        BeanUtils.copyProperties(record, vo);
+        
+        // 获取试卷信息
+        Paper paper = paperMapper.selectById(record.getPaperId());
+        if (paper != null) {
+            vo.setPaperName(paper.getPaperName());
+            vo.setTotalScore(paper.getTotalScore());
+            vo.setPassScore(paper.getPassScore());
+            vo.setExamDuration(paper.getExamDuration());
+        }
+        
+        // 获取用户信息
+        User user = userMapper.selectById(record.getUserId());
+        if (user != null) {
+            vo.setUserName(user.getUsername());
+            vo.setRealName(user.getRealName());
+            if (user.getDeptId() != null) {
+                Dept dept = deptMapper.selectById(user.getDeptId());
+                if (dept != null) {
+                    vo.setDeptName(dept.getDeptName());
+                }
+            }
+        }
+        
+        return vo;
     }
 }

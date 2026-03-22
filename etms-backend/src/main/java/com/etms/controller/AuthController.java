@@ -3,6 +3,7 @@ package com.etms.controller;
 import com.etms.common.Result;
 import com.etms.dto.LoginDTO;
 import com.etms.entity.User;
+import com.etms.service.CaptchaService;
 import com.etms.service.UserService;
 import com.etms.vo.LoginVO;
 import com.etms.vo.UserVO;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 /**
  * 认证控制器
@@ -24,11 +27,19 @@ import javax.validation.Valid;
 public class AuthController {
     
     private final UserService userService;
+    private final CaptchaService captchaService;
+    
+    @ApiOperation(value = "获取验证码")
+    @PostMapping("/captcha")
+    public Result<Map<String, String>> getCaptcha() {
+        Map<String, String> captcha = captchaService.generateCaptcha();
+        return Result.success(captcha);
+    }
     
     @ApiOperation(value = "用户登录")
     @PostMapping("/login")
-    public Result<LoginVO> login(@Valid @RequestBody LoginDTO loginDTO) {
-        LoginVO loginVO = userService.login(loginDTO);
+    public Result<LoginVO> login(@Valid @RequestBody LoginDTO loginDTO, HttpServletRequest request) {
+        LoginVO loginVO = userService.login(loginDTO, request);
         return Result.success("登录成功", loginVO);
     }
     

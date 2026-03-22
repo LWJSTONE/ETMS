@@ -517,15 +517,14 @@ const handleSubmit = async () => {
       minStudyTime: form.minStudyTime,
       minProgress: form.minProgress,
       planDesc: form.planDesc,
-      planObjective: form.planObjective,
-      status: 0
+      planObjective: form.planObjective
     }
 
     if (isEdit.value) {
       await updatePlan(form.id!, data)
       ElMessage.success('更新成功')
     } else {
-      await createPlan(data)
+      await createPlan({ ...data, status: 0 })
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false

@@ -300,10 +300,16 @@ const handleEdit = (row: any) => {
 
 // 删除
 const handleDelete = async (row: any) => {
-  await ElMessageBox.confirm('确定要删除该角色吗？', '提示', { type: 'warning' })
-  await deleteRole(row.id)
-  ElMessage.success('删除成功')
-  getList()
+  try {
+    await ElMessageBox.confirm('确定要删除该角色吗？', '提示', { type: 'warning' })
+    await deleteRole(row.id)
+    ElMessage.success('删除成功')
+    getList()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '删除失败')
+    }
+  }
 }
 
 // 分配权限
@@ -313,8 +319,8 @@ const handleAssignPermission = async (row: any) => {
     const res = await getRolePermissions(row.id)
     checkedPermIds.value = res.data || []
     permDialogVisible.value = true
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    ElMessage.error(error.message || '获取权限失败')
   }
 }
 
@@ -327,8 +333,8 @@ const handlePermSubmit = async () => {
     ElMessage.success('权限分配成功')
     permDialogVisible.value = false
     getList()
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    ElMessage.error(error.message || '权限分配失败')
   }
 }
 
@@ -346,8 +352,8 @@ const handleSubmit = async () => {
     }
     dialogVisible.value = false
     getList()
-  } catch (error) { 
-    console.error(error) 
+  } catch (error: any) { 
+    ElMessage.error(error.message || '操作失败')
   }
 }
 

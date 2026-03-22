@@ -510,10 +510,11 @@ const handleSignSubmit = async () => {
   signLoading.value = true
   try {
     // signType: 签到方式(1二维码 2GPS定位)
-    // 签到/签退由后端根据时间判断
+    // signCategory: 签到类别(1签到 2签退)
     await signIn({
       planId: signForm.planId!,
       signType: signForm.signMethod,
+      signCategory: isSignOut.value ? 2 : 1,
       location: signForm.location
     })
     ElMessage.success(isSignOut.value ? '签退成功' : '签到成功')

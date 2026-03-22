@@ -5,8 +5,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.AttendanceRecord;
 import com.etms.entity.User;
+import com.etms.entity.UserPlan;
 import com.etms.mapper.AttendanceRecordMapper;
 import com.etms.mapper.UserMapper;
+import com.etms.mapper.UserPlanMapper;
 import com.etms.service.AttendanceRecordService;
 import com.etms.vo.AttendanceRecordVO;
 import com.etms.vo.AttendanceStatsVO;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMapper, AttendanceRecord> implements AttendanceRecordService {
     
     private final UserMapper userMapper;
+    private final UserPlanMapper userPlanMapper;
     
     @Override
     public Page<AttendanceRecordVO> pageRecords(Page<AttendanceRecord> page, Long planId, Long userId, Integer status, Integer auditStatus) {
@@ -64,6 +67,16 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         // 添加空指针处理
         if (currentUserId == null) {
             throw new RuntimeException("用户未登录，无法签到");
+        }
+        
+        // 校验用户是否属于该培训计划
+        Long userPlanCount = userPlanMapper.selectCount(
+            new LambdaQueryWrapper<UserPlan>()
+                .eq(UserPlan::getUserId, currentUserId)
+                .eq(UserPlan::getPlanId, planId)
+        );
+        if (userPlanCount == null || userPlanCount == 0) {
+            throw new RuntimeException("您不属于该培训计划，无法签到");
         }
         
         // 检查是否已签到（同一培训计划当天同一签到类别不能重复）

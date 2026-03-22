@@ -88,6 +88,12 @@
         <el-form-item label="分类编码" prop="categoryCode">
           <el-input v-model="form.categoryCode" placeholder="请输入分类编码" />
         </el-form-item>
+        <el-form-item label="分类类型" prop="categoryType">
+          <el-radio-group v-model="form.categoryType">
+            <el-radio :value="1">课程分类</el-radio>
+            <el-radio :value="2">题目分类</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="排序" prop="sortOrder">
           <el-input-number v-model="form.sortOrder" :min="0" :max="999" controls-position="right" />
         </el-form-item>
@@ -330,6 +336,7 @@ const form = reactive({
   parentId: null as number | null,
   categoryName: '',
   categoryCode: '',
+  categoryType: 1 as number,
   sortOrder: 0,
   status: 1
 })
@@ -493,6 +500,7 @@ const handleEdit = async (row: Category) => {
       parentId: data.parentId || null,
       categoryName: data.categoryName,
       categoryCode: data.categoryCode,
+      categoryType: data.categoryType || 1,
       sortOrder: data.sortOrder || 0,
       status: data.status ?? 1
     })
@@ -506,6 +514,7 @@ const handleEdit = async (row: Category) => {
       parentId: row.parentId || null,
       categoryName: row.categoryName,
       categoryCode: row.categoryCode,
+      categoryType: row.categoryType || 1,
       sortOrder: row.sortOrder || 0,
       status: row.status ?? 1
     })
@@ -560,6 +569,7 @@ const resetForm = () => {
     parentId: null,
     categoryName: '',
     categoryCode: '',
+    categoryType: 1,
     sortOrder: 0,
     status: 1
   })
@@ -594,6 +604,7 @@ const handleSubmit = async () => {
       parentId: form.parentId || null,
       categoryName: form.categoryName,
       categoryCode: form.categoryCode,
+      categoryType: form.categoryType,
       sortOrder: form.sortOrder,
       status: form.status,
       level: calculateLevel(form.parentId)

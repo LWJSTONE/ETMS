@@ -3,6 +3,7 @@ package com.etms.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
+import com.etms.dto.CourseAuditDTO;
 import com.etms.entity.Course;
 import com.etms.service.CourseService;
 import com.etms.vo.CourseVO;
@@ -85,9 +86,8 @@ public class CourseController {
     @PostMapping("/{id}/audit")
     public Result<Void> audit(
             @PathVariable Long id,
-            @RequestParam Integer status,
-            @RequestParam(required = false) String auditRemark) {
-        courseService.auditCourse(id, status, auditRemark);
+            @Valid @RequestBody CourseAuditDTO auditDTO) {
+        courseService.auditCourse(id, auditDTO.getStatus(), auditDTO.getAuditRemark());
         return Result.success();
     }
     

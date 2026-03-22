@@ -25,7 +25,7 @@
             <el-option
               v-for="dept in deptList"
               :key="dept.id"
-              :label="dept.name"
+              :label="dept.deptName"
               :value="dept.id"
             />
           </el-select>
@@ -41,7 +41,7 @@
             <el-option
               v-for="paper in paperList"
               :key="paper.id"
-              :label="paper.name"
+              :label="paper.paperName"
               :value="paper.id"
             />
           </el-select>
@@ -473,13 +473,13 @@ const getReportData = async () => {
 // 计算汇总统计
 const calculateSummary = (records: any[]) => {
   reportData.totalCount = records.length
-  reportData.passCount = records.filter(r => r.passStatus === 1).length
-  reportData.failCount = records.filter(r => r.passStatus !== 1).length
+  reportData.passCount = records.filter(r => r.passed === 1).length
+  reportData.failCount = records.filter(r => r.passed !== 1).length
   reportData.passRate = records.length > 0 
     ? ((reportData.passCount / records.length) * 100).toFixed(1) 
     : '0.0'
   
-  const totalScore = records.reduce((sum, r) => sum + (r.examScore || 0), 0)
+  const totalScore = records.reduce((sum, r) => sum + (r.userScore || 0), 0)
   reportData.avgScore = records.length > 0 
     ? (totalScore / records.length).toFixed(1) 
     : '0.0'
@@ -502,9 +502,9 @@ const calculatePaperScoreDistribution = (records: any[]) => {
       })
     }
     const paper = paperMap.get(paperId)
-    paper.scores.push(record.examScore || 0)
+    paper.scores.push(record.userScore || 0)
     paper.totalExams++
-    if (record.passStatus === 1) paper.passCount++
+    if (record.passed === 1) paper.passCount++
     paper.examRecords.push(record)
   })
   
@@ -540,7 +540,7 @@ const calculateDeptExamStats = (records: any[]) => {
   deptList.value.forEach(dept => {
     deptMap.set(dept.id, {
       deptId: dept.id,
-      deptName: dept.name,
+      deptName: dept.deptName,
       totalUsers: 0,
       examUsers: new Set(),
       totalExams: 0,
@@ -557,12 +557,12 @@ const calculateDeptExamStats = (records: any[]) => {
       const dept = deptMap.get(deptId)
       dept.examUsers.add(record.userId)
       dept.totalExams++
-      if (record.passStatus === 1) {
+      if (record.passed === 1) {
         dept.passCount++
       } else {
         dept.failCount++
       }
-      dept.totalScore += record.examScore || 0
+      dept.totalScore += record.userScore || 0
     }
   })
   

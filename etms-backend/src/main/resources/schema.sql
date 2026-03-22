@@ -419,6 +419,8 @@ CREATE TABLE exam_paper (
     total_score INT(11) NOT NULL COMMENT '总分',
     pass_score INT(11) DEFAULT 60 COMMENT '及格分数',
     exam_duration INT(11) NOT NULL COMMENT '考试时长(分钟)',
+    start_time DATETIME DEFAULT NULL COMMENT '考试开始时间',
+    end_time DATETIME DEFAULT NULL COMMENT '考试结束时间',
     question_count INT(11) NOT NULL COMMENT '题目数量',
     question_config TEXT DEFAULT NULL COMMENT '题目配置(JSON)',
     shuffle_option TINYINT(1) DEFAULT 1 COMMENT '是否打乱选项',

@@ -7,6 +7,7 @@ import com.etms.dto.UserDTO;
 import com.etms.entity.User;
 import com.etms.vo.LoginVO;
 import com.etms.vo.UserVO;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
@@ -17,7 +18,7 @@ public interface UserService extends IService<User> {
     /**
      * 用户登录
      */
-    LoginVO login(LoginDTO loginDTO);
+    LoginVO login(LoginDTO loginDTO, HttpServletRequest request);
     
     /**
      * 用户登出
@@ -56,8 +57,9 @@ public interface UserService extends IService<User> {
     
     /**
      * 重置密码
+     * @return 生成的新密码
      */
-    boolean resetPassword(Long userId);
+    String resetPassword(Long userId);
     
     /**
      * 修改状态

@@ -9,9 +9,13 @@ import com.etms.dto.UserDTO;
 import com.etms.entity.Role;
 import com.etms.entity.User;
 import com.etms.entity.UserRole;
+import com.etms.entity.Dept;
+import com.etms.exception.BusinessException;
 import com.etms.mapper.RoleMapper;
 import com.etms.mapper.UserMapper;
 import com.etms.mapper.UserRoleMapper;
+import com.etms.mapper.DeptMapper;
+import com.etms.service.CaptchaService;
 import com.etms.service.UserService;
 import com.etms.vo.LoginVO;
 import com.etms.vo.RoleVO;
@@ -19,6 +23,7 @@ import com.etms.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,8 +32,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.security.SecureRandom;
 
 /**
  * 用户服务实现类
@@ -42,44 +51,151 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final PasswordEncoder passwordEncoder;
     private final RoleMapper roleMapper;
     private final UserRoleMapper userRoleMapper;
+    private final DeptMapper deptMapper;
+    private final CaptchaService captchaService;
+    
+    // 登录失败锁定配置
+    private static final int MAX_LOGIN_FAIL_COUNT = 5;
+    private static final int LOCK_DURATION_MINUTES = 30;
     
     @Override
-    public LoginVO login(LoginDTO loginDTO) {
-        // 认证
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword())
-        );
-        
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        
-        // 生成token
-        String token = jwtTokenProvider.generateToken(authentication);
+    public LoginVO login(LoginDTO loginDTO, HttpServletRequest request) {
+        // 验证验证码
+        if (!captchaService.validateCaptcha(loginDTO.getCaptchaKey(), loginDTO.getCaptcha())) {
+            throw new BusinessException("验证码错误或已过期");
+        }
         
         // 获取用户信息
         User user = baseMapper.selectByUsername(loginDTO.getUsername());
-        
-        // 添加用户不存在的检查
         if (user == null) {
-            throw new RuntimeException("用户不存在");
+            throw new BusinessException("用户名或密码错误");
         }
         
-        // 获取角色和权限
-        List<String> roles = baseMapper.selectRolesByUserId(user.getId());
-        List<String> permissions = baseMapper.selectPermissionsByUserId(user.getId());
+        // 检查账户是否被锁定
+        if (user.getLockTime() != null && user.getLockTime().isAfter(LocalDateTime.now())) {
+            long remainingMinutes = java.time.Duration.between(
+                LocalDateTime.now(), user.getLockTime()
+            ).toMinutes();
+            throw new BusinessException("账户已锁定，请在" + remainingMinutes + "分钟后重试");
+        }
         
-        // 构建返回对象
-        LoginVO loginVO = new LoginVO();
-        loginVO.setAccessToken(token);
-        loginVO.setExpiresIn(86400L);
-        loginVO.setUserId(user.getId());
-        loginVO.setUsername(user.getUsername());
-        loginVO.setRealName(user.getRealName());
-        loginVO.setAvatar(user.getAvatar());
-        loginVO.setDeptName(user.getDeptName());
-        loginVO.setRoles(roles);
-        loginVO.setPermissions(permissions);
+        // 检查账户状态
+        if (user.getStatus() == null || user.getStatus() != 1) {
+            throw new BusinessException("账户已被禁用");
+        }
         
-        return loginVO;
+        try {
+            // 认证
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword())
+            );
+            
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            
+            // 登录成功，重置锁定计数和锁定时间
+            resetLoginFailCount(user.getId());
+            
+            // 更新登录IP和登录时间
+            updateLoginInfo(user.getId(), getClientIp(request));
+            
+            // 生成token
+            String token = jwtTokenProvider.generateToken(authentication);
+            
+            // 获取角色和权限
+            List<String> roles = baseMapper.selectRolesByUserId(user.getId());
+            List<String> permissions = baseMapper.selectPermissionsByUserId(user.getId());
+            
+            // 构建返回对象
+            LoginVO loginVO = new LoginVO();
+            loginVO.setAccessToken(token);
+            loginVO.setExpiresIn(86400L);
+            loginVO.setUserId(user.getId());
+            loginVO.setUsername(user.getUsername());
+            loginVO.setRealName(user.getRealName());
+            loginVO.setAvatar(user.getAvatar());
+            loginVO.setDeptName(user.getDeptName());
+            loginVO.setRoles(roles);
+            loginVO.setPermissions(permissions);
+            
+            return loginVO;
+            
+        } catch (BadCredentialsException e) {
+            // 登录失败，增加失败计数
+            handleLoginFail(user);
+            throw new BusinessException("用户名或密码错误");
+        } catch (Exception e) {
+            if (e instanceof BusinessException) {
+                throw e;
+            }
+            throw new BusinessException("登录失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 重置登录失败计数
+     */
+    private void resetLoginFailCount(Long userId) {
+        User updateUser = new User();
+        updateUser.setId(userId);
+        updateUser.setLockCount(0);
+        updateUser.setLockTime(null);
+        baseMapper.updateById(updateUser);
+    }
+    
+    /**
+     * 处理登录失败
+     */
+    private void handleLoginFail(User user) {
+        int failCount = (user.getLockCount() == null ? 0 : user.getLockCount()) + 1;
+        
+        User updateUser = new User();
+        updateUser.setId(user.getId());
+        updateUser.setLockCount(failCount);
+        
+        // 超过最大失败次数，锁定账户
+        if (failCount >= MAX_LOGIN_FAIL_COUNT) {
+            updateUser.setLockTime(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
+        }
+        
+        baseMapper.updateById(updateUser);
+    }
+    
+    /**
+     * 更新登录信息
+     */
+    private void updateLoginInfo(Long userId, String loginIp) {
+        User updateUser = new User();
+        updateUser.setId(userId);
+        updateUser.setLoginIp(loginIp);
+        updateUser.setLoginTime(LocalDateTime.now());
+        baseMapper.updateById(updateUser);
+    }
+    
+    /**
+     * 获取客户端IP
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 对于多个代理的情况，第一个IP才是客户端真实IP
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
     
     @Override
@@ -142,7 +258,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
         }
         
+        // 批量查询部门名称
+        Map<Long, String> deptNameMap = new HashMap<>();
+        Set<Long> deptIds = userPage.getRecords().stream()
+                .map(User::getDeptId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (!deptIds.isEmpty()) {
+            List<Dept> depts = deptMapper.selectBatchIds(deptIds);
+            deptNameMap = depts.stream()
+                    .collect(Collectors.toMap(Dept::getId, Dept::getDeptName));
+        }
+        
         final Map<Long, List<RoleVO>> finalUserRoleMap = userRoleMap;
+        final Map<Long, String> finalDeptNameMap = deptNameMap;
         List<UserVO> voList = userPage.getRecords().stream().map(user -> {
             UserVO vo = new UserVO();
             BeanUtils.copyProperties(user, vo);
@@ -153,6 +282,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             List<RoleVO> roleVOs = finalUserRoleMap.get(user.getId());
             if (!CollectionUtils.isEmpty(roleVOs)) {
                 vo.setRoles(roleVOs);
+            }
+            
+            // 设置部门名称
+            if (user.getDeptId() != null) {
+                vo.setDeptName(finalDeptNameMap.get(user.getDeptId()));
             }
             
             return vo;
@@ -185,12 +319,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             new LambdaQueryWrapper<User>().eq(User::getUsername, userDTO.getUsername())
         );
         if (count > 0) {
-            throw new RuntimeException("用户名已存在");
+            throw new BusinessException("用户名已存在");
         }
         
         User user = new User();
         BeanUtils.copyProperties(userDTO, user);
-        user.setPassword(passwordEncoder.encode("123456")); // 默认密码
+        // 如果前端传了密码则使用前端密码，否则使用默认密码
+        String password = userDTO.getPassword();
+        if (password == null || password.trim().isEmpty()) {
+            password = "123456"; // 默认密码
+        }
+        user.setPassword(passwordEncoder.encode(password));
         user.setStatus(1);
         
         int result = baseMapper.insert(user);
@@ -213,7 +352,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .ne(User::getId, userDTO.getId())
         );
         if (count > 0) {
-            throw new RuntimeException("用户名已存在");
+            throw new BusinessException("用户名已存在");
         }
         
         User user = new User();
@@ -235,6 +374,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteUser(Long id) {
+        // 获取用户信息
+        User user = baseMapper.selectById(id);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
+        // 禁止删除admin账户
+        if ("admin".equals(user.getUsername())) {
+            throw new BusinessException("admin账户不能删除");
+        }
+        
         // 检查用户是否有相关数据
         // 可以根据实际业务添加更多检查，如：培训记录、考试记录、签到记录等
         Long userRoleCount = userRoleMapper.selectCount(
@@ -254,11 +404,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public boolean updatePassword(Long userId, String oldPassword, String newPassword) {
         User user = baseMapper.selectById(userId);
         if (user == null) {
-            throw new RuntimeException("用户不存在");
+            throw new BusinessException("用户不存在");
         }
         
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new RuntimeException("原密码错误");
+            throw new BusinessException("原密码错误");
         }
         
         User updateUser = new User();
@@ -270,12 +420,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean resetPassword(Long userId) {
+    public String resetPassword(Long userId) {
+        // 生成随机密码（8位，包含大小写字母和数字）
+        String newPassword = generateRandomPassword(8);
+        
         User updateUser = new User();
         updateUser.setId(userId);
-        updateUser.setPassword(passwordEncoder.encode("123456"));
+        updateUser.setPassword(passwordEncoder.encode(newPassword));
         
-        return baseMapper.updateById(updateUser) > 0;
+        baseMapper.updateById(updateUser);
+        return newPassword;
+    }
+    
+    /**
+     * 生成随机密码
+     * @param length 密码长度
+     * @return 随机密码
+     */
+    private String generateRandomPassword(int length) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
     
     @Override
@@ -290,6 +459,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean assignRoles(Long userId, List<Long> roleIds) {
+        // 先删除原有角色关联
+        baseMapper.deleteUserRoleByUserId(userId);
+        
         if (CollectionUtils.isEmpty(roleIds)) {
             return true;
         }

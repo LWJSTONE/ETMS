@@ -1,9 +1,11 @@
 package com.etms.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import java.time.LocalDateTime;
 
 /**
  * 试卷实体类
@@ -37,6 +39,14 @@ public class Paper extends BaseEntity {
     /** 考试时长(分钟) - 前端映射为duration */
     @JsonProperty("duration")
     private Integer examDuration;
+    
+    /** 考试开始时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime startTime;
+    
+    /** 考试结束时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime endTime;
     
     /** 题目数量 */
     private Integer questionCount;

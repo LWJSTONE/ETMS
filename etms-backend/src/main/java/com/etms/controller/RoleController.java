@@ -9,6 +9,7 @@ import com.etms.vo.RoleVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
@@ -56,6 +57,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "新增角色")
+    @PreAuthorize("hasAuthority('system:role:add')")
     @PostMapping
     public Result<Void> add(@Valid @RequestBody Role role) {
         roleService.addRole(role);
@@ -63,6 +65,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "更新角色")
+    @PreAuthorize("hasAuthority('system:role:edit')")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Role role) {
         role.setId(id);
@@ -71,6 +74,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "删除角色")
+    @PreAuthorize("hasAuthority('system:role:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         roleService.deleteRole(id);
@@ -78,6 +82,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "分配权限")
+    @PreAuthorize("hasAuthority('system:role:permission')")
     @PutMapping("/{id}/permissions")
     public Result<Void> assignPermissions(@PathVariable Long id, @Valid @RequestBody List<Long> permissionIds) {
         roleService.assignPermissions(id, permissionIds);

@@ -95,6 +95,17 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean publishPlan(Long id) {
+        // 获取当前培训计划状态
+        TrainingPlan existingPlan = baseMapper.selectById(id);
+        if (existingPlan == null) {
+            throw new RuntimeException("培训计划不存在");
+        }
+        
+        // 校验状态流转：只能从草稿(0)状态发布
+        if (existingPlan.getStatus() != 0) {
+            throw new RuntimeException("当前状态不允许发布，只有草稿状态可以发布");
+        }
+        
         TrainingPlan plan = new TrainingPlan();
         plan.setId(id);
         plan.setStatus(1); // 已发布
@@ -104,6 +115,17 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean archivePlan(Long id) {
+        // 获取当前培训计划状态
+        TrainingPlan existingPlan = baseMapper.selectById(id);
+        if (existingPlan == null) {
+            throw new RuntimeException("培训计划不存在");
+        }
+        
+        // 校验状态流转：只能从已结束(3)状态归档
+        if (existingPlan.getStatus() != 3) {
+            throw new RuntimeException("当前状态不允许归档，只有已结束状态可以归档");
+        }
+        
         TrainingPlan plan = new TrainingPlan();
         plan.setId(id);
         plan.setStatus(4); // 已归档

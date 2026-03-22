@@ -8,6 +8,7 @@ import com.etms.service.DeptService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
@@ -47,6 +48,7 @@ public class DeptController {
     }
     
     @ApiOperation(value = "新增部门")
+    @PreAuthorize("hasAuthority('system:dept:add')")
     @PostMapping
     public Result<Void> add(@Valid @RequestBody Dept dept) {
         deptService.addDept(dept);
@@ -54,6 +56,7 @@ public class DeptController {
     }
     
     @ApiOperation(value = "更新部门")
+    @PreAuthorize("hasAuthority('system:dept:edit')")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Dept dept) {
         dept.setId(id);
@@ -62,6 +65,7 @@ public class DeptController {
     }
     
     @ApiOperation(value = "删除部门")
+    @PreAuthorize("hasAuthority('system:dept:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         deptService.deleteDept(id);

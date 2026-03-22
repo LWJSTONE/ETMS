@@ -8,8 +8,8 @@ import com.etms.entity.RolePermission;
 import com.etms.entity.UserRole;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.RoleMapper;
-import com.etms.mapper.RolePermissionMapper;
 import com.etms.mapper.UserRoleMapper;
+import com.etms.service.RolePermissionService;
 import com.etms.service.RoleService;
 import com.etms.vo.RoleVO;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements RoleService {
 
-    private final RolePermissionMapper rolePermissionMapper;
+    private final RolePermissionService rolePermissionService;
     private final UserRoleMapper userRoleMapper;
 
     @Override
@@ -48,7 +48,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             RoleVO vo = new RoleVO();
             BeanUtils.copyProperties(role, vo);
             // 查询权限数量
-            vo.setPermissionCount(rolePermissionMapper.selectCount(
+            vo.setPermissionCount(rolePermissionService.count(
                 new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, role.getId())
             ));
             return vo;
@@ -95,6 +95,16 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             throw new BusinessException("角色名已存在");
         }
 
+        // 检查角色编码是否重复
+        if (role.getRoleCode() != null) {
+            Long codeCount = baseMapper.selectCount(
+                new LambdaQueryWrapper<Role>().eq(Role::getRoleCode, role.getRoleCode())
+            );
+            if (codeCount > 0) {
+                throw new BusinessException("角色编码已存在");
+            }
+        }
+
         role.setStatus(1);
         baseMapper.insert(role);
     }
@@ -112,6 +122,18 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             throw new BusinessException("角色名已存在");
         }
 
+        // 检查角色编码是否重复（排除自身）
+        if (role.getRoleCode() != null) {
+            Long codeCount = baseMapper.selectCount(
+                new LambdaQueryWrapper<Role>()
+                    .eq(Role::getRoleCode, role.getRoleCode())
+                    .ne(Role::getId, role.getId())
+            );
+            if (codeCount > 0) {
+                throw new BusinessException("角色编码已存在");
+            }
+        }
+
         baseMapper.updateById(role);
     }
 
@@ -127,7 +149,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         }
 
         // 删除角色权限关联
-        rolePermissionMapper.delete(
+        rolePermissionService.remove(
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, id)
         );
         // 删除角色
@@ -138,7 +160,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Transactional(rollbackFor = Exception.class)
     public void assignPermissions(Long roleId, List<Long> permissionIds) {
         // 先删除原有关联
-        rolePermissionMapper.delete(
+        rolePermissionService.remove(
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, roleId)
         );
 
@@ -152,15 +174,13 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
                 rolePermissions.add(rp);
             }
             // 使用 MyBatis-Plus 的批量插入方法
-            for (RolePermission rp : rolePermissions) {
-                rolePermissionMapper.insert(rp);
-            }
+            rolePermissionService.saveBatch(rolePermissions);
         }
     }
 
     @Override
     public List<Long> getPermissionIdsByRoleId(Long roleId) {
-        List<RolePermission> list = rolePermissionMapper.selectList(
+        List<RolePermission> list = rolePermissionService.list(
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, roleId)
         );
         return list.stream()

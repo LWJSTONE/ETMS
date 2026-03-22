@@ -110,15 +110,15 @@
         <el-table-column prop="paperName" label="试卷名称" min-width="200" show-overflow-tooltip />
         <el-table-column prop="examScore" label="得分" width="100" align="center">
           <template #default="{ row }">
-            <span :class="getScoreClass(row)">{{ row.examScore }}</span>
+            <span :class="getScoreClass(row)">{{ row.userScore }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="totalScore" label="满分" width="80" align="center" />
         <el-table-column prop="passScore" label="及格分" width="80" align="center" />
-        <el-table-column prop="passStatus" label="是否通过" width="100" align="center">
+        <el-table-column prop="passed" label="是否通过" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.passStatus === 1 ? 'success' : 'danger'" effect="dark">
-              {{ row.passStatus === 1 ? '通过' : '未通过' }}
+            <el-tag :type="row.passed === 1 ? 'success' : 'danger'" effect="dark">
+              {{ row.passed === 1 ? '通过' : '未通过' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -132,7 +132,7 @@
         </el-table-column>
         <el-table-column prop="examTime" label="考试时间" width="180" align="center">
           <template #default="{ row }">
-            {{ formatDateTime(row.examTime) }}
+            {{ formatDateTime(row.submitTime) }}
           </template>
         </el-table-column>
         <el-table-column prop="durationUsed" label="用时" width="100" align="center">
@@ -281,7 +281,7 @@ const stats = reactive({
 // 搜索表单
 const searchForm = reactive({
   paperName: '',
-  passStatus: null as number | null,
+  passed: null as number | null,
   examTimeRange: [] as string[]
 })
 
@@ -307,7 +307,7 @@ const getList = async () => {
       current: pagination.current,
       size: pagination.size,
       paperName: searchForm.paperName || undefined,
-      passStatus: searchForm.passStatus
+      passed: searchForm.passed
     }
     if (searchForm.examTimeRange && searchForm.examTimeRange.length === 2) {
       params.examStartTime = searchForm.examTimeRange[0]
@@ -333,10 +333,10 @@ const calculateStats = () => {
   stats.examCount = total
   
   if (tableData.value.length > 0) {
-    const passCount = tableData.value.filter(item => item.passStatus === 1).length
+    const passCount = tableData.value.filter(item => item.passed === 1).length
     stats.passCount = passCount
     stats.passRate = total > 0 ? ((passCount / tableData.value.length) * 100).toFixed(1) : '0'
-    const totalScore = tableData.value.reduce((sum, item) => sum + (item.examScore || 0), 0)
+    const totalScore = tableData.value.reduce((sum, item) => sum + (item.userScore || 0), 0)
     stats.avgScore = (totalScore / tableData.value.length).toFixed(1)
   } else {
     stats.passCount = 0
@@ -355,7 +355,7 @@ const handleSearch = () => {
 const handleReset = () => {
   Object.assign(searchForm, {
     paperName: '',
-    passStatus: null,
+    passed: null,
     examTimeRange: []
   })
   handleSearch()
@@ -398,7 +398,7 @@ const formatDuration = (minutes: number) => {
 
 // 获取分数样式类
 const getScoreClass = (row: any) => {
-  if (row.passStatus === 1) return 'score-pass'
+  if (row.passed === 1) return 'score-pass'
   return 'score-fail'
 }
 

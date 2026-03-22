@@ -135,6 +135,11 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
             category.setStatus(1);
         }
         
+        // 设置默认分类类型（1课程分类）
+        if (category.getCategoryType() == null) {
+            category.setCategoryType(1);
+        }
+        
         baseMapper.insert(category);
     }
     

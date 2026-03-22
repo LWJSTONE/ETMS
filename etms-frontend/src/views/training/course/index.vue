@@ -185,9 +185,9 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="课程描述" prop="description">
+        <el-form-item label="课程描述" prop="courseDesc">
           <el-input
-            v-model="form.description"
+            v-model="form.courseDesc"
             type="textarea"
             :rows="4"
             placeholder="请输入课程描述"
@@ -279,7 +279,7 @@ const form = reactive({
   categoryId: null as number | null,
   courseType: null as number | null,
   coverImage: '',
-  description: '',
+  courseDesc: '',  // 修复：与后端字段名一致
   difficulty: null as number | null,
   duration: 0,
   credit: 0
@@ -393,7 +393,7 @@ const resetForm = () => {
     categoryId: null,
     courseType: null,
     coverImage: '',
-    description: '',
+    courseDesc: '',  // 修复：与后端字段名一致
     difficulty: null,
     duration: 0,
     credit: 0
@@ -418,7 +418,7 @@ const handleEdit = async (row: any) => {
     categoryId: row.categoryId,
     courseType: row.courseType,
     coverImage: row.coverImage,
-    description: row.description,
+    courseDesc: row.courseDesc || row.description,  // 修复：兼容两种字段名
     difficulty: row.difficulty,
     duration: row.duration,
     credit: row.credit

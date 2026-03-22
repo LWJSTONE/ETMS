@@ -457,9 +457,11 @@ const handleSignSubmit = async () => {
   signLoading.value = true
   try {
     // signType参数传递给后端表示签到方式
+    // signCategory: 1-签到, 2-签退
     await signIn({
       planId: signForm.planId!,
       signType: signForm.signMethod,
+      signCategory: isSignOut.value ? 2 : 1,
       location: signForm.location
     })
     ElMessage.success(isSignOut.value ? '签退成功' : '签到成功')

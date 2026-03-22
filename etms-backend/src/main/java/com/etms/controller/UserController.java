@@ -10,11 +10,15 @@ import com.etms.vo.UserVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 用户控制器
@@ -77,15 +81,40 @@ public class UserController {
             @PathVariable Long id,
             @RequestParam String oldPassword,
             @RequestParam String newPassword) {
+        // 权限校验：只能修改自己的密码，或需要管理员权限
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Result.error("未登录");
+        }
+        
+        // 获取当前登录用户名
+        String currentUsername = authentication.getName();
+        
+        // 检查是否是管理员
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(auth -> "ROLE_ADMIN".equals(auth) || "admin".equals(auth));
+        
+        // 获取目标用户信息
+        User targetUser = userService.getById(id);
+        if (targetUser == null) {
+            return Result.error("用户不存在");
+        }
+        
+        // 非管理员只能修改自己的密码
+        if (!isAdmin && !currentUsername.equals(targetUser.getUsername())) {
+            return Result.error("无权限修改他人密码");
+        }
+        
         userService.updatePassword(id, oldPassword, newPassword);
         return Result.success();
     }
     
     @ApiOperation(value = "重置密码")
     @PutMapping("/{id}/reset-password")
-    public Result<Void> resetPassword(@PathVariable Long id) {
-        userService.resetPassword(id);
-        return Result.success();
+    public Result<String> resetPassword(@PathVariable Long id) {
+        String newPassword = userService.resetPassword(id);
+        return Result.success(newPassword);
     }
     
     @ApiOperation(value = "修改状态")

@@ -128,6 +128,17 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean submitAudit(Long id) {
+        // 获取当前课程状态
+        Course existingCourse = baseMapper.selectById(id);
+        if (existingCourse == null) {
+            throw new RuntimeException("课程不存在");
+        }
+        
+        // 校验状态流转：只能从草稿(0)或审核驳回(4)状态提交审核
+        if (existingCourse.getStatus() != 0 && existingCourse.getStatus() != 4) {
+            throw new RuntimeException("当前状态不允许提交审核，只有草稿或审核驳回状态可以提交");
+        }
+        
         Course course = new Course();
         course.setId(id);
         course.setStatus(1); // 待审核
@@ -137,6 +148,22 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean auditCourse(Long id, Integer status, String auditRemark) {
+        // 获取当前课程状态
+        Course existingCourse = baseMapper.selectById(id);
+        if (existingCourse == null) {
+            throw new RuntimeException("课程不存在");
+        }
+        
+        // 校验状态流转：只能审核待审核(1)状态的课程
+        if (existingCourse.getStatus() != 1) {
+            throw new RuntimeException("当前状态不允许审核，只有待审核状态可以审核");
+        }
+        
+        // 校验审核状态值：审核通过(2)或审核驳回(4)
+        if (status != 2 && status != 4) {
+            throw new RuntimeException("审核状态无效，审核通过状态为2，审核驳回状态为4");
+        }
+        
         Course course = new Course();
         course.setId(id);
         course.setStatus(status);
@@ -149,6 +176,18 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean publishCourse(Long id) {
+        // 获取当前课程状态
+        Course existingCourse = baseMapper.selectById(id);
+        if (existingCourse == null) {
+            throw new RuntimeException("课程不存在");
+        }
+        
+        // 校验状态流转：审核通过(2)的课程就是已上架状态，这里可以不做额外处理
+        // 如果是从已下架(3)状态重新上架，需要检查
+        if (existingCourse.getStatus() != 2 && existingCourse.getStatus() != 3) {
+            throw new RuntimeException("当前状态不允许上架操作");
+        }
+        
         Course course = new Course();
         course.setId(id);
         course.setStatus(2); // 已上架
@@ -158,6 +197,17 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean unpublishCourse(Long id) {
+        // 获取当前课程状态
+        Course existingCourse = baseMapper.selectById(id);
+        if (existingCourse == null) {
+            throw new RuntimeException("课程不存在");
+        }
+        
+        // 校验状态流转：只能从已上架(2)状态下架
+        if (existingCourse.getStatus() != 2) {
+            throw new RuntimeException("当前状态不允许下架操作，只有已上架状态可以下架");
+        }
+        
         Course course = new Course();
         course.setId(id);
         course.setStatus(3); // 已下架

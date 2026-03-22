@@ -11,9 +11,10 @@
         </el-form-item>
         <el-form-item label="考试状态">
           <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
-            <el-option label="答题中" :value="0" />
-            <el-option label="已提交" :value="1" />
-            <el-option label="已批改" :value="2" />
+            <el-option label="未开始" :value="0" />
+            <el-option label="进行中" :value="1" />
+            <el-option label="已完成" :value="2" />
+            <el-option label="已超时" :value="3" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -46,7 +47,7 @@
         <el-table-column prop="totalScore" label="得分" width="100" align="center">
           <template #default="{ row }">
             <span v-if="row.status === 2">{{ row.totalScore ?? '-' }}</span>
-            <span v-else class="text-gray">待批改</span>
+            <span v-else class="text-gray">待完成</span>
           </template>
         </el-table-column>
         <el-table-column prop="isPass" label="是否通过" width="100" align="center">
@@ -234,9 +235,10 @@ const detailData = ref<ExamRecord>({} as ExamRecord)
 // 获取状态类型
 const getStatusType = (status: number) => {
   const types: Record<number, string> = {
-    0: 'warning',
-    1: 'info',
-    2: 'success'
+    0: 'info',
+    1: 'warning',
+    2: 'success',
+    3: 'danger'
   }
   return types[status] || 'info'
 }
@@ -244,9 +246,10 @@ const getStatusType = (status: number) => {
 // 获取状态名称
 const getStatusName = (status: number) => {
   const names: Record<number, string> = {
-    0: '答题中',
-    1: '已提交',
-    2: '已批改'
+    0: '未开始',
+    1: '进行中',
+    2: '已完成',
+    3: '已超时'
   }
   return names[status] || '未知'
 }

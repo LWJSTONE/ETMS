@@ -3,6 +3,7 @@ package com.etms.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.entity.ExamRecord;
 import com.etms.vo.ExamRecordVO;
+import com.etms.vo.ExamResultVO;
 
 /**
  * 考试记录服务接口
@@ -33,4 +34,19 @@ public interface ExamRecordService {
      * 获取当前用户的考试记录
      */
     Page<ExamRecordVO> pageMyExamRecords(Page<ExamRecord> page, Integer status);
+    
+    /**
+     * 分页查询成绩列表
+     */
+    Page<ExamResultVO> pageResults(Long current, Long size, Long paperId, Long userId, Integer passed, String userName, String paperName, String startTime, String endTime);
+    
+    /**
+     * 获取我的成绩
+     */
+    Page<ExamResultVO> getMyResults(Long current, Long size, Integer passed);
+    
+    /**
+     * 获取成绩详情
+     */
+    ExamResultVO getResultDetail(Long id);
 }

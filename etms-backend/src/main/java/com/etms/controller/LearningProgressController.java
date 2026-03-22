@@ -1,0 +1,76 @@
+package com.etms.controller;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.etms.common.PageResult;
+import com.etms.common.Result;
+import com.etms.entity.UserPlan;
+import com.etms.service.LearningProgressService;
+import com.etms.vo.LearningProgressVO;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.Map;
+
+/**
+ * 学习进度控制器
+ */
+@Api(tags = "学习进度管理")
+@RestController
+@RequestMapping("/training/progress")
+@RequiredArgsConstructor
+@Validated
+public class LearningProgressController {
+    
+    private final LearningProgressService learningProgressService;
+    
+    @ApiOperation(value = "分页查询学习进度列表")
+    @GetMapping
+    public Result<PageResult<LearningProgressVO>> page(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(required = false) Long planId,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String userName,
+            @RequestParam(required = false) String planName) {
+        Page<LearningProgressVO> page = learningProgressService.pageProgress(current, size, planId, userId, status, userName, planName);
+        PageResult<LearningProgressVO> pageResult = new PageResult<>(
+                page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize()
+        );
+        return Result.success(pageResult);
+    }
+    
+    @ApiOperation(value = "获取我的学习进度")
+    @GetMapping("/my")
+    public Result<PageResult<LearningProgressVO>> myProgress(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(required = false) Integer status) {
+        Page<LearningProgressVO> page = learningProgressService.getMyProgress(current, size, status);
+        PageResult<LearningProgressVO> pageResult = new PageResult<>(
+                page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize()
+        );
+        return Result.success(pageResult);
+    }
+    
+    @ApiOperation(value = "更新学习进度")
+    @PutMapping
+    public Result<Void> updateProgress(@Valid @RequestBody Map<String, Object> params) {
+        Long planId = Long.valueOf(params.get("planId").toString());
+        Long courseId = Long.valueOf(params.get("courseId").toString());
+        Integer progress = Integer.valueOf(params.get("progress").toString());
+        learningProgressService.updateProgress(planId, courseId, progress);
+        return Result.success();
+    }
+    
+    @ApiOperation(value = "获取学习进度详情")
+    @GetMapping("/{id}")
+    public Result<LearningProgressVO> get(@PathVariable Long id) {
+        LearningProgressVO vo = learningProgressService.getProgressDetail(id);
+        return Result.success(vo);
+    }
+}
