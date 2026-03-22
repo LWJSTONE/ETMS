@@ -4,12 +4,16 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.AttendanceRecord;
+import com.etms.entity.User;
 import com.etms.mapper.AttendanceRecordMapper;
+import com.etms.mapper.UserMapper;
 import com.etms.service.AttendanceRecordService;
 import com.etms.vo.AttendanceRecordVO;
 import com.etms.vo.AttendanceStatsVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +25,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMapper, AttendanceRecord> implements AttendanceRecordService {
+    
+    private final UserMapper userMapper;
     
     @Override
     public Page<AttendanceRecordVO> pageRecords(Page<AttendanceRecord> page, Long planId, Long userId, Integer status, Integer auditStatus) {
@@ -59,7 +65,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setSignTime(LocalDateTime.now());
         record.setStatus(1); // 正常
         record.setCreateTime(LocalDateTime.now());
-        // record.setUserId(getCurrentUserId());
+        record.setUserId(getCurrentUserId());
         
         return baseMapper.insert(record) > 0;
     }
@@ -73,7 +79,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setStatus(5); // 补签
         record.setAuditStatus(0); // 待审核
         record.setCreateTime(LocalDateTime.now());
-        // record.setUserId(getCurrentUserId());
+        record.setUserId(getCurrentUserId());
         
         // 解析签到时间
         if (signTime != null && !signTime.isEmpty()) {
@@ -164,5 +170,19 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             case 5: return "补签";
             default: return "未知";
         }
+    }
+    
+    /**
+     * 获取当前登录用户ID
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        // 从认证信息中获取用户名，然后查询用户ID
+        String username = authentication.getName();
+        User user = userMapper.selectByUsername(username);
+        return user != null ? user.getId() : null;
     }
 }
