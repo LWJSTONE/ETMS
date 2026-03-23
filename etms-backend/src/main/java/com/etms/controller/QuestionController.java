@@ -9,6 +9,7 @@ import com.etms.vo.QuestionVO;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
@@ -28,6 +29,7 @@ public class QuestionController {
     
     @ApiOperation(value = "分页查询题目列表")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<PageResult<QuestionVO>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
@@ -46,6 +48,7 @@ public class QuestionController {
     
     @ApiOperation(value = "获取题目详情")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<QuestionVO> get(@PathVariable Long id) {
         QuestionVO vo = questionService.getQuestionDetail(id);
         return Result.success(vo);
@@ -53,6 +56,7 @@ public class QuestionController {
     
     @ApiOperation(value = "新增题目")
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> add(@Valid @RequestBody Question question) {
         questionService.addQuestion(question);
         return Result.success();
@@ -60,6 +64,7 @@ public class QuestionController {
     
     @ApiOperation(value = "更新题目")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Question question) {
         question.setId(id);
         questionService.updateQuestion(question);
@@ -68,6 +73,7 @@ public class QuestionController {
     
     @ApiOperation(value = "删除题目")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> delete(@PathVariable Long id) {
         questionService.deleteQuestion(id);
         return Result.success();
@@ -75,6 +81,7 @@ public class QuestionController {
     
     @ApiOperation(value = "随机抽取题目")
     @GetMapping("/random")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<List<QuestionVO>> randomQuestions(
             @RequestParam(required = false) Integer questionType,
             @RequestParam(required = false) Integer difficulty,

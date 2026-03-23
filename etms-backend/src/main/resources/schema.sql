@@ -715,8 +715,13 @@ CREATE TABLE sys_job_log (
 -- =============================================
 
 -- 修复1：为签到记录表添加防重复约束（防止同一天重复签到）
--- 注意：由于已存在数据，先创建触发器或存储过程处理，这里先添加索引
-ALTER TABLE attendance_record ADD INDEX idx_user_plan_date_category (user_id, plan_id, sign_category, DATE(sign_time));
+-- 注意：修复索引中使用函数的问题，使用虚拟列替代
+-- 先添加虚拟列（MySQL 5.7+支持）
+ALTER TABLE attendance_record ADD COLUMN sign_date DATE GENERATED ALWAYS AS (DATE(sign_time)) STORED COMMENT '签到日期（虚拟列）';
+-- 在虚拟列上创建索引
+ALTER TABLE attendance_record ADD INDEX idx_user_plan_date_category (user_id, plan_id, sign_category, sign_date);
+-- 添加唯一约束防止重复签到
+ALTER TABLE attendance_record ADD UNIQUE INDEX uk_user_plan_category_date (user_id, plan_id, sign_category, sign_date);
 
 -- 修复2：为补签申请表添加防重复约束
 ALTER TABLE attendance_apply ADD UNIQUE INDEX uk_user_plan_date (user_id, plan_id, sign_date);
@@ -747,3 +752,60 @@ ALTER TABLE sys_operation_log MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT
 ALTER TABLE sys_login_log MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT '登录IP';
 ALTER TABLE attendance_record MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT '签到IP地址';
 ALTER TABLE sys_user MODIFY login_ip VARCHAR(64) DEFAULT NULL COMMENT '最后登录IP';
+
+-- =============================================
+-- 修复11：为核心业务表添加逻辑删除字段
+-- 注意：MyBatis-Plus配置了逻辑删除字段deleted
+-- =============================================
+
+-- 为用户表添加逻辑删除字段
+ALTER TABLE sys_user ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_user ADD INDEX idx_deleted (deleted);
+
+-- 为部门表添加逻辑删除字段
+ALTER TABLE sys_dept ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_dept ADD INDEX idx_deleted (deleted);
+
+-- 为岗位表添加逻辑删除字段
+ALTER TABLE sys_position ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_position ADD INDEX idx_deleted (deleted);
+
+-- 为角色表添加逻辑删除字段
+ALTER TABLE sys_role ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_role ADD INDEX idx_deleted (deleted);
+
+-- 为权限表添加逻辑删除字段
+ALTER TABLE sys_permission ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_permission ADD INDEX idx_deleted (deleted);
+
+-- 为课程表添加逻辑删除字段
+ALTER TABLE training_course ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE training_course ADD INDEX idx_deleted (deleted);
+
+-- 为培训计划表添加逻辑删除字段
+ALTER TABLE training_plan ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE training_plan ADD INDEX idx_deleted (deleted);
+
+-- 为分类表添加逻辑删除字段
+ALTER TABLE training_category ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE training_category ADD INDEX idx_deleted (deleted);
+
+-- 为题目表添加逻辑删除字段
+ALTER TABLE exam_question ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE exam_question ADD INDEX idx_deleted (deleted);
+
+-- 为试卷表添加逻辑删除字段
+ALTER TABLE exam_paper ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE exam_paper ADD INDEX idx_deleted (deleted);
+
+-- 为字典类型表添加逻辑删除字段
+ALTER TABLE sys_dict_type ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_dict_type ADD INDEX idx_deleted (deleted);
+
+-- 为字典数据表添加逻辑删除字段
+ALTER TABLE sys_dict_data ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_dict_data ADD INDEX idx_deleted (deleted);
+
+-- 为系统配置表添加逻辑删除字段
+ALTER TABLE sys_config ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_config ADD INDEX idx_deleted (deleted);

@@ -4,11 +4,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.ExamRecord;
+import com.etms.exception.BusinessException;
 import com.etms.service.ExamRecordService;
 import com.etms.vo.ExamRecordVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +33,7 @@ public class ExamRecordController {
     
     @ApiOperation(value = "分页查询考试记录")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<PageResult<ExamRecordVO>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
@@ -49,6 +52,7 @@ public class ExamRecordController {
     
     @ApiOperation(value = "获取考试记录详情")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<ExamRecordVO> get(@PathVariable Long id) {
         ExamRecordVO vo = examRecordService.getExamRecordDetail(id);
         return Result.success(vo);
@@ -103,6 +107,7 @@ public class ExamRecordController {
     
     @ApiOperation(value = "导出考试记录")
     @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public void export(
             @RequestParam(required = false) Long paperId,
             @RequestParam(required = false) Long userId,
@@ -120,7 +125,7 @@ public class ExamRecordController {
             // 导出数据
             examRecordService.exportRecords(paperId, userId, status, userName, paperName, response.getOutputStream());
         } catch (Exception e) {
-            throw new RuntimeException("导出失败", e);
+            throw new BusinessException("导出失败: " + e.getMessage());
         }
     }
 }

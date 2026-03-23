@@ -9,9 +9,9 @@ spring:
   
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/etms?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/etms?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
@@ -34,9 +34,9 @@ spring:
       max-request-size: 100MB
   
   redis:
-    host: localhost
-    port: 6379
-    password: 
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
     database: 0
     timeout: 10000ms
     lettuce:
@@ -60,7 +60,7 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 jwt:
-  secret: etms-jwt-secret-key-2026-enterprise-training-management-system
+  secret: ${JWT_SECRET:etms-jwt-secret-key-2026-enterprise-training-management-system}
   expiration: 86400000
   header: Authorization
   prefix: Bearer

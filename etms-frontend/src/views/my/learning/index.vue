@@ -118,6 +118,10 @@ const completing = ref(false)
 const progress = ref(0)
 const videoRef = ref<HTMLVideoElement>()
 
+// 防抖定时器
+let saveProgressTimer: ReturnType<typeof setTimeout> | null = null
+const DEBOUNCE_DELAY = 3000 // 3秒防抖延迟
+
 // 课程信息
 const courseInfo = reactive({
   id: 0,
@@ -183,7 +187,7 @@ const fetchCourseInfo = async () => {
   }
 }
 
-// 视频时间更新
+// 视频时间更新（带防抖）
 const handleVideoTimeUpdate = () => {
   if (videoRef.value) {
     const currentTime = videoRef.value.currentTime
@@ -192,7 +196,8 @@ const handleVideoTimeUpdate = () => {
       const currentProgress = Math.min(Math.round((currentTime / duration) * 100), 100)
       if (currentProgress > progress.value) {
         progress.value = currentProgress
-        saveProgress(currentProgress)
+        // 使用防抖保存进度
+        debouncedSaveProgress(currentProgress)
       }
     }
   }
@@ -201,17 +206,31 @@ const handleVideoTimeUpdate = () => {
 // 视频播放结束
 const handleVideoEnded = () => {
   progress.value = 100
-  saveProgress(100)
+  // 立即保存完成进度（不用防抖）
+  saveProgressImmediate(100)
   ElMessage.success('视频学习完成！')
 }
 
-// 保存进度
-const saveProgress = async (newProgress: number) => {
+// 防抖保存进度
+const debouncedSaveProgress = (newProgress: number) => {
+  // 清除之前的定时器
+  if (saveProgressTimer) {
+    clearTimeout(saveProgressTimer)
+  }
+  // 设置新的定时器
+  saveProgressTimer = setTimeout(() => {
+    saveProgressImmediate(newProgress)
+    saveProgressTimer = null
+  }, DEBOUNCE_DELAY)
+}
+
+// 立即保存进度
+const saveProgressImmediate = async (newProgress: number) => {
   if (!progressId.value) return
   
   try {
     await updateProgress({
-      planId: planId.value || courseInfo.planId || 0, // 优先使用路由参数，其次使用进度数据中的值
+      planId: planId.value || courseInfo.planId || 0,
       courseId: courseId.value || 0,
       progress: newProgress
     })
@@ -219,6 +238,9 @@ const saveProgress = async (newProgress: number) => {
     console.warn('保存进度失败:', error)
   }
 }
+
+// 保存进度（保留兼容性）
+const saveProgress = debouncedSaveProgress
 
 // 标记完成
 const handleCompleteLearning = async () => {
@@ -249,8 +271,14 @@ const handleBack = () => {
 
 // 页面离开时保存进度
 onUnmounted(() => {
+  // 清除防抖定时器
+  if (saveProgressTimer) {
+    clearTimeout(saveProgressTimer)
+    saveProgressTimer = null
+  }
+  // 立即保存当前进度
   if (progress.value > 0 && progressId.value) {
-    saveProgress(progress.value)
+    saveProgressImmediate(progress.value)
   }
 })
 

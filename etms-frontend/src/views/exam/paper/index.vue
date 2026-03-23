@@ -243,9 +243,9 @@ const userStore = useUserStore()
 // 权限检查函数
 const hasPermission = (permission: string): boolean => {
   const permissions = userStore.userInfo?.permissions || []
-  const roles = userStore.userInfo?.roles || []
-  // 管理员角色拥有所有权限
-  if (roles.includes('admin') || roles.includes('ADMIN')) return true
+  const roleNames = userStore.userInfo?.roleNames || []
+  // 管理员角色拥有所有权限（检查角色名称）
+  if (roleNames.some(name => name === '超级管理员' || name === '管理员' || name === 'admin' || name === 'ADMIN')) return true
   return permissions.includes(permission)
 }
 

@@ -107,6 +107,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         }
         
         // 检查是否已签到（同一培训计划当天同一签到类别不能重复）
+        // 修复：使用signTime字段判断重复签到，而不是createTime
         LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime tomorrow = today.plusDays(1);
         
@@ -115,7 +116,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
                 .eq(AttendanceRecord::getUserId, currentUserId)
                 .eq(AttendanceRecord::getPlanId, planId)
                 .eq(signCategory != null, AttendanceRecord::getSignCategory, signCategory)
-                .between(AttendanceRecord::getCreateTime, today, tomorrow)
+                .between(AttendanceRecord::getSignTime, today, tomorrow)
                 .ne(AttendanceRecord::getStatus, 4) // 排除缺勤状态
         );
         if (count > 0) {

@@ -60,6 +60,46 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                .eq(status != null, ExamRecord::getStatus, status)
                .orderByDesc(ExamRecord::getCreateTime);
         
+        // 修复分页问题：在查询前先获取符合条件的用户ID和试卷ID列表
+        List<Long> matchedUserIds = null;
+        List<Long> matchedPaperIds = null;
+        
+        if (userName != null && !userName.isEmpty()) {
+            // 查询匹配用户名的用户ID
+            matchedUserIds = userMapper.selectList(
+                new LambdaQueryWrapper<User>()
+                    .like(User::getRealName, userName)
+                    .or()
+                    .like(User::getUsername, userName)
+            ).stream().map(User::getId).collect(Collectors.toList());
+            
+            if (matchedUserIds.isEmpty()) {
+                // 没有匹配的用户，返回空结果
+                Page<ExamRecordVO> emptyPage = new Page<>();
+                emptyPage.setRecords(Collections.emptyList());
+                emptyPage.setTotal(0);
+                return emptyPage;
+            }
+            wrapper.in(ExamRecord::getUserId, matchedUserIds);
+        }
+        
+        if (paperName != null && !paperName.isEmpty()) {
+            // 查询匹配试卷名的试卷ID
+            matchedPaperIds = paperMapper.selectList(
+                new LambdaQueryWrapper<Paper>()
+                    .like(Paper::getPaperName, paperName)
+            ).stream().map(Paper::getId).collect(Collectors.toList());
+            
+            if (matchedPaperIds.isEmpty()) {
+                // 没有匹配的试卷，返回空结果
+                Page<ExamRecordVO> emptyPage = new Page<>();
+                emptyPage.setRecords(Collections.emptyList());
+                emptyPage.setTotal(0);
+                return emptyPage;
+            }
+            wrapper.in(ExamRecord::getPaperId, matchedPaperIds);
+        }
+        
         Page<ExamRecord> recordPage = baseMapper.selectPage(page, wrapper);
         
         // 转换为VO
@@ -85,27 +125,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 userMapper.selectBatchIds(userIds).stream()
                         .collect(Collectors.toMap(User::getId, u -> u));
         
-        // 过滤并转换
+        // 转换（不再需要内存过滤）
         List<ExamRecordVO> voList = recordPage.getRecords().stream()
-                .filter(record -> {
-                    // 过滤用户名
-                    if (userName != null && !userName.isEmpty()) {
-                        User user = userMap.get(record.getUserId());
-                        if (user == null || 
-                            (user.getRealName() == null || !user.getRealName().contains(userName)) &&
-                            (user.getUsername() == null || !user.getUsername().contains(userName))) {
-                            return false;
-                        }
-                    }
-                    // 过滤试卷名
-                    if (paperName != null && !paperName.isEmpty()) {
-                        Paper paper = paperMap.get(record.getPaperId());
-                        if (paper == null || paper.getPaperName() == null || !paper.getPaperName().contains(paperName)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                })
                 .map(record -> {
                     ExamRecordVO vo = new ExamRecordVO();
                     BeanUtils.copyProperties(record, vo);

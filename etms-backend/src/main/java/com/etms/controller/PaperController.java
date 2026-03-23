@@ -27,6 +27,7 @@ public class PaperController {
     
     @ApiOperation(value = "分页查询试卷列表")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<PageResult<?>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
