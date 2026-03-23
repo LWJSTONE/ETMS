@@ -93,7 +93,7 @@ public class ExamResultController {
         try {
             // 设置响应头
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            String fileName = URLEncoder.encode("成绩报表_" + System.currentTimeMillis() + ".xlsx", StandardCharsets.UTF_8);
+            String fileName = URLEncoder.encode("成绩报表_" + System.currentTimeMillis() + ".xlsx", StandardCharsets.UTF_8.name());
             response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
             
             // 导出数据

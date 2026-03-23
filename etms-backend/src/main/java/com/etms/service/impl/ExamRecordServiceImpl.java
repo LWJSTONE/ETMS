@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -74,11 +75,11 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 .distinct()
                 .collect(Collectors.toList());
         
-        Map<Long, Paper> paperMap = paperIds.isEmpty() ? Map.of() :
+        Map<Long, Paper> paperMap = paperIds.isEmpty() ? Collections.emptyMap() :
                 paperMapper.selectBatchIds(paperIds).stream()
                         .collect(Collectors.toMap(Paper::getId, p -> p));
         
-        Map<Long, User> userMap = userIds.isEmpty() ? Map.of() :
+        Map<Long, User> userMap = userIds.isEmpty() ? Collections.emptyMap() :
                 userMapper.selectBatchIds(userIds).stream()
                         .collect(Collectors.toMap(User::getId, u -> u));
         
@@ -308,7 +309,12 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             // 计算总分
             int totalScore = 0;
             for (Map<String, Object> answer : answerList) {
-                Long questionId = Long.valueOf(answer.get("questionId").toString());
+                // 空值检查
+                Object questionIdObj = answer.get("questionId");
+                if (questionIdObj == null) {
+                    continue;
+                }
+                Long questionId = Long.valueOf(questionIdObj.toString());
                 String userAnswer = answer.get("userAnswer") != null ? answer.get("userAnswer").toString().trim() : "";
                 
                 Question question = questionMap.get(questionId);

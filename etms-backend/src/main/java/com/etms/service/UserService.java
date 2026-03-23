@@ -58,9 +58,9 @@ public interface UserService extends IService<User> {
     
     /**
      * 重置密码
-     * @return 生成的新密码
+     * 密码将通过邮件或短信发送给用户，不再通过API返回
      */
-    String resetPassword(Long userId);
+    void resetPassword(Long userId);
     
     /**
      * 修改状态

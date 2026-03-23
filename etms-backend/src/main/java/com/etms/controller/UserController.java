@@ -113,9 +113,11 @@ public class UserController {
     
     @ApiOperation(value = "重置密码")
     @PutMapping("/{id}/reset-password")
-    public Result<String> resetPassword(@PathVariable Long id) {
-        String newPassword = userService.resetPassword(id);
-        return Result.success(newPassword);
+    public Result<Void> resetPassword(@PathVariable Long id) {
+        // 安全校验：密码不再通过API返回，而是通过邮件或短信发送给用户
+        // 或者返回一个临时密码token，用户通过该token设置新密码
+        userService.resetPassword(id);
+        return Result.success();
     }
     
     @ApiOperation(value = "修改状态")

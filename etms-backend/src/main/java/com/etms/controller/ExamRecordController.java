@@ -107,7 +107,7 @@ public class ExamRecordController {
             // 设置响应头
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("utf-8");
-            String fileName = URLEncoder.encode("考试记录_" + java.time.LocalDate.now(), StandardCharsets.UTF_8);
+            String fileName = URLEncoder.encode("考试记录_" + java.time.LocalDate.now(), StandardCharsets.UTF_8.name());
             response.setHeader("Content-Disposition", "attachment;filename=" + fileName + ".xlsx");
             
             // 导出数据

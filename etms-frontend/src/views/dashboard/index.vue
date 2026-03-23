@@ -151,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
@@ -187,6 +187,16 @@ const todos = ref<any[]>([])
 // 图表引用
 const progressChartRef = ref<HTMLElement>()
 const passRateChartRef = ref<HTMLElement>()
+
+// 图表实例
+let progressChart: echarts.ECharts | null = null
+let passRateChart: echarts.ECharts | null = null
+
+// resize 事件处理函数
+const handleResize = () => {
+  progressChart?.resize()
+  passRateChart?.resize()
+}
 
 // 获取统计数据
 const getStatistics = async () => {
@@ -243,12 +253,14 @@ onMounted(() => {
   getStatistics()
   initProgressChart()
   initPassRateChart()
+  // 添加 resize 事件监听
+  window.addEventListener('resize', handleResize)
 })
 
 // 初始化培训进度图表
 const initProgressChart = () => {
   if (!progressChartRef.value) return
-  const chart = echarts.init(progressChartRef.value)
+  progressChart = echarts.init(progressChartRef.value)
   
   const option = {
     tooltip: { trigger: 'axis' },
@@ -274,14 +286,13 @@ const initProgressChart = () => {
     ]
   }
   
-  chart.setOption(option)
-  window.addEventListener('resize', () => chart.resize())
+  progressChart.setOption(option)
 }
 
 // 初始化考试通过率图表
 const initPassRateChart = () => {
   if (!passRateChartRef.value) return
-  const chart = echarts.init(passRateChartRef.value)
+  passRateChart = echarts.init(passRateChartRef.value)
   
   const option = {
     tooltip: { trigger: 'item' },
@@ -309,9 +320,15 @@ const initPassRateChart = () => {
     ]
   }
   
-  chart.setOption(option)
-  window.addEventListener('resize', () => chart.resize())
+  passRateChart.setOption(option)
 }
+
+// 清理资源
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  progressChart?.dispose()
+  passRateChart?.dispose()
+})
 </script>
 
 <style lang="scss" scoped>

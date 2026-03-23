@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -118,7 +119,7 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
             new LambdaQueryWrapper<DictType>().eq(DictType::getDictType, dictType)
         );
         if (type == null) {
-            return List.of();
+            return Collections.emptyList();
         }
         return getDictDataList(type.getId());
     }

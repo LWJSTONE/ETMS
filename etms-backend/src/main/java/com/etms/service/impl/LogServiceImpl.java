@@ -134,7 +134,7 @@ public class LogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog
             // 设置响应头
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("utf-8");
-            String fileName = URLEncoder.encode("操作日志_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")), StandardCharsets.UTF_8);
+            String fileName = URLEncoder.encode("操作日志_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")), StandardCharsets.UTF_8.name());
             response.setHeader("Content-Disposition", "attachment;filename=" + fileName + ".xlsx");
 
             // 写入响应

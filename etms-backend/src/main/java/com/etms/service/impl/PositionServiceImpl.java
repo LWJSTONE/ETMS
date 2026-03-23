@@ -107,11 +107,15 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
         
         List<Position> positions = baseMapper.selectList(wrapper);
         
-        // 设置响应头
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setCharacterEncoding("utf-8");
-        String fileName = URLEncoder.encode("岗位数据_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")), StandardCharsets.UTF_8);
-        response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
+        try {
+            // 设置响应头
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("utf-8");
+            String fileName = URLEncoder.encode("岗位数据_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")), StandardCharsets.UTF_8.name());
+            response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new BusinessException("编码转换失败：" + e.getMessage());
+        }
         
         // 构建CSV格式的数据
         StringBuilder sb = new StringBuilder();

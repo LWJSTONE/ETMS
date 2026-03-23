@@ -254,6 +254,9 @@ const router = createRouter({
 })
 
 // 路由守卫
+// 防止无限重定向的标志
+let hasTriedGetUserInfo = false
+
 router.beforeEach(async (to, from, next) => {
   NProgress.start()
   
@@ -276,6 +279,8 @@ router.beforeEach(async (to, from, next) => {
   
   // 未登录，保存目标路由并重定向到登录页
   if (!token) {
+    // 重置标志，允许下次登录时重新获取用户信息
+    hasTriedGetUserInfo = false
     next({
       path: '/login',
       query: { redirect: to.fullPath }  // 保存原目标路由
@@ -284,13 +289,18 @@ router.beforeEach(async (to, from, next) => {
   }
   
   // 已登录但无用户信息，尝试获取
-  if (!userStore.userInfo) {
+  if (!userStore.userInfo && !hasTriedGetUserInfo) {
+    hasTriedGetUserInfo = true
     try {
       await userStore.getUserInfoAction()
+      // 获取成功后重置标志
+      hasTriedGetUserInfo = false
     } catch (error) {
       // 获取用户信息失败，清除token并重定向到登录页
       userStore.token = ''
+      userStore.userInfo = null
       localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
       next({
         path: '/login',
         query: { redirect: to.fullPath }

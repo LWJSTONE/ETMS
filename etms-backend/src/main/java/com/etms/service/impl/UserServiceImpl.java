@@ -21,6 +21,7 @@ import com.etms.vo.LoginVO;
 import com.etms.vo.RoleVO;
 import com.etms.vo.UserVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -49,6 +50,7 @@ import java.security.SecureRandom;
 /**
  * 用户服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -453,7 +455,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public String resetPassword(Long userId) {
+    public void resetPassword(Long userId) {
+        User user = baseMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
         // 生成随机密码（8位，包含大小写字母和数字）
         String newPassword = generateRandomPassword(8);
         
@@ -462,7 +469,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         updateUser.setPassword(passwordEncoder.encode(newPassword));
         
         baseMapper.updateById(updateUser);
-        return newPassword;
+        
+        // TODO: 实际生产环境应通过邮件或短信发送新密码给用户
+        // 这里记录日志，方便开发调试
+        log.info("用户 {} 的密码已重置为: {}", user.getUsername(), newPassword);
     }
     
     /**
@@ -568,11 +578,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                     .collect(Collectors.toMap(Dept::getId, Dept::getDeptName));
         }
         
-        // 设置响应头
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setCharacterEncoding("utf-8");
-        String fileName = URLEncoder.encode("用户数据_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")), StandardCharsets.UTF_8);
-        response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
+        try {
+            // 设置响应头
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("utf-8");
+            String fileName = URLEncoder.encode("用户数据_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")), StandardCharsets.UTF_8.name());
+            response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new BusinessException("编码转换失败：" + e.getMessage());
+        }
         
         // 构建CSV格式的数据（简单实现，实际项目建议使用EasyExcel或POI）
         StringBuilder sb = new StringBuilder();
