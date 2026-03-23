@@ -173,6 +173,9 @@ const handleLogin = async () => {
   } catch (error: any) {
     const errorMessage = getErrorMessage(error)
     ElMessage.error(errorMessage)
+    // 登录失败后清空密码（安全考虑）
+    loginForm.password = ''
+    loginForm.captcha = ''
     // 登录失败刷新验证码
     refreshCaptcha()
   } finally {

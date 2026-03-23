@@ -193,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Timer, Document, DataLine, CircleCheck, Close, Check, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
@@ -204,6 +204,9 @@ const router = useRouter()
 
 // 考试记录ID
 const recordId = computed(() => Number(route.params.id))
+
+// 本地存储key
+const STORAGE_KEY = computed(() => `exam_answers_${recordId.value}`)
 
 // 状态
 const loading = ref(false)
@@ -233,6 +236,11 @@ const currentIndex = ref(0)
 // 剩余时间（秒）
 const remainingTime = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
+
+// 防作弊：切屏次数
+const switchCount = ref(0)
+const MAX_SWITCH_COUNT = 3
+let hiddenTime = ref(0)
 
 // 当前题目
 const currentQuestion = computed(() => questions.value[currentIndex.value])
@@ -323,6 +331,77 @@ const goToQuestion = (index: number) => {
   currentIndex.value = index
 }
 
+// 保存答案到本地存储
+const saveAnswersToLocal = () => {
+  try {
+    const data = {
+      answers: { ...answers },
+      currentIndex: currentIndex.value,
+      savedAt: new Date().toISOString()
+    }
+    localStorage.setItem(STORAGE_KEY.value, JSON.stringify(data))
+  } catch (e) {
+    console.warn('保存答案到本地存储失败:', e)
+  }
+}
+
+// 从本地存储恢复答案
+const restoreAnswersFromLocal = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY.value)
+    if (saved) {
+      const data = JSON.parse(saved)
+      // 恢复答案
+      if (data.answers) {
+        Object.keys(data.answers).forEach(key => {
+          answers[Number(key)] = data.answers[key]
+        })
+      }
+      // 恢复当前题目索引
+      if (typeof data.currentIndex === 'number') {
+        currentIndex.value = data.currentIndex
+      }
+      return true
+    }
+  } catch (e) {
+    console.warn('从本地存储恢复答案失败:', e)
+  }
+  return false
+}
+
+// 清除本地存储的答案
+const clearLocalAnswers = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY.value)
+  } catch (e) {
+    console.warn('清除本地存储失败:', e)
+  }
+}
+
+// 监听答案变化，自动保存到本地存储
+watch(answers, () => {
+  saveAnswersToLocal()
+}, { deep: true })
+
+// 防作弊：监听页面可见性变化
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    hiddenTime.value = Date.now()
+  } else {
+    // 页面重新可见
+    if (hiddenTime.value > 0) {
+      switchCount.value++
+      if (switchCount.value >= MAX_SWITCH_COUNT) {
+        // 超过最大切屏次数，强制提交
+        ElMessage.error('切屏次数过多，系统将自动提交试卷！')
+        confirmSubmit()
+      } else {
+        ElMessage.warning(`您已切换页面${switchCount.value}次，超过${MAX_SWITCH_COUNT}次将自动提交试卷！`)
+      }
+    }
+  }
+}
+
 // 获取考试详情
 const fetchExamDetail = async () => {
   loading.value = true
@@ -354,6 +433,12 @@ const fetchExamDetail = async () => {
         answers[q.id] = []
       }
     })
+    
+    // 尝试从本地存储恢复答案
+    const restored = restoreAnswersFromLocal()
+    if (restored) {
+      ElMessage.success('已恢复之前保存的答题进度')
+    }
     
     // 计算剩余时间
     if (data.startTime && data.duration) {
@@ -415,6 +500,9 @@ const handleGiveUp = async () => {
       timer = null
     }
     
+    // 清除本地存储
+    clearLocalAnswers()
+    
     ElMessage.info('已放弃考试')
     router.push('/my/exam')
   } catch {
@@ -449,13 +537,17 @@ const confirmSubmit = async () => {
       timer = null
     }
     
+    // 清除本地存储
+    clearLocalAnswers()
+    
     submitDialogVisible.value = false
     
     // 跳转到成绩页面
     router.push('/my/result')
   } catch (error: any) {
     console.error('提交试卷失败:', error)
-    ElMessage.error(error.message || '提交试卷失败')
+    ElMessage.error(error.message || '提交试卷失败，答案已保存，请重试提交')
+    // 提交失败时保留本地存储，用户可以重试
   } finally {
     submitting.value = false
   }
@@ -470,6 +562,8 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 onMounted(() => {
   fetchExamDetail()
   window.addEventListener('beforeunload', handleBeforeUnload)
+  // 添加防作弊监听
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
@@ -478,6 +572,7 @@ onUnmounted(() => {
     timer = null
   }
   window.removeEventListener('beforeunload', handleBeforeUnload)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

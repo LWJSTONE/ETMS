@@ -6,9 +6,15 @@ import com.etms.common.Result;
 import com.etms.entity.AttendanceRecord;
 import com.etms.service.AttendanceRecordService;
 import com.etms.vo.AttendanceRecordVO;
+import com.etms.service.UserService;
+import com.etms.entity.User;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
@@ -19,12 +25,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/attendance/records")
 @RequiredArgsConstructor
+@Validated
 public class AttendanceRecordController {
     
     private final AttendanceRecordService attendanceRecordService;
+    private final UserService userService;
     
     @ApiOperation(value = "分页查询签到记录")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
     public Result<PageResult<AttendanceRecordVO>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
@@ -105,6 +114,7 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "补签审核")
     @PostMapping("/{id}/audit")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
     public Result<Void> audit(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         // 参数验证
         if (body.get("auditStatus") == null) {
@@ -123,8 +133,20 @@ public class AttendanceRecordController {
     }
     
     @ApiOperation(value = "获取个人签到统计")
+    @GetMapping("/stats/personal")
+    public Result<?> getPersonalStats() {
+        // 修复越权问题：只能查询自己的统计
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            return Result.error("用户未登录");
+        }
+        return Result.success(attendanceRecordService.getPersonalStats(currentUser.getId()));
+    }
+    
+    @ApiOperation(value = "获取指定用户签到统计(管理员)")
     @GetMapping("/stats/{userId}")
-    public Result<?> getPersonalStats(@PathVariable Long userId) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
+    public Result<?> getUserStats(@PathVariable Long userId) {
         return Result.success(attendanceRecordService.getPersonalStats(userId));
     }
 }

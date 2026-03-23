@@ -446,6 +446,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
     
     /**
      * 检查用户是否在培训计划的目标范围内
+     * 修复：使用JSON解析进行精确ID匹配，避免contains()误匹配（如ID "1" 匹配到 "11", "21" 等）
      */
     private boolean checkUserInPlanTarget(User user, TrainingPlan plan) {
         // 获取培训计划的目标类型
@@ -455,40 +456,73 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             return true;
         }
         
-        switch (targetType) {
-            case 1: // 部门
-                String targetDeptIds = plan.getTargetDeptIds();
-                if (targetDeptIds == null || targetDeptIds.isEmpty()) {
+        try {
+            switch (targetType) {
+                case 1: // 部门
+                    String targetDeptIds = plan.getTargetDeptIds();
+                    if (targetDeptIds == null || targetDeptIds.trim().isEmpty()) {
+                        return true;
+                    }
+                    if (user.getDeptId() == null) {
+                        return false;
+                    }
+                    // 使用JSON解析精确匹配部门ID
+                    return isIdInJsonArray(targetDeptIds, user.getDeptId());
+                    
+                case 2: // 岗位
+                    String targetPositionIds = plan.getTargetPositionIds();
+                    if (targetPositionIds == null || targetPositionIds.trim().isEmpty()) {
+                        return true;
+                    }
+                    if (user.getPositionId() == null) {
+                        return false;
+                    }
+                    // 使用JSON解析精确匹配岗位ID
+                    return isIdInJsonArray(targetPositionIds, user.getPositionId());
+                    
+                case 3: // 个人
+                    String targetUserIds = plan.getTargetUserIds();
+                    if (targetUserIds == null || targetUserIds.trim().isEmpty()) {
+                        return true;
+                    }
+                    // 使用JSON解析精确匹配用户ID
+                    return isIdInJsonArray(targetUserIds, user.getId());
+                    
+                default:
                     return true;
-                }
-                if (user.getDeptId() == null) {
-                    return false;
-                }
-                // 检查用户部门是否在目标部门列表中
-                return targetDeptIds.contains(String.valueOf(user.getDeptId()));
-                
-            case 2: // 岗位
-                String targetPositionIds = plan.getTargetPositionIds();
-                if (targetPositionIds == null || targetPositionIds.isEmpty()) {
-                    return true;
-                }
-                if (user.getPositionId() == null) {
-                    return false;
-                }
-                // 检查用户岗位是否在目标岗位列表中
-                return targetPositionIds.contains(String.valueOf(user.getPositionId()));
-                
-            case 3: // 个人
-                String targetUserIds = plan.getTargetUserIds();
-                if (targetUserIds == null || targetUserIds.isEmpty()) {
-                    return true;
-                }
-                // 检查用户ID是否在目标用户列表中
-                return targetUserIds.contains(String.valueOf(user.getId()));
-                
-            default:
-                return true;
+            }
+        } catch (Exception e) {
+            // JSON解析失败时，记录日志并返回false（安全原则：解析失败则不允许访问）
+            return false;
         }
+    }
+    
+    /**
+     * 检查ID是否在JSON数组字符串中
+     * @param jsonArrayStr JSON数组字符串，如 "[1, 2, 3]" 或 ["1","2","3"]
+     * @param targetId 要查找的ID
+     * @return 是否包含该ID
+     */
+    private boolean isIdInJsonArray(String jsonArrayStr, Long targetId) {
+        if (jsonArrayStr == null || jsonArrayStr.trim().isEmpty()) {
+            return false;
+        }
+        
+        String str = jsonArrayStr.trim();
+        // 处理JSON数组格式
+        if (str.startsWith("[") && str.endsWith("]")) {
+            str = str.substring(1, str.length() - 1);
+        }
+        
+        // 分割并精确匹配
+        String[] parts = str.split(",");
+        for (String part : parts) {
+            String idStr = part.trim().replace("\"", "");
+            if (idStr.equals(String.valueOf(targetId))) {
+                return true;
+            }
+        }
+        return false;
     }
     
     @Override

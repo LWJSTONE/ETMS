@@ -10,6 +10,7 @@ import com.etms.vo.CourseVO;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
@@ -55,6 +56,7 @@ public class CourseController {
     
     @ApiOperation(value = "新增课程")
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> add(@Valid @RequestBody Course course) {
         courseService.addCourse(course);
         return Result.success();
@@ -62,6 +64,7 @@ public class CourseController {
     
     @ApiOperation(value = "更新课程")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Course course) {
         course.setId(id);
         courseService.updateCourse(course);
@@ -70,6 +73,7 @@ public class CourseController {
     
     @ApiOperation(value = "删除课程")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> delete(@PathVariable Long id) {
         courseService.deleteCourse(id);
         return Result.success();
@@ -77,6 +81,7 @@ public class CourseController {
     
     @ApiOperation(value = "提交审核")
     @PostMapping("/{id}/submit")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> submitAudit(@PathVariable Long id) {
         courseService.submitAudit(id);
         return Result.success();
@@ -84,6 +89,7 @@ public class CourseController {
     
     @ApiOperation(value = "审核课程")
     @PostMapping("/{id}/audit")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> audit(
             @PathVariable Long id,
             @Valid @RequestBody CourseAuditDTO auditDTO) {
@@ -93,6 +99,7 @@ public class CourseController {
     
     @ApiOperation(value = "上架课程")
     @PostMapping("/{id}/publish")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> publish(@PathVariable Long id) {
         courseService.publishCourse(id);
         return Result.success();
@@ -100,6 +107,7 @@ public class CourseController {
     
     @ApiOperation(value = "下架课程")
     @PostMapping("/{id}/unpublish")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> unpublish(@PathVariable Long id) {
         courseService.unpublishCourse(id);
         return Result.success();

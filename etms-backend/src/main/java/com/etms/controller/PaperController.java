@@ -8,6 +8,7 @@ import com.etms.service.PaperService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
@@ -48,6 +49,7 @@ public class PaperController {
     
     @ApiOperation(value = "新增试卷")
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> add(@Valid @RequestBody Paper paper) {
         paperService.addPaper(paper);
         return Result.success();
@@ -55,6 +57,7 @@ public class PaperController {
     
     @ApiOperation(value = "更新试卷")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Paper paper) {
         paper.setId(id);
         paperService.updatePaper(paper);
@@ -63,6 +66,7 @@ public class PaperController {
     
     @ApiOperation(value = "删除试卷")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> delete(@PathVariable Long id) {
         paperService.deletePaper(id);
         return Result.success();
@@ -70,6 +74,7 @@ public class PaperController {
     
     @ApiOperation(value = "发布试卷")
     @PostMapping("/{id}/publish")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> publish(@PathVariable Long id) {
         paperService.publishPaper(id);
         return Result.success();
@@ -77,6 +82,7 @@ public class PaperController {
     
     @ApiOperation(value = "停用试卷")
     @PostMapping("/{id}/disable")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> disable(@PathVariable Long id) {
         paperService.disablePaper(id);
         return Result.success();

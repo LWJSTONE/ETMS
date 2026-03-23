@@ -466,11 +466,38 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException("原密码错误");
         }
         
+        // 验证新密码强度
+        validatePasswordStrength(newPassword);
+        
         User updateUser = new User();
         updateUser.setId(userId);
         updateUser.setPassword(passwordEncoder.encode(newPassword));
         
         return baseMapper.updateById(updateUser) > 0;
+    }
+    
+    /**
+     * 验证密码强度
+     * 要求：长度6-20位，必须包含数字和字母
+     */
+    private void validatePasswordStrength(String password) {
+        if (password == null || password.isEmpty()) {
+            throw new BusinessException("密码不能为空");
+        }
+        if (password.length() < 6) {
+            throw new BusinessException("密码长度不能少于6位");
+        }
+        if (password.length() > 20) {
+            throw new BusinessException("密码长度不能超过20位");
+        }
+        // 检查是否包含数字
+        boolean hasDigit = password.chars().anyMatch(Character::isDigit);
+        // 检查是否包含字母
+        boolean hasLetter = password.chars().anyMatch(Character::isLetter);
+        
+        if (!hasDigit || !hasLetter) {
+            throw new BusinessException("密码必须包含数字和字母");
+        }
     }
     
     @Override
