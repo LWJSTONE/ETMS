@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("etms_exam_record")
+@TableName("exam_record")
 public class ExamRecord extends BaseEntity {
     
     /**
@@ -81,4 +81,9 @@ public class ExamRecord extends BaseEntity {
      * 补考次数
      */
     private Integer retakeCount;
+
+    /**
+     * 切屏次数（防作弊）
+     */
+    private Integer switchCount;
 }

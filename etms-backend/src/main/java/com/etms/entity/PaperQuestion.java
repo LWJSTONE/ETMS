@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("etms_paper_question")
+@TableName("exam_paper_question")
 public class PaperQuestion extends BaseEntity {
     
     /**
