@@ -12,15 +12,10 @@ export const useUserStore = defineStore('user', () => {
     const res = await login({ username, password, captcha, captchaKey })
     token.value = res.data.accessToken
     localStorage.setItem('token', res.data.accessToken)
-    userInfo.value = {
-      id: res.data.userId,
-      username: res.data.username,
-      realName: res.data.realName,
-      avatar: res.data.avatar,
-      deptName: res.data.deptName,
-      roles: res.data.roles,
-      permissions: res.data.permissions
-    }
+    
+    // 登录成功后获取完整用户信息
+    await getUserInfoAction()
+    
     return res
   }
 

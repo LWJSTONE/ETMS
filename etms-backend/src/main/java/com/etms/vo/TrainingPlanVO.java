@@ -52,11 +52,17 @@ public class TrainingPlanVO implements Serializable {
     /** 目标类型 */
     private Integer targetType;
     
+    /** 最低学习时长(分钟) */
+    private Integer minStudyTime;
+    
     /** 是否需要考试 */
     private Integer needExam;
     
     /** 及格分数 */
     private Integer passScore;
+    
+    /** 最大补考次数 */
+    private Integer maxRetake;
     
     /** 状态 */
     private Integer status;

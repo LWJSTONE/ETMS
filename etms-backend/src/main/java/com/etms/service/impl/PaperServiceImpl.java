@@ -56,6 +56,9 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
 
         PaperVO vo = new PaperVO();
         BeanUtils.copyProperties(paper, vo);
+        
+        // 手动设置duration字段（Paper.examDuration -> PaperVO.duration）
+        vo.setDuration(paper.getExamDuration());
 
         // 查询试卷关联的题目
         List<PaperQuestion> paperQuestions = paperQuestionMapper.selectList(

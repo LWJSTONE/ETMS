@@ -285,7 +285,7 @@ import {
   View,
   List
 } from '@element-plus/icons-vue'
-import { getResultList, getResultDetail, getResultStats, type ResultStats } from '@/api/exam'
+import { getResultList, getResultDetail, getResultStats, exportResults, type ResultStats } from '@/api/exam'
 
 // 统计数据
 const stats = reactive({
@@ -414,38 +414,18 @@ const handleReset = () => {
 const handleExport = async () => {
   exportLoading.value = true
   try {
-    // 构建导出数据
-    const exportData = tableData.value.map(item => ({
-      '考生姓名': item.userName || item.realName || '-',
-      '所属部门': item.deptName || '-',
-      '试卷名称': item.paperName,
-      '得分': item.userScore,
-      '满分': item.totalScore,
-      '及格分': item.passScore,
-      '是否通过': item.passed === 1 ? '通过' : '未通过',
-      '考试时间': formatDateTime(item.submitTime),
-      '考试用时': formatDuration(item.examDuration)
-    }))
-
-    // 使用原生方法导出CSV
-    if (exportData.length === 0) {
-      ElMessage.warning('暂无数据可导出')
-      return
+    // 构建导出参数
+    const params: any = {}
+    if (searchForm.userName) params.userName = searchForm.userName
+    if (searchForm.paperName) params.paperName = searchForm.paperName
+    if (searchForm.passed !== null) params.passed = searchForm.passed
+    if (searchForm.examTimeRange && searchForm.examTimeRange.length === 2) {
+      params.startTime = searchForm.examTimeRange[0]
+      params.endTime = searchForm.examTimeRange[1]
     }
-
-    const headers = Object.keys(exportData[0])
-    const csvContent = [
-      headers.join(','),
-      ...exportData.map(row => headers.map(h => `"${row[h as keyof typeof row] || ''}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `成绩报表_${new Date().toISOString().split('T')[0]}.csv`
-    link.click()
-    URL.revokeObjectURL(link.href)
-
+    
+    // 调用后端导出接口
+    exportResults(params)
     ElMessage.success('导出成功')
   } catch (error) {
     console.error(error)

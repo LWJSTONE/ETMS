@@ -14,6 +14,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,11 +29,16 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     private final UserPlanMapper userPlanMapper;
     
     @Override
-    public Page<TrainingPlanVO> pagePlans(Page<TrainingPlan> page, String planName, Integer status, Integer planType) {
+    public Page<TrainingPlanVO> pagePlans(Page<TrainingPlan> page, String planName, Integer status, Integer planType, String startDate, String endDate, Long deptId) {
         LambdaQueryWrapper<TrainingPlan> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(planName), TrainingPlan::getPlanName, planName)
                .eq(status != null, TrainingPlan::getStatus, status)
                .eq(planType != null, TrainingPlan::getPlanType, planType)
+               // 日期筛选：筛选开始日期在指定范围内
+               .ge(StringUtils.hasText(startDate), TrainingPlan::getStartDate, LocalDate.parse(startDate))
+               .le(StringUtils.hasText(endDate), TrainingPlan::getEndDate, LocalDate.parse(endDate))
+               // 部门筛选：targetDeptIds是JSON数组，使用LIKE匹配
+               .apply(deptId != null, "target_dept_ids LIKE CONCAT('%', {0}, '%')", deptId.toString())
                .orderByDesc(TrainingPlan::getCreateTime);
         
         Page<TrainingPlan> planPage = baseMapper.selectPage(page, wrapper);
@@ -76,6 +83,17 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updatePlan(TrainingPlan plan) {
+        // 获取当前培训计划状态
+        TrainingPlan existingPlan = baseMapper.selectById(plan.getId());
+        if (existingPlan == null) {
+            throw new RuntimeException("培训计划不存在");
+        }
+        
+        // 校验状态流转：只允许草稿状态(0)编辑
+        if (existingPlan.getStatus() != 0) {
+            throw new RuntimeException("当前状态不允许编辑，只有草稿状态可以编辑");
+        }
+        
         return baseMapper.updateById(plan) > 0;
     }
     
@@ -129,6 +147,26 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         TrainingPlan plan = new TrainingPlan();
         plan.setId(id);
         plan.setStatus(4); // 已归档
+        return baseMapper.updateById(plan) > 0;
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean endPlan(Long id) {
+        // 获取当前培训计划状态
+        TrainingPlan existingPlan = baseMapper.selectById(id);
+        if (existingPlan == null) {
+            throw new RuntimeException("培训计划不存在");
+        }
+        
+        // 校验状态流转：只能从已发布(1)或进行中(2)状态结束
+        if (existingPlan.getStatus() != 1 && existingPlan.getStatus() != 2) {
+            throw new RuntimeException("当前状态不允许结束，只有已发布或进行中状态可以结束");
+        }
+        
+        TrainingPlan plan = new TrainingPlan();
+        plan.setId(id);
+        plan.setStatus(3); // 已结束
         return baseMapper.updateById(plan) > 0;
     }
     

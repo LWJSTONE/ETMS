@@ -13,7 +13,7 @@ public interface TrainingPlanService extends IService<TrainingPlan> {
     /**
      * 分页查询培训计划列表
      */
-    Page<TrainingPlanVO> pagePlans(Page<TrainingPlan> page, String planName, Integer status, Integer planType);
+    Page<TrainingPlanVO> pagePlans(Page<TrainingPlan> page, String planName, Integer status, Integer planType, String startDate, String endDate, Long deptId);
     
     /**
      * 获取培训计划详情
@@ -44,4 +44,9 @@ public interface TrainingPlanService extends IService<TrainingPlan> {
      * 归档培训计划
      */
     boolean archivePlan(Long id);
+    
+    /**
+     * 结束培训计划
+     */
+    boolean endPlan(Long id);
 }

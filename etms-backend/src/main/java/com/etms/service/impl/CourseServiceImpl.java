@@ -184,10 +184,10 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             throw new RuntimeException("课程不存在");
         }
         
-        // 校验状态流转：审核通过(2)的课程就是已上架状态，这里可以不做额外处理
-        // 如果是从已下架(3)状态重新上架，需要检查
-        if (existingCourse.getStatus() != 2 && existingCourse.getStatus() != 3) {
-            throw new RuntimeException("当前状态不允许上架操作");
+        // 校验状态流转：只允许已下架(3)状态的课程重新上架
+        // 审核通过(2)的课程已经是已上架状态，不需要再上架
+        if (existingCourse.getStatus() != 3) {
+            throw new RuntimeException("当前状态不允许上架操作，只有已下架状态的课程可以上架");
         }
         
         Course course = new Course();

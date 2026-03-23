@@ -49,6 +49,43 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
                .eq(status != null, UserPlan::getStatus, status)
                .orderByDesc(UserPlan::getCreateTime);
         
+        // 修复：将用户名和计划名的过滤改为数据库查询阶段完成，避免先分页后内存过滤导致数据不准确
+        // 根据用户名查询符合条件的用户ID列表
+        if (userName != null && !userName.isEmpty()) {
+            LambdaQueryWrapper<User> userWrapper = new LambdaQueryWrapper<>();
+            userWrapper.like(User::getRealName, userName)
+                      .or()
+                      .like(User::getUsername, userName);
+            List<User> matchedUsers = userMapper.selectList(userWrapper);
+            if (matchedUsers.isEmpty()) {
+                // 没有匹配的用户，返回空结果
+                Page<LearningProgressVO> emptyVoPage = new Page<>(current, size, 0);
+                emptyVoPage.setRecords(new ArrayList<>());
+                return emptyVoPage;
+            }
+            List<Long> matchedUserIds = matchedUsers.stream()
+                    .map(User::getId)
+                    .collect(Collectors.toList());
+            wrapper.in(UserPlan::getUserId, matchedUserIds);
+        }
+        
+        // 根据计划名查询符合条件的计划ID列表
+        if (planName != null && !planName.isEmpty()) {
+            LambdaQueryWrapper<TrainingPlan> planWrapper = new LambdaQueryWrapper<>();
+            planWrapper.like(TrainingPlan::getPlanName, planName);
+            List<TrainingPlan> matchedPlans = trainingPlanMapper.selectList(planWrapper);
+            if (matchedPlans.isEmpty()) {
+                // 没有匹配的计划，返回空结果
+                Page<LearningProgressVO> emptyVoPage = new Page<>(current, size, 0);
+                emptyVoPage.setRecords(new ArrayList<>());
+                return emptyVoPage;
+            }
+            List<Long> matchedPlanIds = matchedPlans.stream()
+                    .map(TrainingPlan::getId)
+                    .collect(Collectors.toList());
+            wrapper.in(UserPlan::getPlanId, matchedPlanIds);
+        }
+        
         Page<UserPlan> userPlanPage = baseMapper.selectPage(page, wrapper);
         
         // 转换为VO
@@ -107,31 +144,13 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             courseMap = courses.stream().collect(Collectors.toMap(Course::getId, c -> c));
         }
         
-        // 过滤不符合条件的记录
+        // 转换为VO（不再需要内存过滤）
         final Map<Long, User> finalUserMap = userMap;
         final Map<Long, String> finalDeptNameMap = deptNameMap;
         final Map<Long, TrainingPlan> finalPlanMap = planMap;
         final Map<Long, Course> finalCourseMap = courseMap;
         
         List<LearningProgressVO> voList = userPlanPage.getRecords().stream()
-                .filter(up -> {
-                    // 过滤用户名和计划名
-                    if (userName != null && !userName.isEmpty()) {
-                        User user = finalUserMap.get(up.getUserId());
-                        if (user == null || 
-                            (user.getRealName() == null || !user.getRealName().contains(userName)) &&
-                            (user.getUsername() == null || !user.getUsername().contains(userName))) {
-                            return false;
-                        }
-                    }
-                    if (planName != null && !planName.isEmpty()) {
-                        TrainingPlan plan = finalPlanMap.get(up.getPlanId());
-                        if (plan == null || plan.getPlanName() == null || !plan.getPlanName().contains(planName)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                })
                 .map(up -> {
                     LearningProgressVO vo = new LearningProgressVO();
                     BeanUtils.copyProperties(up, vo);
@@ -401,6 +420,22 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
         TrainingPlan plan = trainingPlanMapper.selectById(userPlan.getPlanId());
         if (plan != null) {
             vo.setPlanName(plan.getPlanName());
+        }
+        
+        // 修复：增加课程信息查询和填充
+        Long courseId = userPlan.getCourseId() != null ? userPlan.getCourseId() : 
+                       (plan != null ? plan.getCourseId() : null);
+        if (courseId != null) {
+            Course course = courseMapper.selectById(courseId);
+            if (course != null) {
+                vo.setCourseId(courseId);
+                vo.setCourseName(course.getCourseName());
+                vo.setCourseType(course.getCourseType());
+                vo.setCoverImage(course.getCoverImage());
+                vo.setCourseDesc(course.getCourseDesc());
+                vo.setDuration(course.getDuration());
+                vo.setCredit(course.getCredit());
+            }
         }
         
         vo.setStatusName(getStatusName(userPlan.getStatus()));

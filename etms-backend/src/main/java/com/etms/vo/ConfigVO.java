@@ -1,16 +1,20 @@
-package com.etms.entity;
+package com.etms.vo;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
- * 系统配置实体类
+ * 系统配置响应VO
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-@TableName("sys_config")
-public class Config extends BaseEntity {
+public class ConfigVO implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
+    /** 配置ID */
+    private Long id;
     
     /** 配置名称 */
     private String configName;
@@ -32,4 +36,8 @@ public class Config extends BaseEntity {
     
     /** 备注 */
     private String remark;
+    
+    /** 创建时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createTime;
 }

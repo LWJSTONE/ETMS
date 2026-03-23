@@ -12,6 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 /**
  * 成绩管理控制器
  */
@@ -73,5 +77,29 @@ public class ExamResultController {
             @RequestParam(required = false) String endTime) {
         ExamResultStatsVO stats = examRecordService.getResultStats(startTime, endTime);
         return Result.success(stats);
+    }
+    
+    @ApiOperation(value = "导出成绩")
+    @GetMapping("/export")
+    public void export(
+            @RequestParam(required = false) Long paperId,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Integer passed,
+            @RequestParam(required = false) String userName,
+            @RequestParam(required = false) String paperName,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
+            HttpServletResponse response) {
+        try {
+            // 设置响应头
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            String fileName = URLEncoder.encode("成绩报表_" + System.currentTimeMillis() + ".xlsx", StandardCharsets.UTF_8);
+            response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
+            
+            // 导出数据
+            examRecordService.exportResults(paperId, userId, passed, userName, paperName, startTime, endTime, response.getOutputStream());
+        } catch (Exception e) {
+            throw new RuntimeException("导出失败：" + e.getMessage());
+        }
     }
 }

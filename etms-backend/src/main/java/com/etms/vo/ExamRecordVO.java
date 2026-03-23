@@ -40,7 +40,10 @@ public class ExamRecordVO {
     
     /** 考试时长(分钟) */
     private Integer duration;
-    
+
+    /** 实际用时(分钟) */
+    private Integer durationUsed;
+
     /** 正确题数 */
     private Integer correctCount;
     

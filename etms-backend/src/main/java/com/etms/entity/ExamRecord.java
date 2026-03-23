@@ -56,4 +56,24 @@ public class ExamRecord extends BaseEntity {
      * 提交时间
      */
     private java.time.LocalDateTime submitTime;
+
+    /**
+     * 实际用时（分钟）
+     */
+    private Integer durationUsed;
+
+    /**
+     * 客观题得分
+     */
+    private Integer objectiveScore;
+
+    /**
+     * 主观题得分
+     */
+    private Integer subjectiveScore;
+
+    /**
+     * 答题详情（JSON格式）
+     */
+    private String answerDetail;
 }

@@ -142,6 +142,30 @@ export function getResultStats(params?: PageParams): Promise<ApiResponse<ResultS
   return request.get('/exam/results/stats', params)
 }
 
+// 导出成绩
+export function exportResults(params?: {
+  paperId?: number
+  userId?: number
+  passed?: number
+  userName?: string
+  paperName?: string
+  startTime?: string
+  endTime?: string
+}): void {
+  // 构建查询参数
+  const queryParts: string[] = []
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParts.push(`${key}=${encodeURIComponent(value as string)}`)
+      }
+    })
+  }
+  const queryStr = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
+  // 直接打开下载链接
+  window.open(`/api/exam/results/export${queryStr}`, '_blank')
+}
+
 // 成绩统计类型
 export interface ResultStats {
   totalCount: number

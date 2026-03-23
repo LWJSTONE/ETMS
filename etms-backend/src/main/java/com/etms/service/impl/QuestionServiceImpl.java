@@ -69,6 +69,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean addQuestion(Question question) {
+        // 验证选项依赖关系
+        validateOptions(question);
+        
         question.setStatus(1);
         return baseMapper.insert(question) > 0;
     }
@@ -76,7 +79,58 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateQuestion(Question question) {
+        // 验证选项依赖关系
+        validateOptions(question);
+        
         return baseMapper.updateById(question) > 0;
+    }
+    
+    /**
+     * 验证选项依赖关系
+     * 规则：填C需先有A、B，填D需先有C，填E需先有D
+     */
+    private void validateOptions(Question question) {
+        // 只对选择题（单选、多选）进行选项验证
+        if (question.getQuestionType() != null && (question.getQuestionType() == 1 || question.getQuestionType() == 2)) {
+            String optionA = question.getOptionA();
+            String optionB = question.getOptionB();
+            String optionC = question.getOptionC();
+            String optionD = question.getOptionD();
+            String optionE = question.getOptionE();
+            
+            // 如果填写了C选项，必须先有A、B选项
+            if (hasContent(optionC)) {
+                if (!hasContent(optionA) || !hasContent(optionB)) {
+                    throw new RuntimeException("填写C选项前，必须先填写A、B选项");
+                }
+            }
+            
+            // 如果填写了D选项，必须先有C选项
+            if (hasContent(optionD)) {
+                if (!hasContent(optionC)) {
+                    throw new RuntimeException("填写D选项前，必须先填写C选项");
+                }
+            }
+            
+            // 如果填写了E选项，必须先有D选项
+            if (hasContent(optionE)) {
+                if (!hasContent(optionD)) {
+                    throw new RuntimeException("填写E选项前，必须先填写D选项");
+                }
+            }
+            
+            // 至少需要两个选项（A和B）
+            if (!hasContent(optionA) || !hasContent(optionB)) {
+                throw new RuntimeException("选择题至少需要填写A、B两个选项");
+            }
+        }
+    }
+    
+    /**
+     * 检查字符串是否有内容
+     */
+    private boolean hasContent(String str) {
+        return str != null && !str.trim().isEmpty();
     }
     
     @Override

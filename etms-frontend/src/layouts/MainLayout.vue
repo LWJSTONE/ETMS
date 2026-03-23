@@ -66,7 +66,6 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                 <el-dropdown-item command="password">修改密码</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -197,9 +196,6 @@ const passwordRules: FormRules = {
 // 处理下拉菜单命令
 const handleCommand = async (command: string) => {
   switch (command) {
-    case 'profile':
-      router.push('/profile')
-      break
     case 'password':
       // 打开修改密码对话框
       Object.assign(passwordForm, { oldPassword: '', newPassword: '', confirmPassword: '' })

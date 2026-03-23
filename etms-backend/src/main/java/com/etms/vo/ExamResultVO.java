@@ -57,7 +57,22 @@ public class ExamResultVO implements Serializable {
     
     /** 提交时间 */
     private LocalDateTime submitTime;
-    
+
     /** 创建时间 */
     private LocalDateTime createTime;
+
+    /** 实际用时（分钟） */
+    private Integer durationUsed;
+
+    /** 客观题得分 */
+    private Integer objectiveScore;
+
+    /** 主观题得分 */
+    private Integer subjectiveScore;
+
+    /** 补考次数 */
+    private Integer retakeCount;
+
+    /** 答题详情（JSON格式） */
+    private String answerDetail;
 }

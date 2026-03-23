@@ -329,6 +329,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         vo.setGenderName(getGenderName(user.getGender()));
         vo.setStatusName(getStatusName(user.getStatus()));
         
+        // 查询并设置角色名称列表
+        List<String> roles = baseMapper.selectRolesByUserId(id);
+        vo.setRoleNames(roles);
+        
+        // 查询并设置权限列表
+        List<String> permissions = baseMapper.selectPermissionsByUserId(id);
+        vo.setPermissions(permissions);
+        
         return vo;
     }
     

@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.util.Map;
 
 /**
  * 岗位管理控制器
@@ -72,10 +73,14 @@ public class PositionController {
     
     @ApiOperation(value = "修改状态")
     @PutMapping("/{id}/status")
-    public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Position position) {
+    public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String, Integer> params) {
+        Integer status = params.get("status");
+        if (status == null) {
+            return Result.error("状态参数不能为空");
+        }
         Position updatePosition = new Position();
         updatePosition.setId(id);
-        updatePosition.setStatus(position.getStatus());
+        updatePosition.setStatus(status);
         positionService.updateById(updatePosition);
         return Result.success();
     }

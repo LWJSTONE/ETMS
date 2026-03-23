@@ -72,4 +72,10 @@ public class UserVO implements Serializable {
     
     /** 角色列表 */
     private List<RoleVO> roles;
+    
+    /** 角色名称列表（前端使用） */
+    private List<String> roleNames;
+    
+    /** 权限标识列表 */
+    private List<String> permissions;
 }

@@ -490,7 +490,7 @@ const handleSubmit = async () => {
       paperCode: form.paperCode,
       totalScore: form.totalScore,
       passScore: form.passScore,
-      examDuration: form.duration,  // 后端字段名: examDuration (JSON映射为duration)
+      duration: form.duration,  // 使用duration字段名，后端通过@JsonProperty映射到examDuration
       startTime: form.timeRange?.[0] || null,
       endTime: form.timeRange?.[1] || null,
       description: form.description,

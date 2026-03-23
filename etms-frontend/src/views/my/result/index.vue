@@ -183,7 +183,7 @@
           <el-descriptions-item label="客观题得分">{{ detailData.objectiveScore ?? '-' }}分</el-descriptions-item>
           <el-descriptions-item label="主观题得分">{{ detailData.subjectiveScore ?? '-' }}分</el-descriptions-item>
           <el-descriptions-item label="补考次数">{{ detailData.retakeCount || 0 }}次</el-descriptions-item>
-          <el-descriptions-item label="考试时间">{{ formatDateTime(detailData.examTime) }}</el-descriptions-item>
+          <el-descriptions-item label="考试时间">{{ formatDateTime(detailData.submitTime) }}</el-descriptions-item>
           <el-descriptions-item label="考试用时">{{ formatDuration(detailData.durationUsed) }}</el-descriptions-item>
           <el-descriptions-item label="提交时间">{{ formatDateTime(detailData.submitTime) }}</el-descriptions-item>
         </el-descriptions>

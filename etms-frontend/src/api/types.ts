@@ -677,7 +677,7 @@ export interface UserInfo {
   phone?: string
   deptId?: number
   deptName?: string
-  roles: string[]
+  roleNames: string[]
   permissions: string[]
 }
 

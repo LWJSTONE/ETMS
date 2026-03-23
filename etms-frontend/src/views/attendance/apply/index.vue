@@ -553,7 +553,7 @@ const handleApplySubmit = async () => {
   try {
     await applySupplementary({
       planId: applyForm.planId!,
-      signType: 1, // 签到方式，默认二维码
+      signType: null, // 补签不是常规签到方式，signType设置为null
       signCategory: applyForm.signCategory, // 签到类别：1签到 2签退
       signTime: applyForm.signTime,
       reason: applyForm.reason

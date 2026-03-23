@@ -98,9 +98,9 @@
                 {{ formatDateTime(row.submitTime) || '-' }}
               </template>
             </el-table-column>
-            <el-table-column prop="duration" label="用时" width="100" align="center">
+            <el-table-column prop="durationUsed" label="用时" width="100" align="center">
               <template #default="{ row }">
-                {{ formatDuration(row.duration) }}
+                {{ formatDuration(row.durationUsed) }}
               </template>
             </el-table-column>
             <el-table-column label="操作" width="120" fixed="right">
@@ -180,7 +180,7 @@
         <el-descriptions-item label="总题数">{{ currentResult.totalCount ?? '-' }}道</el-descriptions-item>
         <el-descriptions-item label="开始时间">{{ formatDateTime(currentResult.startTime) || '-' }}</el-descriptions-item>
         <el-descriptions-item label="提交时间">{{ formatDateTime(currentResult.submitTime) || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="用时">{{ formatDuration(currentResult.duration) }}</el-descriptions-item>
+        <el-descriptions-item label="用时">{{ formatDuration(currentResult.durationUsed) }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
   </div>

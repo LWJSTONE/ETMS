@@ -32,9 +32,12 @@ public class TrainingPlanController {
             @RequestParam(defaultValue = "10") Long size,
             @RequestParam(required = false) String planName,
             @RequestParam(required = false) Integer status,
-            @RequestParam(required = false) Integer planType) {
+            @RequestParam(required = false) Integer planType,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) Long deptId) {
         Page<TrainingPlan> page = new Page<>(current, size);
-        Page<TrainingPlanVO> voPage = trainingPlanService.pagePlans(page, planName, status, planType);
+        Page<TrainingPlanVO> voPage = trainingPlanService.pagePlans(page, planName, status, planType, startDate, endDate, deptId);
         PageResult<TrainingPlanVO> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );
@@ -81,6 +84,13 @@ public class TrainingPlanController {
     @PostMapping("/{id}/archive")
     public Result<Void> archive(@PathVariable Long id) {
         trainingPlanService.archivePlan(id);
+        return Result.success();
+    }
+    
+    @ApiOperation(value = "结束培训计划")
+    @PostMapping("/{id}/end")
+    public Result<Void> end(@PathVariable Long id) {
+        trainingPlanService.endPlan(id);
         return Result.success();
     }
 }
