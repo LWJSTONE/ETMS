@@ -328,6 +328,9 @@ const rules: FormRules = {
   planType: [
     { required: true, message: '请选择计划类型', trigger: 'change' }
   ],
+  courseId: [
+    { required: true, message: '请选择关联课程', trigger: 'change' }
+  ],
   dateRange: [
     { required: true, message: '请选择培训日期', trigger: 'change' }
   ],
@@ -364,11 +367,16 @@ const getStatusName = (status: number) => {
 const getList = async () => {
   loading.value = true
   try {
-    const res = await getPlanList({
+    // 只传递有效的搜索参数
+    const params: Record<string, any> = {
       current: pagination.current,
-      size: pagination.size,
-      ...searchForm
-    })
+      size: pagination.size
+    }
+    if (searchForm.planName) params.planName = searchForm.planName
+    if (searchForm.planType !== null) params.planType = searchForm.planType
+    if (searchForm.status !== null) params.status = searchForm.status
+    
+    const res = await getPlanList(params)
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
   } catch (error: any) {

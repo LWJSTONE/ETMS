@@ -356,6 +356,36 @@ watch(multiAnswer, (val) => {
   }
 })
 
+// 自定义验证函数：验证选项C
+const validateOptionC = (rule: any, value: any, callback: any) => {
+  if ((form.questionType === 1 || form.questionType === 2) && value) {
+    // 如果填了C，检查A和B是否已填
+    if (!form.optionA) {
+      callback(new Error('请先填写选项A'));
+    } else if (!form.optionB) {
+      callback(new Error('请先填写选项B'));
+    } else {
+      callback();
+    }
+  } else {
+    callback();
+  }
+};
+
+// 自定义验证函数：验证选项D
+const validateOptionD = (rule: any, value: any, callback: any) => {
+  if ((form.questionType === 1 || form.questionType === 2) && value) {
+    // 如果填了D，检查C是否已填
+    if (!form.optionC) {
+      callback(new Error('请先填写选项C'));
+    } else {
+      callback();
+    }
+  } else {
+    callback();
+  }
+};
+
 // 表单验证规则
 const rules = computed<FormRules>(() => ({
   questionContent: [
@@ -371,6 +401,12 @@ const rules = computed<FormRules>(() => ({
     : [],
   optionB: form.questionType === 1 || form.questionType === 2
     ? [{ required: true, message: '请输入选项B', trigger: 'blur' }] as any
+    : [],
+  optionC: form.questionType === 1 || form.questionType === 2
+    ? [{ validator: validateOptionC, trigger: 'blur' }] as any
+    : [],
+  optionD: form.questionType === 1 || form.questionType === 2
+    ? [{ validator: validateOptionD, trigger: 'blur' }] as any
     : []
 }))
 

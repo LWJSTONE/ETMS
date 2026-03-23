@@ -271,22 +271,25 @@ const handleViewDetail = async (row: LogItem) => {
 
 // 清空日志
 const handleClear = async () => {
-  await ElMessageBox.confirm(
-    '确定要清空所有操作日志吗？此操作不可恢复！',
-    '警告',
-    {
-      type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
-    }
-  )
-
   try {
+    await ElMessageBox.confirm(
+      '确定要清空所有操作日志吗？此操作不可恢复！',
+      '警告',
+      {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      }
+    )
+
     await clearLogs()
     ElMessage.success('日志已清空')
     getList()
-  } catch (error) {
-    console.error('清空日志失败:', error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('清空日志失败:', error)
+      ElMessage.error('清空日志失败')
+    }
   }
 }
 

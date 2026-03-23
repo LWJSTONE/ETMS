@@ -34,9 +34,11 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
     }
     
     @Override
-    public List<Dept> getDeptList(Long parentId) {
+    public List<Dept> getDeptList(Long parentId, String deptName, Integer status) {
         LambdaQueryWrapper<Dept> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(parentId != null, Dept::getParentId, parentId)
+               .like(deptName != null && !deptName.isEmpty(), Dept::getDeptName, deptName)
+               .eq(status != null, Dept::getStatus, status)
                .orderByAsc(Dept::getSortOrder);
         List<Dept> depts = baseMapper.selectList(wrapper);
         // 填充部门负责人名称

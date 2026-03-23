@@ -69,7 +69,7 @@
           />
         </el-form-item>
         <el-form-item label="是否通过">
-          <el-select v-model="searchForm.passStatus" placeholder="全部" clearable style="width: 140px">
+          <el-select v-model="searchForm.passed" placeholder="全部" clearable style="width: 140px">
             <el-option label="全部" :value="null" />
             <el-option label="已通过" :value="1" />
             <el-option label="未通过" :value="0" />
@@ -176,8 +176,8 @@
           </el-descriptions-item>
           <el-descriptions-item label="及格分数">{{ detailData.passScore }}分</el-descriptions-item>
           <el-descriptions-item label="考试结果">
-            <el-tag :type="detailData.passStatus === 1 ? 'success' : 'danger'" effect="dark">
-              {{ detailData.passStatus === 1 ? '通过' : '未通过' }}
+            <el-tag :type="detailData.passed === 1 ? 'success' : 'danger'" effect="dark">
+              {{ detailData.passed === 1 ? '通过' : '未通过' }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="客观题得分">{{ detailData.objectiveScore ?? '-' }}分</el-descriptions-item>
@@ -317,8 +317,8 @@ const getList = async () => {
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
     
-    // 计算统计数据
-    calculateStats()
+    // 获取完整统计数据（不依赖当前页数据）
+    await getStatsSummary()
   } catch (error) {
     console.error(error)
     ElMessage.error('获取成绩列表失败')
@@ -327,21 +327,38 @@ const getList = async () => {
   }
 }
 
-// 计算统计数据
-const calculateStats = () => {
-  const total = pagination.total
-  stats.examCount = total
-  
-  if (tableData.value.length > 0) {
-    const passCount = tableData.value.filter(item => item.passed === 1).length
+// 获取汇总统计数据
+const getStatsSummary = async () => {
+  try {
+    // 使用相同筛选条件但大分页获取统计数据
+    const params: any = {
+      current: 1,
+      size: 10000,
+      paperName: searchForm.paperName || undefined,
+      passed: searchForm.passed
+    }
+    if (searchForm.examTimeRange && searchForm.examTimeRange.length === 2) {
+      params.examStartTime = searchForm.examTimeRange[0]
+      params.examEndTime = searchForm.examTimeRange[1]
+    }
+    
+    const res = await getMyResults(params)
+    const allRecords = res.data?.records || []
+    
+    // 计算统计数据
+    stats.examCount = allRecords.length
+    const passCount = allRecords.filter((r: any) => r.passed === 1).length
     stats.passCount = passCount
-    stats.passRate = total > 0 ? ((passCount / tableData.value.length) * 100).toFixed(1) : '0'
-    const totalScore = tableData.value.reduce((sum, item) => sum + (item.userScore || 0), 0)
-    stats.avgScore = (totalScore / tableData.value.length).toFixed(1)
-  } else {
-    stats.passCount = 0
-    stats.passRate = '0'
-    stats.avgScore = '0'
+    stats.passRate = allRecords.length > 0 
+      ? ((passCount / allRecords.length) * 100).toFixed(1) 
+      : '0'
+    
+    const totalScore = allRecords.reduce((sum: number, r: any) => sum + (r.userScore || 0), 0)
+    stats.avgScore = allRecords.length > 0 
+      ? (totalScore / allRecords.length).toFixed(1) 
+      : '0'
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
   }
 }
 

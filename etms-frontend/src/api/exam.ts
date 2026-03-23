@@ -131,3 +131,22 @@ export function getResultList(params: PageParams): Promise<ApiResponse<PageResul
 export function getMyResults(params: PageParams): Promise<ApiResponse<PageResult<ExamResult>>> {
   return request.get('/exam/results/my', params)
 }
+
+// 获取成绩详情
+export function getResultDetail(id: number): Promise<ApiResponse<ExamResult>> {
+  return request.get(`/exam/results/${id}`)
+}
+
+// 获取成绩统计
+export function getResultStats(params?: PageParams): Promise<ApiResponse<ResultStats>> {
+  return request.get('/exam/results/stats', params)
+}
+
+// 成绩统计类型
+export interface ResultStats {
+  totalCount: number
+  passCount: number
+  failCount: number
+  passRate: number
+  avgScore: number
+}

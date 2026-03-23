@@ -194,7 +194,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, Download, View } from '@element-plus/icons-vue'
-import { getProgressList } from '@/api/training'
+import { getProgressList, getProgressDetail } from '@/api/training'
 import { getPlanList } from '@/api/training'
 
 // 定义进度数据类型
@@ -357,52 +357,24 @@ const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
 }
 
 // 查看详情
-const handleViewDetail = (row: ProgressItem) => {
-  detailData.value = { ...row }
-  
-  // 模拟学习记录数据（实际项目中应从后端获取）
-  studyRecords.value = generateStudyRecords(row)
-  
-  detailVisible.value = true
-}
-
-// 生成模拟学习记录
-const generateStudyRecords = (data: ProgressItem): StudyRecord[] => {
-  const records: StudyRecord[] = []
-  if (data.status === 0) return records
-  
-  // 生成最近几条学习记录
-  const recordCount = Math.min(5, Math.ceil(data.progress / 20))
-  let accumulatedProgress = 0
-  let accumulatedDuration = 0
-  
-  for (let i = 0; i < recordCount; i++) {
-    const progressIncrement = Math.min(20, data.progress - accumulatedProgress)
-    const durationIncrement = Math.floor(progressIncrement * 1.5 + Math.random() * 10)
+const handleViewDetail = async (row: ProgressItem) => {
+  try {
+    // 从后端获取详细信息
+    const res = await getProgressDetail(row.id)
+    detailData.value = res.data || { ...row }
     
-    accumulatedProgress += progressIncrement
-    accumulatedDuration += durationIncrement
+    // TODO: 学习记录需要后端提供对应接口，目前暂不显示
+    // 当后端提供学习记录接口后，替换为真实API调用
+    studyRecords.value = []
     
-    // 生成时间（最近的记录往前推）
-    const daysAgo = recordCount - i - 1
-    const date = new Date()
-    date.setDate(date.getDate() - daysAgo)
-    date.setHours(9 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60))
-    
-    records.push({
-      time: date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-      duration: durationIncrement,
-      progress: accumulatedProgress
-    })
+    detailVisible.value = true
+  } catch (error) {
+    console.error('获取学习进度详情失败:', error)
+    // 如果获取详情失败，使用列表数据
+    detailData.value = { ...row }
+    studyRecords.value = []
+    detailVisible.value = true
   }
-  
-  return records.reverse()
 }
 
 // 导出

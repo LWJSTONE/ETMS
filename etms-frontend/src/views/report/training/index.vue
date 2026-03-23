@@ -439,8 +439,8 @@ const calculateStatistics = (plans: TrainingPlan[], progressList: LearningProgre
   const planTotal = plans.length
   const completedPlans = plans.filter(p => p.status === 3 || p.status === 4) // 已结束或已归档
   
-  // 计算总培训时长（从学习进度中统计）
-  const totalHours = Math.round(progressList.reduce((sum, p) => sum + (p.progress || 0), 0) / 60) || 0
+  // 计算总培训时长（从学习进度中统计，使用 studyTime 字段）
+  const totalHours = Math.round(progressList.reduce((sum, p) => sum + (p.studyTime || 0), 0) / 60) || 0
   
   // 计算完成率
   const completedProgress = progressList.filter(p => p.status === 2) // 已完成状态
@@ -499,7 +499,7 @@ const calculateStatistics = (plans: TrainingPlan[], progressList: LearningProgre
     if (p.createTime) {
       const month = dayjs(p.createTime).month() + 1
       const key = `${month}月`
-      monthMap.set(key, (monthMap.get(key) || 0) + (p.progress || 0))
+      monthMap.set(key, (monthMap.get(key) || 0) + (p.studyTime || 0))
     }
   })
   const monthlyHours = Array.from(monthMap.entries())
@@ -544,7 +544,18 @@ const getTableList = async () => {
       size: pagination.size
     }
     
-    // 添加筛选条件
+    // 添加日期范围筛选
+    if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+      params.startDate = searchForm.dateRange[0]
+      params.endDate = searchForm.dateRange[1]
+    }
+    
+    // 添加部门筛选
+    if (searchForm.deptId !== null) {
+      params.deptId = searchForm.deptId
+    }
+    
+    // 添加培训类型筛选
     if (searchForm.planType !== null) {
       params.planType = searchForm.planType
     }
@@ -567,7 +578,7 @@ const getTableList = async () => {
       const totalPerson = planProgress.length
       const completedPerson = planProgress.filter((p: LearningProgress) => p.status === 2).length
       const completionRate = totalPerson > 0 ? Math.round((completedPerson / totalPerson) * 100) : 0
-      const totalHours = Math.round(planProgress.reduce((sum: number, p: LearningProgress) => sum + (p.progress || 0), 0) / 60)
+      const totalHours = Math.round(planProgress.reduce((sum: number, p: LearningProgress) => sum + (p.studyTime || 0), 0) / 60)
       
       // 计算平均分数（如果有考试成绩的话）
       const scores = planProgress.filter((p: any) => p.score !== null && p.score !== undefined).map((p: any) => p.score)
@@ -961,7 +972,7 @@ const handleViewDetail = async (row: any) => {
       userName: p.realName || p.userName,
       deptName: p.deptName || '-',
       progress: p.progress || 0,
-      studyHours: p.progress ? Math.round(p.progress / 60 * 10) / 10 : 0, // 转换为小时
+      studyHours: p.studyTime ? Math.round(p.studyTime / 60 * 10) / 10 : 0, // 转换为小时
       score: (p as any).score || null,
       completeTime: p.completeTime ? dayjs(p.completeTime).format('YYYY-MM-DD HH:mm') : null,
       status: p.status === 2 ? 1 : 0 // 2=已完成转为1，其他转为0

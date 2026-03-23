@@ -133,189 +133,6 @@ import {
   type Category
 } from '@/api/category'
 
-// 模拟数据 - 当后端接口不可用时使用
-const mockCategoryData: Category[] = [
-  {
-    id: 1,
-    parentId: null,
-    categoryName: '技术培训',
-    categoryCode: 'TECH',
-    level: 1,
-    sortOrder: 1,
-    icon: null,
-    status: 1,
-    createTime: '2024-01-01 10:00:00',
-    children: [
-      {
-        id: 11,
-        parentId: 1,
-        categoryName: '编程语言',
-        categoryCode: 'TECH_LANG',
-        level: 2,
-        sortOrder: 1,
-        icon: null,
-        status: 1,
-        createTime: '2024-01-01 10:00:00',
-        children: [
-          {
-            id: 111,
-            parentId: 11,
-            categoryName: 'Java',
-            categoryCode: 'TECH_LANG_JAVA',
-            level: 3,
-            sortOrder: 1,
-            icon: null,
-            status: 1,
-            createTime: '2024-01-01 10:00:00'
-          },
-          {
-            id: 112,
-            parentId: 11,
-            categoryName: 'Python',
-            categoryCode: 'TECH_LANG_PYTHON',
-            level: 3,
-            sortOrder: 2,
-            icon: null,
-            status: 1,
-            createTime: '2024-01-01 10:00:00'
-          }
-        ]
-      },
-      {
-        id: 12,
-        parentId: 1,
-        categoryName: '数据库',
-        categoryCode: 'TECH_DB',
-        level: 2,
-        sortOrder: 2,
-        icon: null,
-        status: 1,
-        createTime: '2024-01-01 10:00:00'
-      },
-      {
-        id: 13,
-        parentId: 1,
-        categoryName: '前端技术',
-        categoryCode: 'TECH_FRONTEND',
-        level: 2,
-        sortOrder: 3,
-        icon: null,
-        status: 1,
-        createTime: '2024-01-01 10:00:00'
-      }
-    ]
-  },
-  {
-    id: 2,
-    parentId: null,
-    categoryName: '管理培训',
-    categoryCode: 'MGMT',
-    level: 1,
-    sortOrder: 2,
-    icon: null,
-    status: 1,
-    createTime: '2024-01-01 10:00:00',
-    children: [
-      {
-        id: 21,
-        parentId: 2,
-        categoryName: '领导力',
-        categoryCode: 'MGMT_LEADER',
-        level: 2,
-        sortOrder: 1,
-        icon: null,
-        status: 1,
-        createTime: '2024-01-01 10:00:00'
-      },
-      {
-        id: 22,
-        parentId: 2,
-        categoryName: '项目管理',
-        categoryCode: 'MGMT_PROJECT',
-        level: 2,
-        sortOrder: 2,
-        icon: null,
-        status: 1,
-        createTime: '2024-01-01 10:00:00'
-      }
-    ]
-  },
-  {
-    id: 3,
-    parentId: null,
-    categoryName: '业务培训',
-    categoryCode: 'BIZ',
-    level: 1,
-    sortOrder: 3,
-    icon: null,
-    status: 1,
-    createTime: '2024-01-01 10:00:00',
-    children: [
-      {
-        id: 31,
-        parentId: 3,
-        categoryName: '产品知识',
-        categoryCode: 'BIZ_PRODUCT',
-        level: 2,
-        sortOrder: 1,
-        icon: null,
-        status: 1,
-        createTime: '2024-01-01 10:00:00'
-      },
-      {
-        id: 32,
-        parentId: 3,
-        categoryName: '销售技巧',
-        categoryCode: 'BIZ_SALES',
-        level: 2,
-        sortOrder: 2,
-        icon: null,
-        status: 1,
-        createTime: '2024-01-01 10:00:00'
-      }
-    ]
-  },
-  {
-    id: 4,
-    parentId: null,
-    categoryName: '职业素养',
-    categoryCode: 'PRO',
-    level: 1,
-    sortOrder: 4,
-    icon: null,
-    status: 1,
-    createTime: '2024-01-01 10:00:00',
-    children: [
-      {
-        id: 41,
-        parentId: 4,
-        categoryName: '沟通技巧',
-        categoryCode: 'PRO_COMM',
-        level: 2,
-        sortOrder: 1,
-        icon: null,
-        status: 1,
-        createTime: '2024-01-01 10:00:00'
-      },
-      {
-        id: 42,
-        parentId: 4,
-        categoryName: '时间管理',
-        categoryCode: 'PRO_TIME',
-        level: 2,
-        sortOrder: 2,
-        icon: null,
-        status: 0,
-        createTime: '2024-01-01 10:00:00'
-      }
-    ]
-  }
-]
-
-// 用于本地存储和操作的数据
-let localCategoryData: Category[] = JSON.parse(JSON.stringify(mockCategoryData))
-let nextId = 1000 // 用于新增分类时的临时ID
-
 // 搜索表单
 const searchForm = reactive({
   categoryName: '',
@@ -325,6 +142,7 @@ const searchForm = reactive({
 // 表格相关
 const tableRef = ref()
 const tableData = ref<Category[]>([])
+const allCategoryData = ref<Category[]>([])  // 保存原始数据用于计算层级
 const loading = ref(false)
 const isExpandAll = ref(true)
 
@@ -361,6 +179,8 @@ const getCategoryTreeData = async () => {
   try {
     const res = await getCategoryTree()
     const treeData = res.data || []
+    // 保存原始数据
+    allCategoryData.value = treeData
     // 根据搜索条件过滤
     if (searchForm.categoryName || searchForm.status !== null) {
       tableData.value = filterTree(treeData, searchForm)
@@ -369,22 +189,15 @@ const getCategoryTreeData = async () => {
     }
     // 设置分类树选项（添加顶级节点选项）
     categoryTreeOptions.value = [
-      { id: 0, parentId: null, categoryName: '顶级分类', categoryCode: '', level: 0, sortOrder: 0, icon: null, status: 1, children: treeData }
+      { id: 0, parentId: null, categoryName: '顶级分类', categoryCode: '', categoryType: 1, level: 0, sortOrder: 0, icon: null, status: 1, children: treeData }
     ] as Category[]
-    // 同步到本地数据
-    localCategoryData = JSON.parse(JSON.stringify(treeData))
   } catch (error) {
-    console.warn('后端接口不可用，使用模拟数据:', error)
-    // 使用模拟数据
-    const treeData = JSON.parse(JSON.stringify(localCategoryData))
-    if (searchForm.categoryName || searchForm.status !== null) {
-      tableData.value = filterTree(treeData, searchForm)
-    } else {
-      tableData.value = treeData
-    }
-    // 设置分类树选项（添加顶级节点选项）
+    console.error('获取分类树失败:', error)
+    ElMessage.error('获取分类数据失败')
+    tableData.value = []
+    allCategoryData.value = []
     categoryTreeOptions.value = [
-      { id: 0, parentId: null, categoryName: '顶级分类', categoryCode: '', level: 0, sortOrder: 0, icon: null, status: 1, children: treeData }
+      { id: 0, parentId: null, categoryName: '顶级分类', categoryCode: '', categoryType: 1, level: 0, sortOrder: 0, icon: null, status: 1, children: [] }
     ] as Category[]
   } finally {
     loading.value = false
@@ -426,8 +239,8 @@ const calculateLevel = (parentId: number | null): number => {
     }
     return null
   }
-  const parent = findNode(localCategoryData, parentId)
-  return parent ? parent.level + 1 : 1
+  const parent = findNode(allCategoryData.value, parentId)
+  return parent ? (parent.level || 1) + 1 : 1
 }
 
 // 查找节点及其父节点链
@@ -446,7 +259,7 @@ const findNodeAndParents = (nodes: Category[], id: number, parents: Category[] =
 
 // 检查是否是自身的子节点
 const isChildNode = (parentId: number, childId: number): boolean => {
-  const { node } = findNodeAndParents(localCategoryData, parentId)
+  const { node } = findNodeAndParents(allCategoryData.value, parentId)
   if (!node) return false
   
   const checkChildren = (n: Category): boolean => {
@@ -514,19 +327,8 @@ const handleEdit = async (row: Category) => {
     })
     dialogVisible.value = true
   } catch (error) {
-    console.warn('获取分类详情失败，使用本地数据:', error)
-    // 使用本地数据
-    resetForm()
-    Object.assign(form, {
-      id: row.id,
-      parentId: row.parentId || null,
-      categoryName: row.categoryName,
-      categoryCode: row.categoryCode,
-      categoryType: row.categoryType || 1,
-      sortOrder: row.sortOrder || 0,
-      status: row.status ?? 1
-    })
-    dialogVisible.value = true
+    console.error('获取分类详情失败:', error)
+    ElMessage.error('获取分类详情失败')
   }
 }
 
@@ -549,24 +351,8 @@ const handleDelete = async (row: Category) => {
     getCategoryTreeData()
   } catch (error: any) {
     if (error === 'cancel') return
-    console.warn('删除接口不可用，使用本地删除:', error)
-    // 本地删除
-    const removeNode = (nodes: Category[], id: number): boolean => {
-      const index = nodes.findIndex(n => n.id === id)
-      if (index !== -1) {
-        nodes.splice(index, 1)
-        return true
-      }
-      for (const node of nodes) {
-        if (node.children && removeNode(node.children, id)) {
-          return true
-        }
-      }
-      return false
-    }
-    removeNode(localCategoryData, row.id)
-    ElMessage.success('删除成功')
-    getCategoryTreeData()
+    console.error('删除失败:', error)
+    ElMessage.error(error.message || '删除失败')
   }
 }
 
@@ -582,31 +368,13 @@ const handleToggleStatus = async (row: Category) => {
       { type: 'warning' }
     )
 
-    try {
-      await updateCategoryStatus(row.id, newStatus)
-      ElMessage.success(`${statusText}成功`)
-      getCategoryTreeData()
-    } catch (error) {
-      console.warn('状态更新接口不可用，使用本地更新:', error)
-      // 本地更新状态
-      const updateStatus = (nodes: Category[], id: number, status: number): boolean => {
-        for (const node of nodes) {
-          if (node.id === id) {
-            node.status = status
-            return true
-          }
-          if (node.children && updateStatus(node.children, id, status)) {
-            return true
-          }
-        }
-        return false
-      }
-      updateStatus(localCategoryData, row.id, newStatus)
-      ElMessage.success(`${statusText}成功`)
-      getCategoryTreeData()
-    }
-  } catch {
-    // 用户取消操作
+    await updateCategoryStatus(row.id, newStatus)
+    ElMessage.success(`${statusText}成功`)
+    getCategoryTreeData()
+  } catch (error: any) {
+    if (error === 'cancel') return
+    console.error('状态更新失败:', error)
+    ElMessage.error(error.message || `${statusText}失败`)
   }
 }
 
@@ -669,107 +437,8 @@ const handleSubmit = async () => {
     dialogVisible.value = false
     getCategoryTreeData()
   } catch (error: any) {
-    console.warn('保存接口不可用，使用本地保存:', error)
-    // 本地保存
-    if (isEdit.value) {
-      // 更新本地数据
-      const updateNode = (nodes: Category[]): boolean => {
-        for (let i = 0; i < nodes.length; i++) {
-          if (nodes[i].id === form.id) {
-            // 如果父分类变化，需要移动节点
-            const oldParentId = nodes[i].parentId
-            const newParentId = form.parentId || null
-            
-            if (oldParentId !== newParentId) {
-              // 从原位置移除
-              const nodeToUpdate = { ...nodes[i] }
-              nodes.splice(i, 1)
-              
-              // 更新节点属性
-              Object.assign(nodeToUpdate, {
-                parentId: newParentId,
-                categoryName: form.categoryName,
-                categoryCode: form.categoryCode,
-                sortOrder: form.sortOrder,
-                status: form.status,
-                level: calculateLevel(newParentId)
-              })
-              
-              // 添加到新位置
-              if (newParentId === null) {
-                localCategoryData.push(nodeToUpdate)
-              } else {
-                const addToParent = (nodesList: Category[]) => {
-                  for (const n of nodesList) {
-                    if (n.id === newParentId) {
-                      if (!n.children) n.children = []
-                      n.children.push(nodeToUpdate)
-                      return true
-                    }
-                    if (n.children && addToParent(n.children)) {
-                      return true
-                    }
-                  }
-                  return false
-                }
-                addToParent(localCategoryData)
-              }
-            } else {
-              // 只是更新属性
-              Object.assign(nodes[i], {
-                categoryName: form.categoryName,
-                categoryCode: form.categoryCode,
-                sortOrder: form.sortOrder,
-                status: form.status
-              })
-            }
-            return true
-          }
-          if (nodes[i].children && updateNode(nodes[i].children!)) {
-            return true
-          }
-        }
-        return false
-      }
-      updateNode(localCategoryData)
-      ElMessage.success('更新成功')
-    } else {
-      // 新增本地数据
-      const newCategory: Category = {
-        id: nextId++,
-        parentId: form.parentId || null,
-        categoryName: form.categoryName,
-        categoryCode: form.categoryCode,
-        sortOrder: form.sortOrder,
-        status: form.status,
-        level: calculateLevel(form.parentId),
-        icon: null,
-        createTime: new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-')
-      }
-
-      if (form.parentId === null || form.parentId === 0) {
-        localCategoryData.push(newCategory)
-      } else {
-        const addToParent = (nodes: Category[]) => {
-          for (const node of nodes) {
-            if (node.id === form.parentId) {
-              if (!node.children) node.children = []
-              node.children.push(newCategory)
-              return true
-            }
-            if (node.children && addToParent(node.children)) {
-              return true
-            }
-          }
-          return false
-        }
-        addToParent(localCategoryData)
-      }
-      ElMessage.success('新增成功')
-    }
-
-    dialogVisible.value = false
-    getCategoryTreeData()
+    console.error('保存失败:', error)
+    ElMessage.error(error.message || '保存失败')
   } finally {
     submitLoading.value = false
   }

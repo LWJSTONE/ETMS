@@ -379,6 +379,9 @@ const paperScoreData = ref<any[]>([])
 // 各部门考试数据
 const deptExamData = ref<any[]>([])
 
+// 所有考试记录（用于趋势图计算）
+const allExamRecords = ref<any[]>([])
+
 // 考试趋势类型
 const trendType = ref<'day' | 'week' | 'month'>('day')
 
@@ -448,6 +451,9 @@ const getReportData = async () => {
     const res = await getResultList(params)
     const records = res.data?.records || []
     
+    // 保存考试记录用于趋势计算
+    allExamRecords.value = records
+    
     // 计算汇总统计
     calculateSummary(records)
     
@@ -514,12 +520,16 @@ const calculatePaperScoreDistribution = (records: any[]) => {
       ? (scores.reduce((a: number, b: number) => a + b, 0) / scores.length).toFixed(1) 
       : '0'
     
+    // 添加空数组检查，避免 Math.max/min 返回 -Infinity/Infinity
+    const maxScore = scores.length > 0 ? Math.max(...scores) : 0
+    const minScore = scores.length > 0 ? Math.min(...scores) : 0
+    
     return {
       paperName: paper.paperName,
       totalExams: paper.totalExams,
       avgScore,
-      maxScore: Math.max(...scores),
-      minScore: Math.min(...scores),
+      maxScore,
+      minScore,
       excellentCount: scores.filter((s: number) => s >= 90).length,
       goodCount: scores.filter((s: number) => s >= 80 && s < 90).length,
       mediumCount: scores.filter((s: number) => s >= 70 && s < 80).length,
@@ -779,7 +789,7 @@ const initTrendChart = () => {
   }
   trendChart = echarts.init(trendChartRef.value)
   
-  // 生成模拟趋势数据
+  // 基于真实考试记录计算趋势数据
   const dates: string[] = []
   const examCounts: number[] = []
   const passCounts: number[] = []
@@ -788,25 +798,54 @@ const initTrendChart = () => {
   const now = dayjs()
   let dateFormat = 'MM-DD'
   let step = 1
+  let points = 7
   
   if (trendType.value === 'week') {
     dateFormat = 'MM-DD'
     step = 7
+    points = 7
   } else if (trendType.value === 'month') {
     dateFormat = 'YYYY-MM'
     step = 30
+    points = 6
   }
   
-  for (let i = 6; i >= 0; i--) {
+  // 生成时间点并统计每个时间点的数据
+  for (let i = points - 1; i >= 0; i--) {
     const date = now.subtract(i * step, 'day')
-    dates.push(date.format(dateFormat))
+    const dateStr = date.format(dateFormat)
+    dates.push(dateStr)
     
-    // 模拟数据
-    const examCount = Math.floor(Math.random() * 50) + 10
-    const passCount = Math.floor(examCount * (0.7 + Math.random() * 0.2))
+    // 根据时间类型筛选考试记录
+    let startDate: dayjs.Dayjs
+    let endDate: dayjs.Dayjs
+    
+    if (trendType.value === 'day') {
+      startDate = date.startOf('day')
+      endDate = date.endOf('day')
+    } else if (trendType.value === 'week') {
+      startDate = date.startOf('week')
+      endDate = date.endOf('week')
+    } else {
+      startDate = date.startOf('month')
+      endDate = date.endOf('month')
+    }
+    
+    // 筛选该时间段内的考试记录
+    const periodRecords = allExamRecords.value.filter((record: any) => {
+      if (!record.submitTime && !record.examTime) return false
+      const recordDate = dayjs(record.submitTime || record.examTime)
+      return recordDate.isAfter(startDate) && recordDate.isBefore(endDate)
+    })
+    
+    const examCount = periodRecords.length
+    const passCount = periodRecords.filter((r: any) => r.passed === 1).length
+    const totalScore = periodRecords.reduce((sum: number, r: any) => sum + (r.userScore || 0), 0)
+    const avgScore = examCount > 0 ? Math.round(totalScore / examCount) : 0
+    
     examCounts.push(examCount)
     passCounts.push(passCount)
-    avgScores.push(Math.floor(Math.random() * 20) + 70)
+    avgScores.push(avgScore)
   }
   
   const option = {

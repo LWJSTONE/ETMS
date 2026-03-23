@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.entity.ExamRecord;
 import com.etms.vo.ExamRecordVO;
 import com.etms.vo.ExamResultVO;
+import com.etms.vo.ExamResultStatsVO;
+
+import java.io.OutputStream;
 
 /**
  * 考试记录服务接口
@@ -49,4 +52,14 @@ public interface ExamRecordService {
      * 获取成绩详情
      */
     ExamResultVO getResultDetail(Long id);
+    
+    /**
+     * 获取成绩统计
+     */
+    ExamResultStatsVO getResultStats(String startTime, String endTime);
+    
+    /**
+     * 导出考试记录
+     */
+    void exportRecords(Long paperId, Long userId, Integer status, String userName, String paperName, OutputStream outputStream);
 }

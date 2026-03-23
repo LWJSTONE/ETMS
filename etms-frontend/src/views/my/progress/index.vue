@@ -207,6 +207,18 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { 
+  Reading, 
+  CircleCheck, 
+  Loading, 
+  Timer, 
+  Collection, 
+  Clock, 
+  Search, 
+  Refresh,
+  VideoPlay,
+  RefreshRight
+} from '@element-plus/icons-vue'
 import { getMyProgress, getPlanList } from '@/api/training'
 
 const router = useRouter()
@@ -614,11 +626,9 @@ onMounted(() => {
       }
     }
   }
-}
 
-// 响应式适配
-@media screen and (max-width: 768px) {
-  .my-progress {
+  // 响应式适配 - 移动端样式
+  @media screen and (max-width: 768px) {
     .stats-row {
       .stat-card {
         margin-bottom: 10px;

@@ -54,3 +54,8 @@ export function updatePassword(id: number, oldPassword: string, newPassword: str
     params: { oldPassword, newPassword }
   })
 }
+
+// 导出用户
+export function exportUsers(params: PageParams): Promise<Blob> {
+  return request.get('/system/users/export', params, { responseType: 'blob' })
+}

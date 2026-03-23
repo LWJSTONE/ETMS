@@ -27,6 +27,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,12 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.security.SecureRandom;
@@ -53,10 +59,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final UserRoleMapper userRoleMapper;
     private final DeptMapper deptMapper;
     private final CaptchaService captchaService;
+    private final StringRedisTemplate stringRedisTemplate;
     
     // 登录失败锁定配置
     private static final int MAX_LOGIN_FAIL_COUNT = 5;
     private static final int LOCK_DURATION_MINUTES = 30;
+    private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
     
     @Override
     public LoginVO login(LoginDTO loginDTO, HttpServletRequest request) {
@@ -199,7 +207,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
     
     @Override
-    public void logout() {
+    public void logout(HttpServletRequest request) {
+        // 从请求头获取Token
+        String bearerToken = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            String token = bearerToken.substring(7);
+            
+            // 将Token加入黑名单
+            long remainingTime = jwtTokenProvider.getTokenRemainingTime(token);
+            if (remainingTime > 0) {
+                String key = TOKEN_BLACKLIST_PREFIX + token;
+                stringRedisTemplate.opsForValue().set(key, "1", remainingTime, java.util.concurrent.TimeUnit.MILLISECONDS);
+            }
+        }
+        
         SecurityContextHolder.clearContext();
     }
     
@@ -509,6 +530,58 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             case 2: return "离职";
             case 3: return "休假";
             default: return "未知";
+        }
+    }
+
+    @Override
+    public void exportUsers(UserDTO userDTO, HttpServletResponse response) {
+        // 查询所有符合条件的用户
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(StringUtils.hasText(userDTO.getUsername()), User::getUsername, userDTO.getUsername())
+               .like(StringUtils.hasText(userDTO.getRealName()), User::getRealName, userDTO.getRealName())
+               .eq(userDTO.getStatus() != null, User::getStatus, userDTO.getStatus())
+               .orderByDesc(User::getCreateTime);
+        
+        List<User> users = baseMapper.selectList(wrapper);
+        
+        // 批量查询部门名称
+        Map<Long, String> deptNameMap = new HashMap<>();
+        Set<Long> deptIds = users.stream()
+                .map(User::getDeptId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (!deptIds.isEmpty()) {
+            List<Dept> depts = deptMapper.selectBatchIds(deptIds);
+            deptNameMap = depts.stream()
+                    .collect(Collectors.toMap(Dept::getId, Dept::getDeptName));
+        }
+        
+        // 设置响应头
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        String fileName = URLEncoder.encode("用户数据_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")), StandardCharsets.UTF_8);
+        response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
+        
+        // 构建CSV格式的数据（简单实现，实际项目建议使用EasyExcel或POI）
+        StringBuilder sb = new StringBuilder();
+        sb.append("用户名,真实姓名,性别,手机号,邮箱,部门,状态,创建时间\n");
+        
+        final Map<Long, String> finalDeptNameMap = deptNameMap;
+        for (User user : users) {
+            sb.append(user.getUsername()).append(",")
+              .append(user.getRealName() != null ? user.getRealName() : "").append(",")
+              .append(getGenderName(user.getGender())).append(",")
+              .append(user.getPhone() != null ? user.getPhone() : "").append(",")
+              .append(user.getEmail() != null ? user.getEmail() : "").append(",")
+              .append(user.getDeptId() != null ? finalDeptNameMap.getOrDefault(user.getDeptId(), "") : "").append(",")
+              .append(getStatusName(user.getStatus())).append(",")
+              .append(user.getCreateTime() != null ? user.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "").append("\n");
+        }
+        
+        try {
+            response.getWriter().write(sb.toString());
+        } catch (IOException e) {
+            throw new BusinessException("导出用户数据失败：" + e.getMessage());
         }
     }
 }

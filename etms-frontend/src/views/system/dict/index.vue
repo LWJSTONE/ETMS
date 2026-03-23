@@ -242,13 +242,25 @@ const dataForm = reactive({
 
 // ==================== 表单验证规则 ====================
 const typeRules: FormRules = {
-  dictName: [{ required: true, message: '请输入字典名称', trigger: 'blur' }],
-  dictType: [{ required: true, message: '请输入字典类型', trigger: 'blur' }]
+  dictName: [
+    { required: true, message: '请输入字典名称', trigger: 'blur' },
+    { min: 2, max: 100, message: '长度在 2 到 100 个字符', trigger: 'blur' }
+  ],
+  dictType: [
+    { required: true, message: '请输入字典类型', trigger: 'blur' },
+    { min: 2, max: 100, message: '长度在 2 到 100 个字符', trigger: 'blur' }
+  ]
 }
 
 const dataRules: FormRules = {
-  dictLabel: [{ required: true, message: '请输入数据标签', trigger: 'blur' }],
-  dictValue: [{ required: true, message: '请输入数据键值', trigger: 'blur' }]
+  dictLabel: [
+    { required: true, message: '请输入数据标签', trigger: 'blur' },
+    { min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur' }
+  ],
+  dictValue: [
+    { required: true, message: '请输入数据键值', trigger: 'blur' },
+    { min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur' }
+  ]
 }
 
 // ==================== 计算属性 ====================

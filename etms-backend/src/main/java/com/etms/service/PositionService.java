@@ -3,6 +3,7 @@ package com.etms.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.etms.entity.Position;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 岗位服务接口
@@ -33,4 +34,9 @@ public interface PositionService extends IService<Position> {
      * 删除岗位
      */
     void deletePosition(Long id);
+
+    /**
+     * 导出岗位
+     */
+    void exportPositions(String positionName, String positionCode, Integer status, HttpServletResponse response);
 }

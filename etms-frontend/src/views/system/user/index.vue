@@ -27,9 +27,14 @@
       <template #header>
         <div class="card-header">
           <span>用户列表</span>
-          <el-button type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>新增
-          </el-button>
+          <div class="header-buttons">
+            <el-button type="primary" @click="handleAdd">
+              <el-icon><Plus /></el-icon>新增
+            </el-button>
+            <el-button type="success" @click="handleExport">
+              <el-icon><Download /></el-icon>导出
+            </el-button>
+          </div>
         </div>
       </template>
       
@@ -146,7 +151,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { getUserList, getUserDetail, createUser, updateUser, deleteUser, resetPassword, assignRoles } from '@/api/user'
+import { getUserList, getUserDetail, createUser, updateUser, deleteUser, resetPassword, assignRoles, exportUsers } from '@/api/user'
 import { getRoleListAll } from '@/api/role'
 
 const searchForm = reactive({ username: '', realName: '', status: null as number | null })
@@ -204,6 +209,18 @@ const emailValidator = (rule: any, value: string, callback: any) => {
 
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ 
+    required: true, 
+    message: '请输入密码', 
+    trigger: 'blur',
+    validator: (rule: any, value: string, callback: any) => {
+      if (!isEdit.value && (!value || value.trim() === '')) {
+        callback(new Error('请输入密码'))
+      } else {
+        callback()
+      }
+    }
+  }],
   realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
   phone: [{ validator: phoneValidator, trigger: 'blur' }],
   email: [{ validator: emailValidator, trigger: 'blur' }]
@@ -324,15 +341,56 @@ const handleSubmit = async () => {
   if (!valid) return
   try {
     if (isEdit.value) { 
-      await updateUser(form.id!, form)
+      // 编辑时只传递需要的字段
+      const updateData = {
+        realName: form.realName,
+        gender: form.gender,
+        phone: form.phone,
+        email: form.email,
+        status: form.status
+      }
+      await updateUser(form.id!, updateData)
       ElMessage.success('更新成功')
     } else { 
-      await createUser(form)
+      // 新增时传递所有字段
+      const createData = {
+        username: form.username,
+        password: form.password,
+        realName: form.realName,
+        gender: form.gender,
+        phone: form.phone,
+        email: form.email,
+        status: form.status
+      }
+      await createUser(createData)
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false
     getList()
-  } catch (error) { console.error(error) }
+  } catch (error: any) { 
+    console.error(error)
+    ElMessage.error(error.message || '操作失败')
+  }
+}
+
+// 导出用户
+const handleExport = async () => {
+  try {
+    const blob = await exportUsers({ ...searchForm, current: 1, size: 10000 })
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `用户数据_${new Date().toISOString().slice(0, 10)}.xlsx`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
 }
 
 onMounted(() => { getList(); getRoleList() })
@@ -341,7 +399,16 @@ onMounted(() => { getList(); getRoleList() })
 <style lang="scss" scoped>
 .user-management {
   .search-card { margin-bottom: 20px; }
-  .table-card .card-header { display: flex; justify-content: space-between; align-items: center; }
+  .table-card .card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+  }
   .el-pagination { margin-top: 20px; justify-content: flex-end; }
 }
 </style>

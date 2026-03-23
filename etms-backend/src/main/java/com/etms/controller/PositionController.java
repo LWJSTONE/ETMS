@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 /**
@@ -77,5 +78,15 @@ public class PositionController {
         updatePosition.setStatus(position.getStatus());
         positionService.updateById(updatePosition);
         return Result.success();
+    }
+
+    @ApiOperation(value = "导出岗位")
+    @GetMapping("/export")
+    public void export(
+            @RequestParam(required = false) String positionName,
+            @RequestParam(required = false) String positionCode,
+            @RequestParam(required = false) Integer status,
+            HttpServletResponse response) {
+        positionService.exportPositions(positionName, positionCode, status, response);
     }
 }

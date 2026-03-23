@@ -206,7 +206,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getMyProgress } from '@/api/training'
-import { getCourseList } from '@/api/course'
+import { getCourseList as getCourseListApi } from '@/api/course'
 
 const router = useRouter()
 
@@ -312,7 +312,7 @@ const getCourseListData = async () => {
     console.error('获取课程列表失败:', error)
     // 如果进度接口失败，尝试获取课程列表
     try {
-      const courseRes = await getCourseList({
+      const courseRes = await getCourseListApi({
         current: pagination.current,
         size: pagination.size,
         courseName: searchForm.keyword,

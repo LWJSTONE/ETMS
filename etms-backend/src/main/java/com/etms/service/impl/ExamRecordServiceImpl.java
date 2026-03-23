@@ -18,6 +18,7 @@ import com.etms.service.ExamRecordService;
 import com.etms.service.UserService;
 import com.etms.vo.ExamRecordVO;
 import com.etms.vo.ExamResultVO;
+import com.etms.vo.ExamResultStatsVO;
 import com.etms.entity.Dept;
 import com.etms.mapper.DeptMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -496,5 +497,159 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         }
         
         return vo;
+    }
+    
+    @Override
+    public ExamResultStatsVO getResultStats(String startTime, String endTime) {
+        ExamResultStatsVO stats = new ExamResultStatsVO();
+        
+        LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ExamRecord::getStatus, 2); // 只统计已完成的考试
+        
+        // 时间范围过滤
+        if (startTime != null && !startTime.isEmpty()) {
+            wrapper.ge(ExamRecord::getSubmitTime, LocalDateTime.parse(startTime + "T00:00:00"));
+        }
+        if (endTime != null && !endTime.isEmpty()) {
+            wrapper.le(ExamRecord::getSubmitTime, LocalDateTime.parse(endTime + "T23:59:59"));
+        }
+        
+        // 统计总数
+        Long totalCount = baseMapper.selectCount(wrapper);
+        stats.setTotalCount(totalCount);
+        
+        if (totalCount == 0) {
+            stats.setPassCount(0L);
+            stats.setFailCount(0L);
+            stats.setPassRate(0.0);
+            stats.setAvgScore(0.0);
+            return stats;
+        }
+        
+        // 统计通过人数
+        LambdaQueryWrapper<ExamRecord> passWrapper = new LambdaQueryWrapper<>();
+        passWrapper.eq(ExamRecord::getStatus, 2)
+                   .eq(ExamRecord::getPassed, 1);
+        if (startTime != null && !startTime.isEmpty()) {
+            passWrapper.ge(ExamRecord::getSubmitTime, LocalDateTime.parse(startTime + "T00:00:00"));
+        }
+        if (endTime != null && !endTime.isEmpty()) {
+            passWrapper.le(ExamRecord::getSubmitTime, LocalDateTime.parse(endTime + "T23:59:59"));
+        }
+        Long passCount = baseMapper.selectCount(passWrapper);
+        stats.setPassCount(passCount);
+        stats.setFailCount(totalCount - passCount);
+        stats.setPassRate(totalCount > 0 ? (passCount * 100.0 / totalCount) : 0.0);
+        
+        // 计算平均分
+        List<ExamRecord> records = baseMapper.selectList(wrapper);
+        double avgScore = records.stream()
+                .filter(r -> r.getUserScore() != null)
+                .mapToInt(ExamRecord::getUserScore)
+                .average()
+                .orElse(0.0);
+        stats.setAvgScore(avgScore);
+        
+        return stats;
+    }
+    
+    @Override
+    public void exportRecords(Long paperId, Long userId, Integer status, String userName, String paperName, OutputStream outputStream) {
+        // 获取所有符合条件的记录
+        LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(paperId != null, ExamRecord::getPaperId, paperId)
+               .eq(userId != null, ExamRecord::getUserId, userId)
+               .eq(status != null, ExamRecord::getStatus, status)
+               .orderByDesc(ExamRecord::getCreateTime);
+        
+        List<ExamRecord> records = baseMapper.selectList(wrapper);
+        
+        if (records.isEmpty()) {
+            throw new BusinessException("没有可导出的数据");
+        }
+        
+        // 获取关联信息
+        java.util.Set<Long> paperIds = records.stream()
+                .map(ExamRecord::getPaperId)
+                .collect(java.util.stream.Collectors.toSet());
+        
+        java.util.Set<Long> userIds = records.stream()
+                .map(ExamRecord::getUserId)
+                .collect(java.util.stream.Collectors.toSet());
+        
+        java.util.Map<Long, Paper> paperMap = paperIds.isEmpty() ? new java.util.HashMap<>() :
+                paperMapper.selectBatchIds(paperIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(Paper::getId, p -> p));
+        
+        java.util.Map<Long, User> userMap = userIds.isEmpty() ? new java.util.HashMap<>() :
+                userMapper.selectBatchIds(userIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(User::getId, u -> u));
+        
+        // 使用EasyExcel或Apache POI导出
+        try {
+            // 创建工作簿
+            org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("考试记录");
+            
+            // 创建表头
+            org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
+            String[] headers = {"考生姓名", "试卷名称", "考试时长(分钟)", "得分", "是否通过", "考试状态", "开始时间", "提交时间"};
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+            
+            // 填充数据
+            int rowNum = 1;
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            
+            for (ExamRecord record : records) {
+                // 过滤
+                if (userName != null && !userName.isEmpty()) {
+                    User user = userMap.get(record.getUserId());
+                    if (user == null || 
+                        (user.getRealName() == null || !user.getRealName().contains(userName)) &&
+                        (user.getUsername() == null || !user.getUsername().contains(userName))) {
+                        continue;
+                    }
+                }
+                if (paperName != null && !paperName.isEmpty()) {
+                    Paper paper = paperMap.get(record.getPaperId());
+                    if (paper == null || paper.getPaperName() == null || !paper.getPaperName().contains(paperName)) {
+                        continue;
+                    }
+                }
+                
+                org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowNum++);
+                
+                User user = userMap.get(record.getUserId());
+                Paper paper = paperMap.get(record.getPaperId());
+                
+                row.createCell(0).setCellValue(user != null ? (user.getRealName() != null ? user.getRealName() : user.getUsername()) : "");
+                row.createCell(1).setCellValue(paper != null ? paper.getPaperName() : "");
+                row.createCell(2).setCellValue(paper != null && paper.getExamDuration() != null ? paper.getExamDuration() : 0);
+                row.createCell(3).setCellValue(record.getUserScore() != null ? record.getUserScore() : 0);
+                row.createCell(4).setCellValue(record.getPassed() != null && record.getPassed() == 1 ? "通过" : "未通过");
+                row.createCell(5).setCellValue(getStatusName(record.getStatus()));
+                row.createCell(6).setCellValue(record.getStartTime() != null ? sdf.format(java.sql.Timestamp.valueOf(record.getStartTime())) : "");
+                row.createCell(7).setCellValue(record.getSubmitTime() != null ? sdf.format(java.sql.Timestamp.valueOf(record.getSubmitTime())) : "");
+            }
+            
+            // 写入输出流
+            workbook.write(outputStream);
+            workbook.close();
+        } catch (Exception e) {
+            throw new BusinessException("导出失败：" + e.getMessage());
+        }
+    }
+    
+    private String getStatusName(Integer status) {
+        if (status == null) return "未知";
+        switch (status) {
+            case 0: return "未开始";
+            case 1: return "进行中";
+            case 2: return "已完成";
+            case 3: return "已超时";
+            default: return "未知";
+        }
     }
 }

@@ -2,6 +2,8 @@ package com.etms.config;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,6 +16,7 @@ import java.util.stream.Collectors;
 /**
  * JWT Token提供者
  */
+@Slf4j
 @Component
 public class JwtTokenProvider {
     
@@ -40,11 +43,11 @@ public class JwtTokenProvider {
                 .collect(Collectors.joining(","));
         
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
+                .subject(userDetails.getUsername())
                 .claim("authorities", authorities)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
                 .compact();
     }
     
@@ -52,11 +55,11 @@ public class JwtTokenProvider {
      * 从Token获取用户名
      */
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
         
         return claims.getSubject();
     }
@@ -66,13 +69,43 @@ public class JwtTokenProvider {
      */
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
+            Jwts.parser()
+                    .verifyWith(getSigningKey())
                     .build()
-                    .parseClaimsJws(token);
+                    .parseSignedClaims(token);
             return true;
+        } catch (SignatureException e) {
+            log.warn("JWT签名验证失败: {}", e.getMessage());
+        } catch (MalformedJwtException e) {
+            log.warn("JWT格式错误: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT已过期: {}", e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            log.warn("不支持的JWT类型: {}", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.warn("JWT参数非法: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("JWT验证异常: {}", e.getMessage(), e);
+        }
+        return false;
+    }
+
+    /**
+     * 获取Token的剩余有效时间（毫秒）
+     */
+    public long getTokenRemainingTime(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            Date expiration = claims.getExpiration();
+            long remaining = expiration.getTime() - System.currentTimeMillis();
+            return remaining > 0 ? remaining : 0;
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            log.debug("获取Token剩余时间失败: {}", e.getMessage());
+            return 0;
         }
     }
 }

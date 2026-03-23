@@ -18,7 +18,7 @@ public interface DeptService extends IService<Dept> {
     /**
      * 获取部门列表
      */
-    List<Dept> getDeptList(Long parentId);
+    List<Dept> getDeptList(Long parentId, String deptName, Integer status);
     
     /**
      * 新增部门

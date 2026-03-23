@@ -15,6 +15,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -138,5 +139,13 @@ public class UserController {
     public Result<Void> assignRoles(@PathVariable Long id, @Valid @RequestBody List<Long> roleIds) {
         userService.assignRoles(id, roleIds);
         return Result.success();
+    }
+
+    @ApiOperation(value = "导出用户")
+    @GetMapping("/export")
+    public void export(
+            UserDTO userDTO,
+            HttpServletResponse response) {
+        userService.exportUsers(userDTO, response);
     }
 }

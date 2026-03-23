@@ -81,6 +81,8 @@ const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 const captchaImage = ref('')
 const captchaKey = ref('')
+const captchaRetryCount = ref(0)
+const MAX_CAPTCHA_RETRY = 3
 
 const loginForm = reactive({
   username: '',
@@ -88,13 +90,25 @@ const loginForm = reactive({
   captcha: ''
 })
 
+// 用户名验证规则：长度3-20位，只允许字母、数字、下划线
+const validateUsername = (_rule: any, value: string, callback: (error?: Error) => void) => {
+  if (!value) {
+    callback(new Error('请输入用户名'))
+  } else if (value.length < 3 || value.length > 20) {
+    callback(new Error('用户名长度为3-20位'))
+  } else if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+    callback(new Error('用户名只能包含字母、数字和下划线'))
+  } else {
+    callback()
+  }
+}
+
 const loginRules: FormRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
+    { required: true, validator: validateUsername, trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+    { required: true, message: '请输入密码', trigger: 'blur' }
   ],
   captcha: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
@@ -102,15 +116,45 @@ const loginRules: FormRules = {
   ]
 }
 
-// 获取验证码
+// 获取验证码（带自动重试机制）
 const refreshCaptcha = async () => {
   try {
     const res = await getCaptcha()
     captchaImage.value = res.data.captchaImage
     captchaKey.value = res.data.captchaKey
+    captchaRetryCount.value = 0 // 成功后重置计数器
   } catch (error) {
-    ElMessage.error('获取验证码失败')
+    captchaRetryCount.value++
+    if (captchaRetryCount.value < MAX_CAPTCHA_RETRY) {
+      // 自动重试
+      ElMessage.warning(`获取验证码失败，正在重试(${captchaRetryCount.value}/${MAX_CAPTCHA_RETRY})...`)
+      setTimeout(refreshCaptcha, 1000)
+    } else {
+      ElMessage.error('获取验证码失败，请刷新页面重试')
+      // 重置计数器，允许用户手动重试
+      captchaRetryCount.value = 0
+    }
   }
+}
+
+// 获取友好的错误消息
+const getErrorMessage = (error: any): string => {
+  // 检查是否有响应数据
+  if (error.response?.data?.message) {
+    return error.response.data.message
+  }
+  // 检查是否有错误消息
+  if (error.message) {
+    // 处理常见网络错误
+    if (error.message.includes('timeout')) {
+      return '请求超时，请稍后重试'
+    }
+    if (error.message.includes('Network Error')) {
+      return '网络连接失败，请检查网络'
+    }
+    return error.message
+  }
+  return '登录失败，请稍后重试'
 }
 
 const handleLogin = async () => {
@@ -123,7 +167,8 @@ const handleLogin = async () => {
     ElMessage.success('登录成功')
     router.push('/')
   } catch (error: any) {
-    ElMessage.error(error.message || '登录失败')
+    const errorMessage = getErrorMessage(error)
+    ElMessage.error(errorMessage)
     // 登录失败刷新验证码
     refreshCaptcha()
   } finally {

@@ -122,6 +122,7 @@ const videoRef = ref<HTMLVideoElement>()
 const courseInfo = reactive({
   id: 0,
   courseId: 0,
+  planId: 0,
   courseName: '',
   description: '',
   courseDesc: '',
@@ -134,9 +135,10 @@ const courseInfo = reactive({
   courseType: 1
 })
 
-// 进度ID
+// 进度ID和计划ID
 const progressId = computed(() => route.query.progressId ? Number(route.query.progressId) : null)
 const courseId = computed(() => route.query.courseId ? Number(route.query.courseId) : null)
+const planId = computed(() => route.query.planId ? Number(route.query.planId) : null)
 
 // 获取课程信息
 const fetchCourseInfo = async () => {
@@ -167,6 +169,10 @@ const fetchCourseInfo = async () => {
       const progressData = progressRes.data?.records?.find((r: any) => r.id === progressId.value)
       if (progressData) {
         progress.value = progressData.progress || 0
+        // 从进度数据中获取 planId
+        if (progressData.planId) {
+          courseInfo.planId = progressData.planId
+        }
       }
     }
   } catch (error) {
@@ -205,7 +211,7 @@ const saveProgress = async (newProgress: number) => {
   
   try {
     await updateProgress({
-      planId: 0, // 如果没有计划ID，传0
+      planId: planId.value || courseInfo.planId || 0, // 优先使用路由参数，其次使用进度数据中的值
       courseId: courseId.value || 0,
       progress: newProgress
     })

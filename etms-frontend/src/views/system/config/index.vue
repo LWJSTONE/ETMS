@@ -50,6 +50,7 @@
         <el-table-column prop="configName" label="参数名称" width="180" show-overflow-tooltip />
         <el-table-column prop="configKey" label="参数键名" width="200" show-overflow-tooltip />
         <el-table-column prop="configValue" label="参数键值" width="150" show-overflow-tooltip />
+        <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
         <el-table-column prop="configType" label="系统内置" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.configType === 'Y' ? 'primary' : 'info'">
@@ -139,6 +140,9 @@
             <el-radio :value="0">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="form.sortOrder" :min="0" :max="999" />
+        </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input 
             v-model="form.remark" 
@@ -202,6 +206,7 @@ const form = reactive({
   configValue: '',
   configType: 'N' as 'Y' | 'N',
   remark: '',
+  sortOrder: 0,
   status: 1
 })
 
@@ -272,6 +277,7 @@ const handleAdd = () => {
     configValue: '',
     configType: 'N',
     remark: '',
+    sortOrder: 0,
     status: 1
   })
   dialogVisible.value = true
@@ -289,6 +295,7 @@ const handleEdit = (row: ConfigItem) => {
     configValue: row.configValue,
     configType: row.configType,
     remark: row.remark,
+    sortOrder: row.sortOrder || 0,
     status: row.status
   })
   dialogVisible.value = true
@@ -303,17 +310,17 @@ const handleDelete = async (row: ConfigItem) => {
     return
   }
   
-  await ElMessageBox.confirm(
-    `确定要删除参数「${row.configName}」吗？`,
-    '删除确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  )
-  
   try {
+    await ElMessageBox.confirm(
+      `确定要删除参数「${row.configName}」吗？`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
     const res = await deleteConfig(row.id)
     if (res.code === 200) {
       ElMessage.success('删除成功')
@@ -322,24 +329,26 @@ const handleDelete = async (row: ConfigItem) => {
       ElMessage.error(res.message || '删除失败')
     }
   } catch (error: any) {
-    ElMessage.error(error.message || '删除失败')
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '删除失败')
+    }
   }
 }
 
 // 刷新缓存
 const handleRefreshCache = async () => {
-  await ElMessageBox.confirm(
-    '确定要刷新系统参数缓存吗？',
-    '刷新缓存',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  )
-  
-  loading.value = true
   try {
+    await ElMessageBox.confirm(
+      '确定要刷新系统参数缓存吗？',
+      '刷新缓存',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    loading.value = true
     const res = await refreshConfigCache()
     if (res.code === 200) {
       ElMessage.success('缓存刷新成功')
@@ -347,7 +356,9 @@ const handleRefreshCache = async () => {
       ElMessage.error(res.message || '缓存刷新失败')
     }
   } catch (error: any) {
-    ElMessage.error(error.message || '缓存刷新失败')
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '缓存刷新失败')
+    }
   } finally {
     loading.value = false
   }
@@ -366,6 +377,7 @@ const handleSubmit = async () => {
       configValue: form.configValue,
       configType: form.configType,
       remark: form.remark,
+      sortOrder: form.sortOrder,
       status: form.status
     }
     

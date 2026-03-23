@@ -5,6 +5,7 @@ import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.service.ExamRecordService;
 import com.etms.vo.ExamResultVO;
+import com.etms.vo.ExamResultStatsVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -63,5 +64,14 @@ public class ExamResultController {
     public Result<ExamResultVO> get(@PathVariable Long id) {
         ExamResultVO vo = examRecordService.getResultDetail(id);
         return Result.success(vo);
+    }
+    
+    @ApiOperation(value = "获取成绩统计")
+    @GetMapping("/stats")
+    public Result<ExamResultStatsVO> getStats(
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime) {
+        ExamResultStatsVO stats = examRecordService.getResultStats(startTime, endTime);
+        return Result.success(stats);
     }
 }

@@ -263,16 +263,40 @@ const toggleExpandAll = () => {
 // 新增
 const handleAdd = () => {
   isEdit.value = false
-  resetForm()
-  form.parentId = null
+  // 先重置表单，再设置 parentId
+  Object.assign(form, {
+    id: null,
+    parentId: null,
+    deptName: '',
+    deptCode: '',
+    leaderId: null,
+    sortOrder: 0,
+    status: 1
+  })
+  // 重置表单验证状态
+  nextTick(() => {
+    formRef.value?.clearValidate()
+  })
   dialogVisible.value = true
 }
 
 // 新增子部门
 const handleAddChild = (row: Dept) => {
   isEdit.value = false
-  resetForm()
-  form.parentId = row.id
+  // 先重置表单，再设置 parentId
+  Object.assign(form, {
+    id: null,
+    parentId: row.id,
+    deptName: '',
+    deptCode: '',
+    leaderId: null,
+    sortOrder: 0,
+    status: 1
+  })
+  // 重置表单验证状态
+  nextTick(() => {
+    formRef.value?.clearValidate()
+  })
   dialogVisible.value = true
 }
 

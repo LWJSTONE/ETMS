@@ -67,3 +67,8 @@ export function updateProgress(data: LearningProgressUpdateParams): Promise<ApiR
 export function getMyProgress(params: PageParams): Promise<ApiResponse<PageResult<LearningProgress>>> {
   return request.get('/training/progress/my', params)
 }
+
+// 获取学习进度详情
+export function getProgressDetail(id: number): Promise<ApiResponse<LearningProgress>> {
+  return request.get(`/training/progress/${id}`)
+}

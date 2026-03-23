@@ -172,8 +172,14 @@ const form = reactive({
 
 // 表单验证规则
 const rules: FormRules = {
-  roleName: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
-  roleCode: [{ required: true, message: '请输入角色编码', trigger: 'blur' }],
+  roleName: [
+    { required: true, message: '请输入角色名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  roleCode: [
+    { required: true, message: '请输入角色编码', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
   dataScope: [{ required: true, message: '请选择数据范围', trigger: 'change' }]
 }
 
@@ -311,7 +317,16 @@ const handleAdd = () => {
 // 编辑
 const handleEdit = (row: any) => { 
   isEdit.value = true
-  Object.assign(form, row)
+  // 明确指定需要复制的字段，避免传递额外数据
+  Object.assign(form, {
+    id: row.id,
+    roleName: row.roleName,
+    roleCode: row.roleCode,
+    roleDesc: row.roleDesc,
+    dataScope: row.dataScope,
+    sortOrder: row.sortOrder,
+    status: row.status
+  })
   dialogVisible.value = true
 }
 

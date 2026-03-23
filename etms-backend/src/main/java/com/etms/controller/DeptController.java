@@ -35,8 +35,11 @@ public class DeptController {
     
     @ApiOperation(value = "获取部门列表")
     @GetMapping
-    public Result<List<Dept>> list(@RequestParam(required = false) Long parentId) {
-        List<Dept> list = deptService.getDeptList(parentId);
+    public Result<List<Dept>> list(
+            @RequestParam(required = false) Long parentId,
+            @RequestParam(required = false) String deptName,
+            @RequestParam(required = false) Integer status) {
+        List<Dept> list = deptService.getDeptList(parentId, deptName, status);
         return Result.success(list);
     }
     

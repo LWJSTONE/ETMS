@@ -27,9 +27,14 @@
       <template #header>
         <div class="card-header">
           <span>岗位列表</span>
-          <el-button type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>新增
-          </el-button>
+          <div class="header-buttons">
+            <el-button type="primary" @click="handleAdd">
+              <el-icon><Plus /></el-icon>新增
+            </el-button>
+            <el-button type="success" @click="handleExport">
+              <el-icon><Download /></el-icon>导出
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -115,6 +120,7 @@ import {
   updatePosition,
   deletePosition,
   updatePositionStatus,
+  exportPositions,
   type Position
 } from '@/api/position'
 
@@ -222,18 +228,21 @@ const handleEdit = (row: Position) => {
 
 // 删除
 const handleDelete = async (row: Position) => {
-  await ElMessageBox.confirm(
-    `确定要删除岗位「${row.positionName}」吗？`,
-    '提示',
-    { type: 'warning' }
-  )
-  
   try {
+    await ElMessageBox.confirm(
+      `确定要删除岗位「${row.positionName}」吗？`,
+      '提示',
+      { type: 'warning' }
+    )
+    
     await deletePosition(row.id)
     ElMessage.success('删除成功')
     getList()
-  } catch (error) {
-    console.error('删除失败:', error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
   }
 }
 
@@ -246,6 +255,7 @@ const handleStatusChange = async (row: Position) => {
     // 恢复原状态
     row.status = row.status === 1 ? 0 : 1
     console.error('状态更新失败:', error)
+    ElMessage.error('状态更新失败')
   }
 }
 
@@ -282,8 +292,9 @@ const handleSubmit = async () => {
     }
     dialogVisible.value = false
     getList()
-  } catch (error) {
+  } catch (error: any) {
     console.error('保存失败:', error)
+    ElMessage.error(error.message || '保存失败')
   } finally {
     submitLoading.value = false
   }
@@ -292,6 +303,26 @@ const handleSubmit = async () => {
 onMounted(() => {
   getList()
 })
+
+// 导出岗位
+const handleExport = async () => {
+  try {
+    const blob = await exportPositions({ ...searchForm, current: 1, size: 10000 })
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `岗位数据_${new Date().toISOString().slice(0, 10)}.xlsx`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -305,6 +336,11 @@ onMounted(() => {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      
+      .header-buttons {
+        display: flex;
+        gap: 10px;
+      }
     }
   }
   

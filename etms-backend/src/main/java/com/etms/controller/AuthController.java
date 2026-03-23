@@ -45,8 +45,8 @@ public class AuthController {
     
     @ApiOperation(value = "用户登出")
     @PostMapping("/logout")
-    public Result<Void> logout() {
-        userService.logout();
+    public Result<Void> logout(HttpServletRequest request) {
+        userService.logout(request);
         return Result.success("登出成功", null);
     }
     

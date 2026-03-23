@@ -285,7 +285,7 @@ import {
   View,
   List
 } from '@element-plus/icons-vue'
-import { getResultList, getExamRecordDetail } from '@/api/exam'
+import { getResultList, getResultDetail, getResultStats, type ResultStats } from '@/api/exam'
 
 // 统计数据
 const stats = reactive({
@@ -340,16 +340,40 @@ const getList = async () => {
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
     
-    // 计算统计数据
-    calculateStats()
+    // 获取统计数据
+    getStats()
   } catch (error) {
     console.error(error)
+    ElMessage.error('获取成绩列表失败')
   } finally {
     loading.value = false
   }
 }
 
-// 计算统计数据
+// 获取统计数据
+const getStats = async () => {
+  try {
+    const params: any = {}
+    if (searchForm.examTimeRange && searchForm.examTimeRange.length === 2) {
+      params.startTime = searchForm.examTimeRange[0]
+      params.endTime = searchForm.examTimeRange[1]
+    }
+    const res = await getResultStats(params)
+    if (res.data) {
+      stats.totalCount = res.data.totalCount || 0
+      stats.passCount = res.data.passCount || 0
+      stats.failCount = res.data.failCount || 0
+      stats.passRate = (res.data.passRate || 0).toFixed(1)
+      stats.avgScore = (res.data.avgScore || 0).toFixed(1)
+    }
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+    // 如果后端API不可用，使用前端计算作为备选
+    calculateStats()
+  }
+}
+
+// 计算统计数据（备选方案）
 const calculateStats = () => {
   const data = tableData.value
   stats.totalCount = pagination.total
@@ -438,8 +462,8 @@ const handleViewDetail = async (row: any) => {
   answerList.value = []
   
   try {
-    // 调用API获取完整的答题详情
-    const res = await getExamRecordDetail(row.id)
+    // 调用成绩详情API获取完整信息
+    const res = await getResultDetail(row.id)
     const detailInfo = res.data
     
     // 更新详情数据
@@ -477,7 +501,8 @@ const handleViewDetail = async (row: any) => {
       }
     }
   } catch (error) {
-    console.warn('获取详情API失败，使用行数据:', error)
+    console.warn('获取详情失败:', error)
+    ElMessage.error('获取成绩详情失败')
     // 如果API调用失败，使用行数据
     if (row.answerDetail) {
       try {

@@ -8,6 +8,7 @@ import com.etms.entity.User;
 import com.etms.vo.LoginVO;
 import com.etms.vo.UserVO;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -23,7 +24,7 @@ public interface UserService extends IService<User> {
     /**
      * 用户登出
      */
-    void logout();
+    void logout(HttpServletRequest request);
     
     /**
      * 分页查询用户列表
@@ -75,4 +76,9 @@ public interface UserService extends IService<User> {
      * 获取当前登录用户
      */
     User getCurrentUser();
+
+    /**
+     * 导出用户
+     */
+    void exportUsers(UserDTO userDTO, HttpServletResponse response);
 }

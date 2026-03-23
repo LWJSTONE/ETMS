@@ -336,36 +336,33 @@ const handleViewDetail = async (row: ExamRecord) => {
 }
 
 // 导出
-const handleExport = () => {
-  // 构建导出数据
-  const exportData = tableData.value.map(item => ({
-    '考生姓名': item.userName,
-    '试卷名称': item.paperName,
-    '考试时长(分钟)': item.duration || '',
-    '得分': item.status === 2 ? item.totalScore : '',
-    '是否通过': item.status === 2 ? (item.passed === 1 ? '是' : '否') : '',
-    '考试状态': getStatusName(item.status),
-    '开始时间': formatDateTime(item.startTime),
-    '提交时间': formatDateTime(item.submitTime) || ''
-  }))
-
-  // 转换为CSV格式
-  const headers = Object.keys(exportData[0] || {})
-  const csvContent = [
-    headers.join(','),
-    ...exportData.map(row => headers.map(h => `"${row[h as keyof typeof row] || ''}"`).join(','))
-  ].join('\n')
-
-  // 添加BOM以支持中文
-  const BOM = '\uFEFF'
-  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = `考试记录_${new Date().toISOString().slice(0, 10)}.csv`
-  link.click()
-  URL.revokeObjectURL(link.href)
-
-  ElMessage.success('导出成功')
+const handleExport = async () => {
+  try {
+    // 使用后端导出API
+    const response = await fetch('/api/exam/records/export', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error('导出失败')
+    }
+    
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `考试记录_${new Date().toISOString().slice(0, 10)}.xlsx`
+    link.click()
+    window.URL.revokeObjectURL(url)
+    
+    ElMessage.success('导出成功')
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || '导出失败')
+  }
 }
 
 onMounted(() => {

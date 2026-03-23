@@ -2,6 +2,7 @@ package com.etms.security;
 
 import com.etms.config.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +26,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
+    private final StringRedisTemplate stringRedisTemplate;
+    
+    private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
     
     @Override
     protected void doFilterInternal(
@@ -35,6 +39,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = getTokenFromRequest(request);
         
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
+            // 检查Token是否在黑名单中
+            if (isTokenBlacklisted(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            
             String username = jwtTokenProvider.getUsernameFromToken(token);
             
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -60,5 +70,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearerToken.substring(7);
         }
         return null;
+    }
+    
+    /**
+     * 检查Token是否在黑名单中
+     */
+    private boolean isTokenBlacklisted(String token) {
+        String key = TOKEN_BLACKLIST_PREFIX + token;
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
     }
 }

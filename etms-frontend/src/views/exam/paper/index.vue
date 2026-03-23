@@ -28,7 +28,7 @@
       <template #header>
         <div class="card-header">
           <span>试卷列表</span>
-          <el-button type="primary" @click="handleAdd">
+          <el-button v-if="canAdd" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>新增
           </el-button>
         </div>
@@ -65,25 +65,25 @@
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">查看</el-button>
             <el-button
-              v-if="row.status === 0"
+              v-if="row.status === 0 && canEdit"
               type="primary"
               link
               @click="handleEdit(row)"
             >编辑</el-button>
             <el-button
-              v-if="row.status === 0"
+              v-if="row.status === 0 && canPublish"
               type="success"
               link
               @click="handlePublish(row)"
             >发布</el-button>
             <el-button
-              v-if="row.status === 1"
+              v-if="row.status === 1 && canPublish"
               type="warning"
               link
               @click="handleDisable(row)"
             >停用</el-button>
             <el-button
-              v-if="row.status === 0 || row.status === 2"
+              v-if="(row.status === 0 || row.status === 2) && canDelete"
               type="danger"
               link
               @click="handleDelete(row)"
@@ -236,6 +236,24 @@ import {
   publishPaper,
   disablePaper
 } from '@/api/exam'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+
+// 权限检查函数
+const hasPermission = (permission: string): boolean => {
+  const permissions = userStore.userInfo?.permissions || []
+  const roles = userStore.userInfo?.roles || []
+  // 管理员角色拥有所有权限
+  if (roles.includes('admin') || roles.includes('ADMIN')) return true
+  return permissions.includes(permission)
+}
+
+// 检查是否有试卷管理相关权限
+const canAdd = computed(() => hasPermission('exam:paper:add'))
+const canEdit = computed(() => hasPermission('exam:paper:edit'))
+const canDelete = computed(() => hasPermission('exam:paper:delete'))
+const canPublish = computed(() => hasPermission('exam:paper:publish'))
 
 // 搜索表单
 const searchForm = reactive({
@@ -472,7 +490,7 @@ const handleSubmit = async () => {
       paperCode: form.paperCode,
       totalScore: form.totalScore,
       passScore: form.passScore,
-      duration: form.duration,
+      examDuration: form.duration,  // 后端字段名: examDuration (JSON映射为duration)
       startTime: form.timeRange?.[0] || null,
       endTime: form.timeRange?.[1] || null,
       description: form.description,

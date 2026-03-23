@@ -9,10 +9,10 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -30,6 +30,9 @@ public class CaptchaServiceImpl implements CaptchaService {
     private static final int CAPTCHA_LENGTH = 4;
     private static final int IMAGE_WIDTH = 120;
     private static final int IMAGE_HEIGHT = 40;
+    
+    // 使用 SecureRandom 替代 Random，提高安全性
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     
     @Override
     public Map<String, String> generateCaptcha() {
@@ -89,9 +92,8 @@ public class CaptchaServiceImpl implements CaptchaService {
     private String generateRandomText() {
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         StringBuilder sb = new StringBuilder();
-        Random random = new Random();
         for (int i = 0; i < CAPTCHA_LENGTH; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
+            sb.append(chars.charAt(SECURE_RANDOM.nextInt(chars.length())));
         }
         return sb.toString();
     }
@@ -111,17 +113,16 @@ public class CaptchaServiceImpl implements CaptchaService {
         g.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
         
         // 绘制干扰线
-        Random random = new Random();
         for (int i = 0; i < 6; i++) {
-            g.setColor(new Color(random.nextInt(200), random.nextInt(200), random.nextInt(200)));
-            g.drawLine(random.nextInt(IMAGE_WIDTH), random.nextInt(IMAGE_HEIGHT),
-                      random.nextInt(IMAGE_WIDTH), random.nextInt(IMAGE_HEIGHT));
+            g.setColor(new Color(SECURE_RANDOM.nextInt(200), SECURE_RANDOM.nextInt(200), SECURE_RANDOM.nextInt(200)));
+            g.drawLine(SECURE_RANDOM.nextInt(IMAGE_WIDTH), SECURE_RANDOM.nextInt(IMAGE_HEIGHT),
+                      SECURE_RANDOM.nextInt(IMAGE_WIDTH), SECURE_RANDOM.nextInt(IMAGE_HEIGHT));
         }
         
         // 绘制干扰点
         for (int i = 0; i < 40; i++) {
-            g.setColor(new Color(random.nextInt(255), random.nextInt(255), random.nextInt(255)));
-            g.fillOval(random.nextInt(IMAGE_WIDTH), random.nextInt(IMAGE_HEIGHT), 2, 2);
+            g.setColor(new Color(SECURE_RANDOM.nextInt(255), SECURE_RANDOM.nextInt(255), SECURE_RANDOM.nextInt(255)));
+            g.fillOval(SECURE_RANDOM.nextInt(IMAGE_WIDTH), SECURE_RANDOM.nextInt(IMAGE_HEIGHT), 2, 2);
         }
         
         // 绘制验证码文本
@@ -129,9 +130,9 @@ public class CaptchaServiceImpl implements CaptchaService {
         int x = 10;
         for (int i = 0; i < text.length(); i++) {
             // 随机颜色
-            g.setColor(new Color(random.nextInt(100), random.nextInt(100), random.nextInt(100)));
+            g.setColor(new Color(SECURE_RANDOM.nextInt(100), SECURE_RANDOM.nextInt(100), SECURE_RANDOM.nextInt(100)));
             // 随机角度旋转
-            double angle = (random.nextDouble() - 0.5) * 0.4;
+            double angle = (SECURE_RANDOM.nextDouble() - 0.5) * 0.4;
             g.rotate(angle, x + 15, 28);
             g.drawString(String.valueOf(text.charAt(i)), x, 30);
             g.rotate(-angle, x + 15, 28);

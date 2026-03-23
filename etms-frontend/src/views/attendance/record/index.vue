@@ -206,7 +206,6 @@
           <el-radio-group v-model="signForm.signMethod">
             <el-radio :value="1">二维码签到</el-radio>
             <el-radio :value="2">GPS定位签到</el-radio>
-            <el-radio :value="3">人脸识别签到</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="签到地点" prop="location">
@@ -325,7 +324,8 @@ const searchForm = reactive({
 
 // 培训计划列表
 const planList = ref<any[]>([])
-const activePlanList = computed(() => planList.value.filter(p => p.status === 1))
+// 活跃计划列表：进行中(1)和已结束(2)的计划都可以进行签到操作
+const activePlanList = computed(() => planList.value.filter(p => p.status === 1 || p.status === 2))
 
 // 表格数据
 const tableData = ref<any[]>([])
@@ -380,8 +380,9 @@ const getStats = async () => {
         stats.value = res.data
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取统计失败:', error)
+    ElMessage.error('获取统计数据失败，请稍后重试')
   }
 }
 
@@ -516,8 +517,7 @@ const formatDateTime = (dateTime: string) => {
 const getSignTypeName = (type: number) => {
   const types: Record<number, string> = {
     1: '二维码签到',
-    2: 'GPS定位',
-    3: '人脸识别'
+    2: 'GPS定位'
   }
   return types[type] || '未知'
 }

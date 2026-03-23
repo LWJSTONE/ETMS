@@ -163,6 +163,7 @@ export interface Course {
   pptUrl?: string
   categoryId?: number
   categoryName?: string
+  courseType?: number  // 课程类型(1视频 2文档 3直播)
   duration?: number
   credit?: number
   difficulty?: number
@@ -191,6 +192,7 @@ export interface CourseCreateParams {
   documentUrl?: string
   pptUrl?: string
   categoryId?: number
+  courseType?: number  // 课程类型(1视频 2文档 3直播)
   duration?: number
   credit?: number
   difficulty?: number
@@ -209,6 +211,7 @@ export interface CourseUpdateParams {
   documentUrl?: string
   pptUrl?: string
   categoryId?: number
+  courseType?: number  // 课程类型(1视频 2文档 3直播)
   duration?: number
   credit?: number
   difficulty?: number
@@ -267,6 +270,7 @@ export interface QuestionCreateParams {
 
 export interface QuestionUpdateParams {
   questionCode?: string
+  /** 题目类型(1单选 2多选 3判断 4填空 5简答) - 更新时建议传递 */
   questionType?: number
   questionContent?: string
   optionA?: string
@@ -334,7 +338,9 @@ export interface PaperCreateParams {
   paperType?: number
   totalScore: number
   passScore: number
-  examDuration: number
+  examDuration: number  // 对应后端examDuration字段，JSON序列化为duration
+  startTime?: string
+  endTime?: string
   questionCount?: number
   questionConfig?: string
   shuffleOption?: number
@@ -352,7 +358,9 @@ export interface PaperUpdateParams {
   paperType?: number
   totalScore?: number
   passScore?: number
-  examDuration?: number
+  examDuration?: number  // 对应后端examDuration字段，JSON序列化为duration
+  startTime?: string
+  endTime?: string
   questionCount?: number
   questionConfig?: string
   shuffleOption?: number
@@ -589,6 +597,10 @@ export interface ExamResult {
   passed: number
   submitTime: string
   examDuration?: number
+  startTime?: string
+  answerDetail?: string  // 答题详情JSON
+  answers?: any[]  // 答题详情数组
+  retakeCount?: number  // 补考次数
   createTime?: string
 }
 

@@ -58,3 +58,8 @@ export function deletePosition(id: number): Promise<ApiResponse<void>> {
 export function updatePositionStatus(id: number, status: number): Promise<ApiResponse<void>> {
   return request.put(`/system/positions/${id}/status`, { status })
 }
+
+// 导出岗位
+export function exportPositions(params: PageParams & { positionName?: string; positionCode?: string; status?: number }): Promise<Blob> {
+  return request.get('/system/positions/export', params, { responseType: 'blob' })
+}
