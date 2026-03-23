@@ -70,6 +70,21 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean addQuestion(Question question) {
+        // 验证必填字段
+        if (question.getQuestionContent() == null || question.getQuestionContent().trim().isEmpty()) {
+            throw new BusinessException("题目内容不能为空");
+        }
+        if (question.getQuestionType() == null) {
+            throw new BusinessException("题目类型不能为空");
+        }
+        
+        // 选择题和判断题必须有答案
+        if (question.getQuestionType() == 1 || question.getQuestionType() == 2 || question.getQuestionType() == 3) {
+            if (question.getAnswer() == null || question.getAnswer().trim().isEmpty()) {
+                throw new BusinessException("选择题和判断题必须设置答案");
+            }
+        }
+        
         // 验证选项依赖关系
         validateOptions(question);
         
@@ -80,6 +95,15 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateQuestion(Question question) {
+        // 检查题目是否被已完成的考试使用
+        Long usedInExamCount = paperQuestionMapper.selectCount(
+            new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getQuestionId, question.getId())
+        );
+        if (usedInExamCount > 0) {
+            // 题目已被试卷引用，警告但不禁止修改（因为试卷可能尚未被使用）
+            // 可根据业务需求决定是否禁止修改
+        }
+        
         // 验证选项依赖关系
         validateOptions(question);
         

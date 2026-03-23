@@ -228,6 +228,19 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             throw new BusinessException("试卷不存在");
         }
         
+        // 检查考试是否超时
+        if (record.getStartTime() != null && paper.getExamDuration() != null) {
+            long minutesUsed = Duration.between(record.getStartTime(), LocalDateTime.now()).toMinutes();
+            if (minutesUsed > paper.getExamDuration()) {
+                // 标记为超时并自动提交
+                record.setStatus(3); // 已超时
+                record.setSubmitTime(LocalDateTime.now());
+                record.setDurationUsed((int) minutesUsed);
+                baseMapper.updateById(record);
+                throw new BusinessException("考试时间已超时，系统已自动提交");
+            }
+        }
+        
         // 计算分数（简化处理，实际应根据答案计算）
         // TODO: 实现详细的评分逻辑
         int userScore = calculateScore(record.getPaperId(), answers);
@@ -350,7 +363,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             
             return totalScore;
         } catch (Exception e) {
-            // 解析失败返回0分
+            // 解析失败记录日志
+            log.error("计算分数失败: {}", e.getMessage(), e);
             return 0;
         }
     }
@@ -486,6 +500,17 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         ExamRecord record = baseMapper.selectById(id);
         if (record == null || record.getStatus() != 2) {
             return null;
+        }
+        
+        // 权限校验：只能查看自己的成绩，或者管理员可以查看所有
+        User currentUser = userService.getCurrentUser();
+        if (currentUser != null && !record.getUserId().equals(currentUser.getId())) {
+            // 检查是否是管理员
+            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                .anyMatch(r -> "ADMIN".equals(r.getRoleCode()));
+            if (!isAdmin) {
+                throw new BusinessException("无权查看他人成绩详情");
+            }
         }
         
         ExamResultVO vo = new ExamResultVO();

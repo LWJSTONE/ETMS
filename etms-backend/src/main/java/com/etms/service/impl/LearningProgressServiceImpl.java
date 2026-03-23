@@ -354,6 +354,15 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateProgress(Long planId, Long courseId, Integer progress) {
+        // 参数校验
+        if (planId == null || courseId == null || progress == null) {
+            throw new BusinessException("参数不能为空");
+        }
+        // 进度值范围校验
+        if (progress < 0 || progress > 100) {
+            throw new BusinessException("进度值必须在0-100之间");
+        }
+        
         // 获取当前用户
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
@@ -366,6 +375,16 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             throw new BusinessException("用户不存在");
         }
         
+        // 验证培训计划存在且有效
+        TrainingPlan plan = trainingPlanMapper.selectById(planId);
+        if (plan == null) {
+            throw new BusinessException("培训计划不存在");
+        }
+        // 只允许已发布(1)或进行中(2)状态的计划进行学习
+        if (plan.getStatus() != 1 && plan.getStatus() != 2) {
+            throw new BusinessException("培训计划未发布或未开始，无法学习");
+        }
+        
         // 查找或创建学习进度记录
         LambdaQueryWrapper<UserPlan> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserPlan::getUserId, user.getId())
@@ -376,14 +395,19 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             userPlan = new UserPlan();
             userPlan.setUserId(user.getId());
             userPlan.setPlanId(planId);
+            userPlan.setCourseId(courseId);
             userPlan.setProgress(progress);
-            userPlan.setStatus(progress >= 100 ? 2 : 1);
+            userPlan.setStatus(progress >= 100 ? 2 : 1); // 设置状态：0未开始、1进行中、2已完成
             userPlan.setStartTime(LocalDateTime.now());
             if (progress >= 100) {
                 userPlan.setCompleteTime(LocalDateTime.now());
             }
             baseMapper.insert(userPlan);
         } else {
+            // 防止进度倒退
+            if (userPlan.getProgress() != null && progress < userPlan.getProgress()) {
+                throw new BusinessException("学习进度不能倒退");
+            }
             userPlan.setProgress(progress);
             userPlan.setStatus(progress >= 100 ? 2 : 1);
             if (progress >= 100 && userPlan.getCompleteTime() == null) {

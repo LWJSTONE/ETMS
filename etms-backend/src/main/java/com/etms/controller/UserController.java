@@ -113,6 +113,8 @@ public class UserController {
     
     @ApiOperation(value = "重置密码")
     @PutMapping("/{id}/reset-password")
+    // 权限校验：只有管理员可以重置密码
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public Result<Void> resetPassword(@PathVariable Long id) {
         // 安全校验：密码不再通过API返回，而是通过邮件或短信发送给用户
         // 或者返回一个临时密码token，用户通过该token设置新密码
@@ -122,6 +124,8 @@ public class UserController {
     
     @ApiOperation(value = "修改状态")
     @PutMapping("/{id}/status")
+    // 权限校验：只有管理员可以修改用户状态
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
         Integer status = body.get("status");
         // 参数验证
@@ -138,6 +142,8 @@ public class UserController {
     
     @ApiOperation(value = "分配角色")
     @PutMapping("/{id}/roles")
+    // 权限校验：只有管理员可以分配角色
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public Result<Void> assignRoles(@PathVariable Long id, @Valid @RequestBody List<Long> roleIds) {
         userService.assignRoles(id, roleIds);
         return Result.success();

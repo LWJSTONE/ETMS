@@ -127,6 +127,53 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             throw new BusinessException("用户未登录，无法申请补签");
         }
         
+        // 校验用户是否属于该培训计划（与签到方法保持一致）
+        Long userPlanCount = userPlanMapper.selectCount(
+            new LambdaQueryWrapper<UserPlan>()
+                .eq(UserPlan::getUserId, currentUserId)
+                .eq(UserPlan::getPlanId, planId)
+        );
+        if (userPlanCount == null || userPlanCount == 0) {
+            throw new BusinessException("您不属于该培训计划，无法申请补签");
+        }
+        
+        // 解析并校验补签时间
+        LocalDateTime parsedSignTime;
+        if (signTime != null && !signTime.isEmpty()) {
+            try {
+                parsedSignTime = LocalDateTime.parse(signTime.replace(" ", "T"));
+                // 校验补签时间不能晚于当前时间
+                if (parsedSignTime.isAfter(LocalDateTime.now())) {
+                    throw new BusinessException("补签时间不能晚于当前时间");
+                }
+                // 校验补签时间不能超过30天
+                if (parsedSignTime.isBefore(LocalDateTime.now().minusDays(30))) {
+                    throw new BusinessException("只能补签30天内的记录");
+                }
+            } catch (BusinessException e) {
+                throw e;
+            } catch (Exception e) {
+                parsedSignTime = LocalDateTime.now();
+            }
+        } else {
+            parsedSignTime = LocalDateTime.now();
+        }
+        
+        // 检查是否已有该时间段的签到记录
+        LocalDateTime dayStart = parsedSignTime.withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime dayEnd = dayStart.plusDays(1);
+        Long existCount = baseMapper.selectCount(
+            new LambdaQueryWrapper<AttendanceRecord>()
+                .eq(AttendanceRecord::getUserId, currentUserId)
+                .eq(AttendanceRecord::getPlanId, planId)
+                .eq(signCategory != null, AttendanceRecord::getSignCategory, signCategory)
+                .between(AttendanceRecord::getSignTime, dayStart, dayEnd)
+                .ne(AttendanceRecord::getStatus, 4) // 排除缺勤状态
+        );
+        if (existCount > 0) {
+            throw new BusinessException("该时间段已有签到记录，无法重复补签");
+        }
+        
         AttendanceRecord record = new AttendanceRecord();
         record.setPlanId(planId);
         record.setSignType(signType);
@@ -136,17 +183,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setAuditStatus(0); // 待审核
         record.setCreateTime(LocalDateTime.now());
         record.setUserId(currentUserId);
-        
-        // 解析签到时间
-        if (signTime != null && !signTime.isEmpty()) {
-            try {
-                record.setSignTime(LocalDateTime.parse(signTime.replace(" ", "T")));
-            } catch (Exception e) {
-                record.setSignTime(LocalDateTime.now());
-            }
-        } else {
-            record.setSignTime(LocalDateTime.now());
-        }
+        record.setSignTime(parsedSignTime);
         
         return baseMapper.insert(record) > 0;
     }
@@ -206,6 +243,11 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setAuditRemark(auditRemark);
         record.setAuditBy(currentUserId);
         record.setAuditTime(LocalDateTime.now());
+        
+        // 审核通过时更新状态为正常签到
+        if (auditStatus == 1) {
+            record.setStatus(1); // 更新为正常状态
+        }
         
         return baseMapper.updateById(record) > 0;
     }

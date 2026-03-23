@@ -27,7 +27,12 @@ public class JwtTokenProvider {
     private Long jwtExpiration;
     
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        byte[] keyBytes = jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        // 校验密钥长度，HS256要求至少32字节（256位）
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT密钥长度不足，必须至少32字节（256位），当前长度：" + keyBytes.length);
+        }
+        return Keys.hmacShaKeyFor(keyBytes);
     }
     
     /**

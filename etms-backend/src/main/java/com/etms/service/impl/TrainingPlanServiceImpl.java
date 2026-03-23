@@ -139,9 +139,34 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("当前状态不允许发布，只有草稿状态可以发布");
         }
         
-        // 验证必要字段
+        // 验证必要字段：培训名称
+        if (existingPlan.getPlanName() == null || existingPlan.getPlanName().trim().isEmpty()) {
+            throw new BusinessException("请先设置培训计划名称");
+        }
+        
+        // 验证必要字段：日期
         if (existingPlan.getStartDate() == null || existingPlan.getEndDate() == null) {
             throw new BusinessException("请先设置培训计划的开始日期和结束日期");
+        }
+        
+        // 验证日期合理性
+        if (existingPlan.getStartDate().isAfter(existingPlan.getEndDate())) {
+            throw new BusinessException("开始日期不能晚于结束日期");
+        }
+        
+        // 验证必要字段：培训类型
+        if (existingPlan.getPlanType() == null) {
+            throw new BusinessException("请先设置培训类型");
+        }
+        
+        // 验证必要字段：目标部门（至少选择一个部门）
+        if (existingPlan.getTargetDeptIds() == null || existingPlan.getTargetDeptIds().trim().isEmpty()) {
+            throw new BusinessException("请先设置目标部门");
+        }
+        
+        // 验证必要字段：关联课程
+        if (existingPlan.getCourseId() == null) {
+            throw new BusinessException("请先关联培训课程");
         }
         
         TrainingPlan plan = new TrainingPlan();

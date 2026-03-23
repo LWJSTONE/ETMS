@@ -206,10 +206,10 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         }
         
         // 检查试卷是否有关联题目
-        Long questionCount = paperQuestionMapper.selectCount(
+        List<PaperQuestion> paperQuestions = paperQuestionMapper.selectList(
             new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getPaperId, id)
         );
-        if (questionCount == 0) {
+        if (paperQuestions.isEmpty()) {
             throw new BusinessException("试卷没有关联题目，请先添加题目后再发布");
         }
         
@@ -219,6 +219,21 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         }
         if (existingPaper.getPassScore() == null || existingPaper.getPassScore() <= 0) {
             throw new BusinessException("请先设置及格分数");
+        }
+        
+        // 校验每道题是否都有分数设置
+        boolean hasZeroScore = paperQuestions.stream()
+            .anyMatch(pq -> pq.getScore() == null || pq.getScore() <= 0);
+        if (hasZeroScore) {
+            throw new BusinessException("存在未设置分数的题目，请先设置所有题目分数");
+        }
+        
+        // 校验题目分数总和是否等于试卷总分
+        int totalQuestionScore = paperQuestions.stream()
+            .mapToInt(PaperQuestion::getScore)
+            .sum();
+        if (totalQuestionScore != existingPaper.getTotalScore()) {
+            throw new BusinessException("题目分数总和(" + totalQuestionScore + ")与试卷总分(" + existingPaper.getTotalScore() + ")不一致");
         }
         
         Paper paper = new Paper();

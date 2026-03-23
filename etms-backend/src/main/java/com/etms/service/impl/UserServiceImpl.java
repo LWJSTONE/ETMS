@@ -76,7 +76,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public LoginVO login(LoginDTO loginDTO, HttpServletRequest request) {
         // 验证验证码
         if (!captchaService.validateCaptcha(loginDTO.getCaptchaKey(), loginDTO.getCaptcha())) {
-            throw new BusinessException("验证码错误或已过期");
+            // 统一错误信息，避免信息泄露
+            throw new BusinessException("用户名或密码错误");
         }
         
         // 获取用户信息
@@ -390,8 +391,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException("用户名已存在");
         }
         
+        // 获取原用户信息，用于保护admin账户
+        User existingUser = baseMapper.selectById(userDTO.getId());
+        if (existingUser == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
         User user = new User();
         BeanUtils.copyProperties(userDTO, user);
+        
+        // 单独处理密码字段，如果传入密码则需要加密
+        if (StringUtils.hasText(userDTO.getPassword())) {
+            user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        } else {
+            // 不更新密码字段，设为null避免覆盖原密码
+            user.setPassword(null);
+        }
         
         int result = baseMapper.updateById(user);
         
@@ -492,6 +507,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Override
     public boolean updateStatus(Long userId, Integer status) {
+        // 获取用户信息
+        User user = baseMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
+        // 禁止禁用admin账户
+        if ("admin".equals(user.getUsername()) && status == 0) {
+            throw new BusinessException("admin账户不能被禁用");
+        }
+        
         User updateUser = new User();
         updateUser.setId(userId);
         updateUser.setStatus(status);

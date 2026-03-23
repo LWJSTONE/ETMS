@@ -101,6 +101,17 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateCourse(Course course) {
+        // 获取现有课程信息
+        Course existingCourse = baseMapper.selectById(course.getId());
+        if (existingCourse == null) {
+            throw new BusinessException("课程不存在");
+        }
+        
+        // 已上架(2)状态的课程不能随意编辑
+        if (existingCourse.getStatus() == 2) {
+            throw new BusinessException("已上架的课程不能编辑，请先下架后再修改");
+        }
+        
         // 检查课程编码是否重复（排除自身）
         Long count = baseMapper.selectCount(
             new LambdaQueryWrapper<Course>()
@@ -142,6 +153,16 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             throw new BusinessException("当前状态不允许提交审核，只有草稿或审核驳回状态可以提交");
         }
         
+        // 验证必要字段：课程名称
+        if (existingCourse.getCourseName() == null || existingCourse.getCourseName().trim().isEmpty()) {
+            throw new BusinessException("请先设置课程名称");
+        }
+        
+        // 验证必要字段：课程类型
+        if (existingCourse.getCourseType() == null) {
+            throw new BusinessException("请先设置课程类型");
+        }
+        
         Course course = new Course();
         course.setId(id);
         course.setStatus(1); // 待审核
@@ -172,6 +193,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         course.setStatus(status);
         course.setAuditRemark(auditRemark);
         course.setAuditTime(LocalDateTime.now());
+        // 记录审核人（需要从SecurityContext获取当前用户）
         // course.setAuditBy(getCurrentUserId());
         return baseMapper.updateById(course) > 0;
     }

@@ -49,6 +49,22 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addDept(Dept dept) {
+        // 校验部门名称唯一性
+        Long nameCount = baseMapper.selectCount(
+            new LambdaQueryWrapper<Dept>().eq(Dept::getDeptName, dept.getDeptName())
+        );
+        if (nameCount > 0) {
+            throw new BusinessException("部门名称已存在");
+        }
+        
+        // 校验部门负责人是否存在
+        if (dept.getLeaderId() != null) {
+            User leader = userMapper.selectById(dept.getLeaderId());
+            if (leader == null) {
+                throw new BusinessException("部门负责人不存在");
+            }
+        }
+        
         // 设置层级和祖级列表
         if (dept.getParentId() == null || dept.getParentId() == 0) {
             dept.setParentId(0L);
@@ -60,6 +76,10 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
             if (parentDept == null) {
                 throw new BusinessException("父部门不存在");
             }
+            // 校验层级深度（最多5级）
+            if (parentDept.getLevel() >= 5) {
+                throw new BusinessException("部门层级不能超过5级");
+            }
             dept.setLevel(parentDept.getLevel() + 1);
             dept.setAncestors(parentDept.getAncestors() + "," + parentDept.getId());
         }
@@ -69,6 +89,24 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateDept(Dept dept) {
+        // 校验部门名称唯一性（排除自身）
+        Long nameCount = baseMapper.selectCount(
+            new LambdaQueryWrapper<Dept>()
+                .eq(Dept::getDeptName, dept.getDeptName())
+                .ne(Dept::getId, dept.getId())
+        );
+        if (nameCount > 0) {
+            throw new BusinessException("部门名称已存在");
+        }
+        
+        // 校验部门负责人是否存在
+        if (dept.getLeaderId() != null) {
+            User leader = userMapper.selectById(dept.getLeaderId());
+            if (leader == null) {
+                throw new BusinessException("部门负责人不存在");
+            }
+        }
+        
         // 校验父部门是否存在
         if (dept.getParentId() != null && dept.getParentId() != 0) {
             Dept parentDept = baseMapper.selectById(dept.getParentId());
@@ -81,9 +119,16 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
                 throw new BusinessException("不能选择自己或自己的子部门作为父部门");
             }
             
+            // 校验层级深度（最多5级）
+            if (parentDept.getLevel() >= 5) {
+                throw new BusinessException("部门层级不能超过5级");
+            }
+            
             // 更新层级和祖级列表
             dept.setLevel(parentDept.getLevel() + 1);
             dept.setAncestors(parentDept.getAncestors() + "," + parentDept.getId());
+            
+            // TODO: 递归更新所有子部门的层级和祖级列表
         }
         baseMapper.updateById(dept);
     }
