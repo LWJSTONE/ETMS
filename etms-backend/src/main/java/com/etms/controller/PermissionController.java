@@ -6,6 +6,7 @@ import com.etms.service.PermissionService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,6 +29,7 @@ public class PermissionController {
      * @return 权限树列表
      */
     @ApiOperation(value = "获取权限树")
+    @PreAuthorize("hasAuthority('system:permission:list')")
     @GetMapping("/tree")
     public Result<List<Permission>> getPermissionTree() {
         List<Permission> tree = permissionService.getPermissionTree();

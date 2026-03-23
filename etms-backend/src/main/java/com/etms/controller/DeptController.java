@@ -27,6 +27,7 @@ public class DeptController {
     private final DeptService deptService;
     
     @ApiOperation(value = "获取部门树形结构")
+    @PreAuthorize("hasAuthority('system:dept:list')")
     @GetMapping("/tree-structure")
     public Result<List<Dept>> tree() {
         List<Dept> tree = deptService.getDeptTree();
@@ -34,6 +35,7 @@ public class DeptController {
     }
     
     @ApiOperation(value = "获取部门列表")
+    @PreAuthorize("hasAuthority('system:dept:list')")
     @GetMapping
     public Result<List<Dept>> list(
             @RequestParam(required = false) Long parentId,
@@ -44,9 +46,13 @@ public class DeptController {
     }
     
     @ApiOperation(value = "获取部门详情")
+    @PreAuthorize("hasAuthority('system:dept:query')")
     @GetMapping("/{id}")
     public Result<Dept> get(@PathVariable Long id) {
         Dept dept = deptService.getById(id);
+        if (dept == null) {
+            return Result.error("部门不存在");
+        }
         return Result.success(dept);
     }
     

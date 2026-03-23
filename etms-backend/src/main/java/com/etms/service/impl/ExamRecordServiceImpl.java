@@ -402,7 +402,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         Page<ExamRecord> page = new Page<>(current, size);
         
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ExamRecord::getStatus, 2) // 只查询已完成的考试
+        // 修复：查询已完成(2)和已超时(3)状态的考试记录，因为超时提交的记录也应该统计成绩
+        wrapper.in(ExamRecord::getStatus, 2, 3)
                .eq(paperId != null, ExamRecord::getPaperId, paperId)
                .eq(userId != null, ExamRecord::getUserId, userId)
                .eq(passed != null, ExamRecord::getPassed, passed)
@@ -507,7 +508,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     @Override
     public ExamResultVO getResultDetail(Long id) {
         ExamRecord record = baseMapper.selectById(id);
-        if (record == null || record.getStatus() != 2) {
+        // 修复：支持已完成(2)和已超时(3)状态的记录
+        if (record == null || (record.getStatus() != 2 && record.getStatus() != 3)) {
             return null;
         }
         
@@ -556,7 +558,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         ExamResultStatsVO stats = new ExamResultStatsVO();
         
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ExamRecord::getStatus, 2); // 只统计已完成的考试
+        // 修复：统计已完成(2)和已超时(3)状态的考试
+        wrapper.in(ExamRecord::getStatus, 2, 3);
         
         // 时间范围过滤
         if (startTime != null && !startTime.isEmpty()) {
@@ -580,7 +583,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         
         // 统计通过人数
         LambdaQueryWrapper<ExamRecord> passWrapper = new LambdaQueryWrapper<>();
-        passWrapper.eq(ExamRecord::getStatus, 2)
+        passWrapper.in(ExamRecord::getStatus, 2, 3)
                    .eq(ExamRecord::getPassed, 1);
         if (startTime != null && !startTime.isEmpty()) {
             passWrapper.ge(ExamRecord::getSubmitTime, LocalDateTime.parse(startTime + "T00:00:00"));
@@ -709,7 +712,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     public void exportResults(Long paperId, Long userId, Integer passed, String userName, String paperName, String startTime, String endTime, OutputStream outputStream) {
         // 构建查询条件
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ExamRecord::getStatus, 2) // 只导出已完成的考试
+        // 修复：导出已完成(2)和已超时(3)状态的考试
+        wrapper.in(ExamRecord::getStatus, 2, 3)
                .eq(paperId != null, ExamRecord::getPaperId, paperId)
                .eq(userId != null, ExamRecord::getUserId, userId)
                .eq(passed != null, ExamRecord::getPassed, passed)

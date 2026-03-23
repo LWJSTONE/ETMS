@@ -8,6 +8,7 @@ import com.etms.service.LogService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,7 @@ public class LogController {
     private final LogService logService;
 
     @ApiOperation(value = "分页查询日志列表")
+    @PreAuthorize("hasAuthority('system:log:list')")
     @GetMapping
     public Result<PageResult<OperationLog>> page(
             @RequestParam(defaultValue = "1") Long current,
@@ -47,13 +49,18 @@ public class LogController {
     }
 
     @ApiOperation(value = "获取日志详情")
+    @PreAuthorize("hasAuthority('system:log:query')")
     @GetMapping("/{id}")
     public Result<OperationLog> get(@PathVariable Long id) {
         OperationLog log = logService.getLogDetail(id);
+        if (log == null) {
+            return Result.error("日志不存在");
+        }
         return Result.success(log);
     }
 
     @ApiOperation(value = "清空日志")
+    @PreAuthorize("hasAuthority('system:log:clear')")
     @DeleteMapping
     public Result<Void> clear() {
         logService.clearLogs();
@@ -61,6 +68,7 @@ public class LogController {
     }
 
     @ApiOperation(value = "导出日志")
+    @PreAuthorize("hasAuthority('system:log:export')")
     @GetMapping("/export")
     public void export(
             @RequestParam(required = false) String module,

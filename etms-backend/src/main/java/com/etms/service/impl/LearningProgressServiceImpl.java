@@ -403,11 +403,18 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             throw new BusinessException("培训计划未发布或未开始，无法学习");
         }
         
+        // 验证用户是否有权限参与该培训计划（是否在目标范围内）
+        if (!checkUserInPlanTarget(user, plan)) {
+            throw new BusinessException("您不在该培训计划的目标范围内，无法学习");
+        }
+        
         // 查找或创建学习进度记录
         LambdaQueryWrapper<UserPlan> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserPlan::getUserId, user.getId())
                .eq(UserPlan::getPlanId, planId);
         UserPlan userPlan = baseMapper.selectOne(wrapper);
+        
+        LocalDateTime now = LocalDateTime.now();
         
         if (userPlan == null) {
             userPlan = new UserPlan();
@@ -416,9 +423,10 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             userPlan.setCourseId(courseId);
             userPlan.setProgress(progress);
             userPlan.setStatus(progress >= 100 ? 2 : 1); // 设置状态：0未开始、1进行中、2已完成
-            userPlan.setStartTime(LocalDateTime.now());
+            userPlan.setStartTime(now);
+            userPlan.setLastStudyTime(now); // 设置最后学习时间
             if (progress >= 100) {
-                userPlan.setCompleteTime(LocalDateTime.now());
+                userPlan.setCompleteTime(now);
             }
             baseMapper.insert(userPlan);
         } else {
@@ -428,10 +436,58 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             }
             userPlan.setProgress(progress);
             userPlan.setStatus(progress >= 100 ? 2 : 1);
+            userPlan.setLastStudyTime(now); // 更新最后学习时间
             if (progress >= 100 && userPlan.getCompleteTime() == null) {
-                userPlan.setCompleteTime(LocalDateTime.now());
+                userPlan.setCompleteTime(now);
             }
             baseMapper.updateById(userPlan);
+        }
+    }
+    
+    /**
+     * 检查用户是否在培训计划的目标范围内
+     */
+    private boolean checkUserInPlanTarget(User user, TrainingPlan plan) {
+        // 获取培训计划的目标类型
+        Integer targetType = plan.getTargetType();
+        if (targetType == null) {
+            // 如果没有设置目标类型，默认允许所有用户
+            return true;
+        }
+        
+        switch (targetType) {
+            case 1: // 部门
+                String targetDeptIds = plan.getTargetDeptIds();
+                if (targetDeptIds == null || targetDeptIds.isEmpty()) {
+                    return true;
+                }
+                if (user.getDeptId() == null) {
+                    return false;
+                }
+                // 检查用户部门是否在目标部门列表中
+                return targetDeptIds.contains(String.valueOf(user.getDeptId()));
+                
+            case 2: // 岗位
+                String targetPositionIds = plan.getTargetPositionIds();
+                if (targetPositionIds == null || targetPositionIds.isEmpty()) {
+                    return true;
+                }
+                if (user.getPositionId() == null) {
+                    return false;
+                }
+                // 检查用户岗位是否在目标岗位列表中
+                return targetPositionIds.contains(String.valueOf(user.getPositionId()));
+                
+            case 3: // 个人
+                String targetUserIds = plan.getTargetUserIds();
+                if (targetUserIds == null || targetUserIds.isEmpty()) {
+                    return true;
+                }
+                // 检查用户ID是否在目标用户列表中
+                return targetUserIds.contains(String.valueOf(user.getId()));
+                
+            default:
+                return true;
         }
     }
     

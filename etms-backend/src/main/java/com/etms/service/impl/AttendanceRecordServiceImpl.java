@@ -276,9 +276,12 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         long total = baseMapper.selectCount(wrapper);
         stats.setTotalCount((int) total);
         
+        // 修复：正常签到数量应包含审核通过的补签记录（status=1 或者 status=5且auditStatus=1）
         LambdaQueryWrapper<AttendanceRecord> normalWrapper = new LambdaQueryWrapper<>();
         normalWrapper.eq(AttendanceRecord::getUserId, userId)
-                     .eq(AttendanceRecord::getStatus, 1);
+                     .and(w -> w.eq(AttendanceRecord::getStatus, 1)
+                         .or(sub -> sub.eq(AttendanceRecord::getStatus, 5)
+                             .eq(AttendanceRecord::getAuditStatus, 1)));
         long normal = baseMapper.selectCount(normalWrapper);
         stats.setNormalCount((int) normal);
         

@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.TrainingPlan;
 import com.etms.entity.UserPlan;
+import com.etms.entity.Course;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.TrainingPlanMapper;
 import com.etms.mapper.UserPlanMapper;
+import com.etms.mapper.CourseMapper;
 import com.etms.service.TrainingPlanService;
 import com.etms.vo.TrainingPlanVO;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, TrainingPlan> implements TrainingPlanService {
     
     private final UserPlanMapper userPlanMapper;
+    private final CourseMapper courseMapper;
     
     @Override
     public Page<TrainingPlanVO> pagePlans(Page<TrainingPlan> page, String planName, Integer status, Integer planType, String startDate, String endDate, Long deptId) {
@@ -167,6 +170,15 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         // 验证必要字段：关联课程
         if (existingPlan.getCourseId() == null) {
             throw new BusinessException("请先关联培训课程");
+        }
+        
+        // 验证关联课程是否存在且已上架
+        Course course = courseMapper.selectById(existingPlan.getCourseId());
+        if (course == null) {
+            throw new BusinessException("关联的课程不存在");
+        }
+        if (course.getStatus() != 2) {
+            throw new BusinessException("关联的课程未上架，无法发布培训计划");
         }
         
         TrainingPlan plan = new TrainingPlan();

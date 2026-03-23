@@ -9,6 +9,7 @@ import com.etms.service.DictService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
@@ -28,6 +29,7 @@ public class DictController {
     // ==================== 字典类型相关 ====================
     
     @ApiOperation(value = "分页查询字典类型列表")
+    @PreAuthorize("hasAuthority('system:dict:list')")
     @GetMapping("/system/dict/types")
     public Result<PageResult<DictType>> pageDictTypes(
             @RequestParam(defaultValue = "1") Long current,
@@ -44,13 +46,18 @@ public class DictController {
     }
     
     @ApiOperation(value = "获取字典类型详情")
+    @PreAuthorize("hasAuthority('system:dict:query')")
     @GetMapping("/system/dict/types/{id}")
     public Result<DictType> getDictType(@PathVariable Long id) {
         DictType type = dictService.getDictTypeDetail(id);
+        if (type == null) {
+            return Result.error("字典类型不存在");
+        }
         return Result.success(type);
     }
     
     @ApiOperation(value = "新增字典类型")
+    @PreAuthorize("hasAuthority('system:dict:add')")
     @PostMapping("/system/dict/types")
     public Result<Void> addDictType(@Valid @RequestBody DictType dictType) {
         dictService.addDictType(dictType);
@@ -58,6 +65,7 @@ public class DictController {
     }
     
     @ApiOperation(value = "更新字典类型")
+    @PreAuthorize("hasAuthority('system:dict:edit')")
     @PutMapping("/system/dict/types/{id}")
     public Result<Void> updateDictType(@PathVariable Long id, @Valid @RequestBody DictType dictType) {
         dictType.setId(id);
@@ -66,6 +74,7 @@ public class DictController {
     }
     
     @ApiOperation(value = "删除字典类型")
+    @PreAuthorize("hasAuthority('system:dict:delete')")
     @DeleteMapping("/system/dict/types/{id}")
     public Result<Void> deleteDictType(@PathVariable Long id) {
         dictService.deleteDictType(id);
@@ -75,6 +84,7 @@ public class DictController {
     // ==================== 字典数据相关 ====================
     
     @ApiOperation(value = "获取字典数据列表")
+    @PreAuthorize("hasAuthority('system:dict:list')")
     @GetMapping("/system/dict/data/{dictTypeId}")
     public Result<List<DictData>> getDictDataList(@PathVariable Long dictTypeId) {
         List<DictData> list = dictService.getDictDataList(dictTypeId);
@@ -89,6 +99,7 @@ public class DictController {
     }
     
     @ApiOperation(value = "新增字典数据")
+    @PreAuthorize("hasAuthority('system:dict:add')")
     @PostMapping("/system/dict/data")
     public Result<Void> addDictData(@Valid @RequestBody DictData dictData) {
         dictService.addDictData(dictData);
@@ -96,6 +107,7 @@ public class DictController {
     }
     
     @ApiOperation(value = "更新字典数据")
+    @PreAuthorize("hasAuthority('system:dict:edit')")
     @PutMapping("/system/dict/data/{id}")
     public Result<Void> updateDictData(@PathVariable Long id, @Valid @RequestBody DictData dictData) {
         dictData.setId(id);
@@ -104,6 +116,7 @@ public class DictController {
     }
     
     @ApiOperation(value = "删除字典数据")
+    @PreAuthorize("hasAuthority('system:dict:delete')")
     @DeleteMapping("/system/dict/data/{id}")
     public Result<Void> deleteDictData(@PathVariable Long id) {
         dictService.deleteDictData(id);
@@ -113,6 +126,7 @@ public class DictController {
     // ==================== 字典缓存相关 ====================
     
     @ApiOperation(value = "刷新字典缓存")
+    @PreAuthorize("hasAuthority('system:dict:cache')")
     @PostMapping("/system/dict/cache/refresh")
     public Result<Void> refreshCache() {
         dictService.refreshCache();

@@ -28,6 +28,7 @@ public class RoleController {
     private final RoleService roleService;
     
     @ApiOperation(value = "分页查询角色列表")
+    @PreAuthorize("hasAuthority('system:role:list')")
     @GetMapping
     public Result<PageResult<RoleVO>> page(
             @RequestParam(defaultValue = "1") Long current,
@@ -43,6 +44,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "获取所有角色列表")
+    @PreAuthorize("hasAuthority('system:role:list')")
     @GetMapping("/all")
     public Result<List<RoleVO>> list() {
         List<RoleVO> list = roleService.listRoles();
@@ -50,9 +52,13 @@ public class RoleController {
     }
     
     @ApiOperation(value = "获取角色详情")
+    @PreAuthorize("hasAuthority('system:role:query')")
     @GetMapping("/{id}")
     public Result<RoleVO> get(@PathVariable Long id) {
         RoleVO vo = roleService.getRoleDetail(id);
+        if (vo == null) {
+            return Result.error("角色不存在");
+        }
         return Result.success(vo);
     }
     
@@ -90,6 +96,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "获取角色权限ID列表")
+    @PreAuthorize("hasAuthority('system:role:query')")
     @GetMapping("/{id}/permissions")
     public Result<List<Long>> getPermissions(@PathVariable Long id) {
         List<Long> permissionIds = roleService.getPermissionIdsByRoleId(id);
