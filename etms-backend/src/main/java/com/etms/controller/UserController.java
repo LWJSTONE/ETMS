@@ -51,6 +51,9 @@ public class UserController {
     @GetMapping("/{id}")
     public Result<UserVO> get(@PathVariable Long id) {
         UserVO vo = userService.getUserDetail(id);
+        if (vo == null) {
+            return Result.error("用户不存在");
+        }
         return Result.success(vo);
     }
     
@@ -80,8 +83,22 @@ public class UserController {
     @PutMapping("/{id}/password")
     public Result<Void> updatePassword(
             @PathVariable Long id,
-            @RequestParam String oldPassword,
-            @RequestParam String newPassword) {
+            @RequestBody java.util.Map<String, String> passwordMap) {
+        // 从请求体中获取密码，避免敏感信息暴露在URL中
+        String oldPassword = passwordMap.get("oldPassword");
+        String newPassword = passwordMap.get("newPassword");
+        
+        // 参数校验
+        if (oldPassword == null || oldPassword.isEmpty()) {
+            return Result.error("原密码不能为空");
+        }
+        if (newPassword == null || newPassword.isEmpty()) {
+            return Result.error("新密码不能为空");
+        }
+        if (newPassword.length() < 6 || newPassword.length() > 20) {
+            return Result.error("新密码长度必须在6-20个字符之间");
+        }
+        
         // 权限校验：只能修改自己的密码，或需要管理员权限
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -151,6 +168,8 @@ public class UserController {
 
     @ApiOperation(value = "导出用户")
     @GetMapping("/export")
+    // 权限校验：只有管理员可以导出用户数据
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public void export(
             UserDTO userDTO,
             HttpServletResponse response) {

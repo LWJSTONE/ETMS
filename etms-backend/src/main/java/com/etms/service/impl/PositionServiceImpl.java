@@ -108,17 +108,20 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
         List<Position> positions = baseMapper.selectList(wrapper);
         
         try {
-            // 设置响应头
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            // 修复：响应头与实际导出格式一致，使用CSV格式
+            response.setContentType("text/csv;charset=utf-8");
             response.setCharacterEncoding("utf-8");
+            // 添加BOM以支持Excel正确打开UTF-8编码的CSV
             String fileName = URLEncoder.encode("岗位数据_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")), StandardCharsets.UTF_8.name());
-            response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
+            response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".csv");
         } catch (java.io.UnsupportedEncodingException e) {
             throw new BusinessException("编码转换失败：" + e.getMessage());
         }
         
         // 构建CSV格式的数据
         StringBuilder sb = new StringBuilder();
+        // 添加UTF-8 BOM以支持Excel正确打开
+        sb.append("\ufeff");
         sb.append("岗位名称,岗位编码,排序,状态,备注,创建时间\n");
         
         for (Position position : positions) {

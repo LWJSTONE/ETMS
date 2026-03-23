@@ -23,6 +23,7 @@ import com.etms.entity.Dept;
 import com.etms.mapper.DeptMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 /**
  * 考试记录服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRecord> implements ExamRecordService {

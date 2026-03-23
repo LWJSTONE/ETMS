@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
+import com.etms.exception.BusinessException;
 
 /**
  * 培训计划控制器
@@ -48,6 +49,9 @@ public class TrainingPlanController {
     @GetMapping("/{id}")
     public Result<TrainingPlanVO> get(@PathVariable Long id) {
         TrainingPlanVO vo = trainingPlanService.getPlanDetail(id);
+        if (vo == null) {
+            throw new BusinessException("培训计划不存在");
+        }
         return Result.success(vo);
     }
     

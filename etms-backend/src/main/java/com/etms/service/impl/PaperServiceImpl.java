@@ -236,6 +236,11 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             throw new BusinessException("题目分数总和(" + totalQuestionScore + ")与试卷总分(" + existingPaper.getTotalScore() + ")不一致");
         }
         
+        // 修复：校验题目数量是否与试卷设置的题目数量一致
+        if (existingPaper.getQuestionCount() != null && paperQuestions.size() != existingPaper.getQuestionCount()) {
+            throw new BusinessException("实际题目数量(" + paperQuestions.size() + ")与试卷设置的题目数量(" + existingPaper.getQuestionCount() + ")不一致");
+        }
+        
         Paper paper = new Paper();
         paper.setId(id);
         paper.setStatus(1); // 已发布

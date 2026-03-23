@@ -52,6 +52,16 @@ public class AttendanceRecordController {
         Integer signType = body.get("signType") != null ? Integer.valueOf(body.get("signType").toString()) : 1;
         Integer signCategory = body.get("signCategory") != null ? Integer.valueOf(body.get("signCategory").toString()) : 1;
         String location = body.get("location") != null ? body.get("location").toString() : null;
+        
+        // 修复：验证签到类型值是否合法（1: 二维码, 2: GPS定位, 3: 人脸识别）
+        if (signType < 1 || signType > 3) {
+            return Result.error("签到类型不合法，有效值为1-3");
+        }
+        // 修复：验证签到类别值是否合法（1: 签到, 2: 签退）
+        if (signCategory < 1 || signCategory > 2) {
+            return Result.error("签到类别不合法，有效值为1-2");
+        }
+        
         attendanceRecordService.signIn(planId, signType, signCategory, location);
         return Result.success();
     }
@@ -72,6 +82,16 @@ public class AttendanceRecordController {
         Integer signCategory = body.get("signCategory") != null ? Integer.valueOf(body.get("signCategory").toString()) : 1;
         String signTime = body.get("signTime").toString();
         String reason = body.get("reason") != null ? body.get("reason").toString() : null;
+        
+        // 修复：验证签到类型值是否合法（1: 二维码, 2: GPS定位, 3: 人脸识别）
+        if (signType < 1 || signType > 3) {
+            return Result.error("签到类型不合法，有效值为1-3");
+        }
+        // 修复：验证签到类别值是否合法（1: 签到, 2: 签退）
+        if (signCategory < 1 || signCategory > 2) {
+            return Result.error("签到类别不合法，有效值为1-2");
+        }
+        
         attendanceRecordService.applySupplementary(planId, signType, signCategory, signTime, reason);
         return Result.success();
     }

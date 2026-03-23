@@ -128,7 +128,8 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
             dept.setLevel(parentDept.getLevel() + 1);
             dept.setAncestors(parentDept.getAncestors() + "," + parentDept.getId());
             
-            // TODO: 递归更新所有子部门的层级和祖级列表
+            // 递归更新所有子部门的层级和祖级列表
+            updateChildrenLevelAndAncestors(dept.getId(), dept.getAncestors());
         }
         baseMapper.updateById(dept);
     }
@@ -170,15 +171,54 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
     
     /**
      * 填充部门负责人名称
+     * 修复N+1查询问题：使用批量查询替代循环查询
      */
     private void fillLeaderNames(List<Dept> depts) {
+        // 收集所有负责人ID
+        List<Long> leaderIds = depts.stream()
+                .map(Dept::getLeaderId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toList());
+        
+        if (leaderIds.isEmpty()) {
+            return;
+        }
+        
+        // 批量查询所有负责人
+        List<User> leaders = userMapper.selectBatchIds(leaderIds);
+        Map<Long, User> leaderMap = leaders.stream()
+                .collect(java.util.stream.Collectors.toMap(User::getId, u -> u));
+        
+        // 设置负责人名称
         for (Dept dept : depts) {
             if (dept.getLeaderId() != null) {
-                User user = userMapper.selectById(dept.getLeaderId());
+                User user = leaderMap.get(dept.getLeaderId());
                 if (user != null) {
                     dept.setLeaderName(user.getRealName());
                 }
             }
+        }
+    }
+    
+    /**
+     * 递归更新所有子部门的层级和祖级列表
+     * @param parentId 父部门ID
+     * @param parentAncestors 父部门的祖级列表
+     */
+    private void updateChildrenLevelAndAncestors(Long parentId, String parentAncestors) {
+        // 查询所有直接子部门
+        List<Dept> children = baseMapper.selectList(
+            new LambdaQueryWrapper<Dept>().eq(Dept::getParentId, parentId)
+        );
+        
+        for (Dept child : children) {
+            // 更新子部门的层级和祖级列表
+            child.setLevel(child.getLevel() != null ? child.getLevel() + 1 : 2);
+            child.setAncestors(parentAncestors + "," + parentId);
+            baseMapper.updateById(child);
+            
+            // 递归更新子部门的所有子部门
+            updateChildrenLevelAndAncestors(child.getId(), child.getAncestors());
         }
     }
     

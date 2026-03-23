@@ -215,6 +215,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
     
     /**
      * 支持课程名称关键字过滤的分页查询
+     * 修复：将课程名称过滤改为数据库查询阶段完成，避免内存过滤导致分页数据不准确
      */
     private Page<LearningProgressVO> pageProgressWithKeyword(Long current, Long size, Long planId, Long userId, Integer status, String keyword) {
         Page<UserPlan> page = new Page<>(current, size);
@@ -224,6 +225,39 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
                .eq(userId != null, UserPlan::getUserId, userId)
                .eq(status != null, UserPlan::getStatus, status)
                .orderByDesc(UserPlan::getCreateTime);
+        
+        // 修复：在数据库层面过滤课程名称关键字，避免先分页后内存过滤导致数据不准确
+        if (keyword != null && !keyword.isEmpty()) {
+            // 根据课程名称查询符合条件的课程ID列表
+            LambdaQueryWrapper<Course> courseWrapper = new LambdaQueryWrapper<>();
+            courseWrapper.like(Course::getCourseName, keyword);
+            List<Course> matchedCourses = courseMapper.selectList(courseWrapper);
+            if (matchedCourses.isEmpty()) {
+                // 没有匹配的课程，返回空结果
+                Page<LearningProgressVO> emptyVoPage = new Page<>(current, size, 0);
+                emptyVoPage.setRecords(new ArrayList<>());
+                return emptyVoPage;
+            }
+            List<Long> matchedCourseIds = matchedCourses.stream()
+                    .map(Course::getId)
+                    .collect(Collectors.toList());
+            // 由于UserPlan的courseId可能为空，需要通过TrainingPlan关联查询
+            // 先查询匹配课程的培训计划
+            LambdaQueryWrapper<TrainingPlan> planWrapper = new LambdaQueryWrapper<>();
+            planWrapper.in(TrainingPlan::getCourseId, matchedCourseIds);
+            List<TrainingPlan> matchedPlans = trainingPlanMapper.selectList(planWrapper);
+            List<Long> matchedPlanIds = matchedPlans.stream()
+                    .map(TrainingPlan::getId)
+                    .collect(Collectors.toList());
+            
+            // 构建查询条件：课程ID匹配或培训计划ID匹配
+            if (!matchedPlanIds.isEmpty()) {
+                wrapper.and(w -> w.in(UserPlan::getCourseId, matchedCourseIds)
+                                   .or().in(UserPlan::getPlanId, matchedPlanIds));
+            } else {
+                wrapper.in(UserPlan::getCourseId, matchedCourseIds);
+            }
+        }
         
         Page<UserPlan> userPlanPage = baseMapper.selectPage(page, wrapper);
         
@@ -283,29 +317,13 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             courseMap = courses.stream().collect(Collectors.toMap(Course::getId, c -> c));
         }
         
-        // 过滤不符合条件的记录
+        // 转换为VO（已在数据库层面完成过滤，无需内存过滤）
         final Map<Long, User> finalUserMap = userMap;
         final Map<Long, String> finalDeptNameMap = deptNameMap;
         final Map<Long, TrainingPlan> finalPlanMap = planMap;
         final Map<Long, Course> finalCourseMap = courseMap;
         
         List<LearningProgressVO> voList = userPlanPage.getRecords().stream()
-                .filter(up -> {
-                    // 过滤课程名称关键字
-                    if (keyword != null && !keyword.isEmpty()) {
-                        Long courseId = up.getCourseId() != null ? up.getCourseId() : 
-                                       (finalPlanMap.get(up.getPlanId()) != null ? finalPlanMap.get(up.getPlanId()).getCourseId() : null);
-                        if (courseId != null) {
-                            Course course = finalCourseMap.get(courseId);
-                            if (course == null || course.getCourseName() == null || !course.getCourseName().contains(keyword)) {
-                                return false;
-                            }
-                        } else {
-                            return false;
-                        }
-                    }
-                    return true;
-                })
                 .map(up -> {
                     LearningProgressVO vo = new LearningProgressVO();
                     BeanUtils.copyProperties(up, vo);

@@ -2,6 +2,7 @@ package com.etms.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import java.time.LocalDateTime;
@@ -18,6 +19,7 @@ public class User extends BaseEntity {
     private String username;
     
     /** 密码 */
+    @JsonIgnore
     private String password;
     
     /** 真实姓名 */

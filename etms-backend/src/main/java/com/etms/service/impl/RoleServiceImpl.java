@@ -140,6 +140,17 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteRole(Long id) {
+        // 获取角色信息
+        Role role = baseMapper.selectById(id);
+        if (role == null) {
+            throw new BusinessException("角色不存在");
+        }
+        
+        // 修复：禁止删除系统内置角色（ADMIN角色）
+        if ("ADMIN".equals(role.getRoleCode()) || "admin".equals(role.getRoleCode())) {
+            throw new BusinessException("系统内置角色不能删除");
+        }
+        
         // 检查角色是否已分配给用户
         Long count = userRoleMapper.selectCount(
             new LambdaQueryWrapper<UserRole>().eq(UserRole::getRoleId, id)

@@ -47,6 +47,20 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         Page<AttendanceRecordVO> voPage = new Page<>();
         BeanUtils.copyProperties(recordPage, voPage, "records");
         
+        // 修复N+1查询问题：批量查询用户信息
+        List<Long> userIds = recordPage.getRecords().stream()
+                .map(AttendanceRecord::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        Map<Long, User> userMap = new java.util.HashMap<>();
+        if (!userIds.isEmpty()) {
+            List<User> users = userMapper.selectBatchIds(userIds);
+            userMap = users.stream()
+                    .collect(Collectors.toMap(User::getId, u -> u));
+        }
+        
+        final Map<Long, User> finalUserMap = userMap;
         List<AttendanceRecordVO> voList = recordPage.getRecords().stream().map(record -> {
             AttendanceRecordVO vo = new AttendanceRecordVO();
             BeanUtils.copyProperties(record, vo);
@@ -56,8 +70,8 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             vo.setReason(record.getReason());
             vo.setAuditRemark(record.getAuditRemark());
             
-            // 设置用户信息
-            User user = userMapper.selectById(record.getUserId());
+            // 从批量查询结果中获取用户信息
+            User user = finalUserMap.get(record.getUserId());
             if (user != null) {
                 vo.setUserName(user.getUsername());
                 vo.setRealName(user.getRealName());

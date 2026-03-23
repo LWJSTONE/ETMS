@@ -490,9 +490,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         baseMapper.updateById(updateUser);
         
-        // TODO: 实际生产环境应通过邮件或短信发送新密码给用户
-        // 这里记录日志，方便开发调试
-        log.info("用户 {} 的密码已重置为: {}", user.getUsername(), newPassword);
+        // 安全性修复：不再打印新密码到日志，实际生产环境应通过邮件或短信发送新密码给用户
+        log.info("用户 {} 的密码已重置，请通过安全渠道通知用户", user.getUsername());
     }
     
     /**
@@ -610,17 +609,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         
         try {
-            // 设置响应头
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            // 修复：响应头与实际导出格式一致，使用CSV格式
+            response.setContentType("text/csv;charset=utf-8");
             response.setCharacterEncoding("utf-8");
+            // 添加BOM以支持Excel正确打开UTF-8编码的CSV
             String fileName = URLEncoder.encode("用户数据_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")), StandardCharsets.UTF_8.name());
-            response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
+            response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".csv");
         } catch (java.io.UnsupportedEncodingException e) {
             throw new BusinessException("编码转换失败：" + e.getMessage());
         }
         
-        // 构建CSV格式的数据（简单实现，实际项目建议使用EasyExcel或POI）
+        // 修复：添加导出数量限制，防止内存溢出
+        if (users.size() > 10000) {
+            throw new BusinessException("导出数据量过大，请缩小查询范围后重试");
+        }
         StringBuilder sb = new StringBuilder();
+        // 添加UTF-8 BOM以支持Excel正确打开
+        sb.append("\ufeff");
         sb.append("用户名,真实姓名,性别,手机号,邮箱,部门,状态,创建时间\n");
         
         final Map<Long, String> finalDeptNameMap = deptNameMap;
