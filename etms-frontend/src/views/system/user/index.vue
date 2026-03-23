@@ -432,7 +432,12 @@ const handleSubmit = async () => {
 // 导出用户
 const handleExport = async () => {
   try {
-    const blob = await exportUsers({ ...searchForm, current: 1, size: 10000 })
+    // 修复：限制导出数量，避免请求超时，与后端限制保持一致
+    const exportSize = Math.min(pagination.total, 10000)
+    if (pagination.total > 10000) {
+      ElMessage.warning(`数据量超过10000条，将只导出前${exportSize}条数据`)
+    }
+    const blob = await exportUsers({ ...searchForm, current: 1, size: exportSize })
     // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')

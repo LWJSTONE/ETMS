@@ -47,13 +47,28 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         Page<RoleVO> voPage = new Page<>();
         BeanUtils.copyProperties(rolePage, voPage, "records");
 
+        // 修复N+1查询问题：批量查询权限数量
+        List<Long> roleIds = rolePage.getRecords().stream()
+                .map(Role::getId)
+                .collect(Collectors.toList());
+        
+        // 批量查询每个角色的权限数量
+        Map<Long, Long> permissionCountMap = new java.util.HashMap<>();
+        if (!roleIds.isEmpty()) {
+            List<RolePermission> rolePermissions = rolePermissionService.list(
+                new LambdaQueryWrapper<RolePermission>().in(RolePermission::getRoleId, roleIds)
+            );
+            // 统计每个角色的权限数量
+            permissionCountMap = rolePermissions.stream()
+                .collect(Collectors.groupingBy(RolePermission::getRoleId, Collectors.counting()));
+        }
+
+        final Map<Long, Long> finalPermissionCountMap = permissionCountMap;
         List<RoleVO> voList = rolePage.getRecords().stream().map(role -> {
             RoleVO vo = new RoleVO();
             BeanUtils.copyProperties(role, vo);
-            // 查询权限数量
-            vo.setPermissionCount(rolePermissionService.count(
-                new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, role.getId())
-            ));
+            // 从批量查询结果中获取权限数量
+            vo.setPermissionCount(finalPermissionCountMap.getOrDefault(role.getId(), 0L).intValue());
             return vo;
         }).collect(Collectors.toList());
 

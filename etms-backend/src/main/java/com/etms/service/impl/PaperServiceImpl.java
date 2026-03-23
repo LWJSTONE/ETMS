@@ -253,10 +253,11 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             throw new BusinessException("实际题目数量(" + paperQuestions.size() + ")与试卷设置的题目数量(" + existingPaper.getQuestionCount() + ")不一致");
         }
         
-        Paper paper = new Paper();
-        paper.setId(id);
-        paper.setStatus(1); // 已发布
-        baseMapper.updateById(paper);
+        // 修复：使用乐观锁防止并发重复发布
+        int updateCount = baseMapper.updateStatusWithOptimisticLock(id, 0, 1);
+        if (updateCount == 0) {
+            throw new BusinessException("发布失败，试卷状态已被修改，请刷新后重试");
+        }
     }
 
     @Override

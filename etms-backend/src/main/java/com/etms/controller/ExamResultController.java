@@ -3,12 +3,14 @@ package com.etms.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
+import com.etms.exception.BusinessException;
 import com.etms.service.ExamRecordService;
 import com.etms.vo.ExamResultVO;
 import com.etms.vo.ExamResultStatsVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +32,7 @@ public class ExamResultController {
     
     @ApiOperation(value = "分页查询成绩列表")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<PageResult<ExamResultVO>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
@@ -72,6 +75,7 @@ public class ExamResultController {
     
     @ApiOperation(value = "获取成绩统计")
     @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<ExamResultStatsVO> getStats(
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime) {
@@ -81,6 +85,7 @@ public class ExamResultController {
     
     @ApiOperation(value = "导出成绩")
     @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public void export(
             @RequestParam(required = false) Long paperId,
             @RequestParam(required = false) Long userId,
@@ -98,8 +103,10 @@ public class ExamResultController {
             
             // 导出数据
             examRecordService.exportResults(paperId, userId, passed, userName, paperName, startTime, endTime, response.getOutputStream());
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("导出失败：" + e.getMessage());
+            throw new BusinessException("导出失败：" + e.getMessage());
         }
     }
 }

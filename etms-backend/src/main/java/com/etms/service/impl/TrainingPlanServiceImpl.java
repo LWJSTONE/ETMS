@@ -210,10 +210,12 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("关联的课程未上架，无法发布培训计划");
         }
         
-        TrainingPlan plan = new TrainingPlan();
-        plan.setId(id);
-        plan.setStatus(1); // 已发布
-        return baseMapper.updateById(plan) > 0;
+        // 修复：使用乐观锁防止并发重复发布
+        int updateCount = baseMapper.updateStatusWithOptimisticLock(id, 0, 1);
+        if (updateCount == 0) {
+            throw new BusinessException("发布失败，培训计划状态已被修改，请刷新后重试");
+        }
+        return true;
     }
     
     @Override

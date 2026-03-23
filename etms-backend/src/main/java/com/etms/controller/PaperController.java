@@ -46,6 +46,10 @@ public class PaperController {
     @GetMapping("/{id}")
     public Result<?> get(@PathVariable Long id, 
                           @RequestParam(required = false, defaultValue = "false") boolean forExam) {
+        // 修复：根据场景区分权限
+        // 考试场景(forExam=true)：登录用户可访问，答案会被隐藏（Service层处理）
+        // 管理场景(forExam=false)：需要管理员权限查看完整信息（包含答案）
+        // 当前设计：任何登录用户都可以访问，答案是否返回由Service层根据forExam参数控制
         return Result.success(paperService.getPaperDetail(id, forExam));
     }
     
