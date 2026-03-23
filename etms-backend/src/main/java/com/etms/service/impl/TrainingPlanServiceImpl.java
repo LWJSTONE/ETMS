@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.TrainingPlan;
 import com.etms.entity.UserPlan;
+import com.etms.exception.BusinessException;
 import com.etms.mapper.TrainingPlanMapper;
 import com.etms.mapper.UserPlanMapper;
 import com.etms.service.TrainingPlanService;
@@ -76,6 +77,13 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean addPlan(TrainingPlan plan) {
+        // 验证日期合理性
+        if (plan.getStartDate() != null && plan.getEndDate() != null) {
+            if (plan.getStartDate().isAfter(plan.getEndDate())) {
+                throw new BusinessException("开始日期不能晚于结束日期");
+            }
+        }
+        
         plan.setStatus(0); // 草稿状态
         return baseMapper.insert(plan) > 0;
     }
@@ -86,12 +94,19 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         // 获取当前培训计划状态
         TrainingPlan existingPlan = baseMapper.selectById(plan.getId());
         if (existingPlan == null) {
-            throw new RuntimeException("培训计划不存在");
+            throw new BusinessException("培训计划不存在");
         }
         
         // 校验状态流转：只允许草稿状态(0)编辑
         if (existingPlan.getStatus() != 0) {
-            throw new RuntimeException("当前状态不允许编辑，只有草稿状态可以编辑");
+            throw new BusinessException("当前状态不允许编辑，只有草稿状态可以编辑");
+        }
+        
+        // 验证日期合理性
+        LocalDate startDate = plan.getStartDate() != null ? plan.getStartDate() : existingPlan.getStartDate();
+        LocalDate endDate = plan.getEndDate() != null ? plan.getEndDate() : existingPlan.getEndDate();
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new BusinessException("开始日期不能晚于结束日期");
         }
         
         return baseMapper.updateById(plan) > 0;
@@ -105,7 +120,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             new LambdaQueryWrapper<UserPlan>().eq(UserPlan::getPlanId, id)
         );
         if (count > 0) {
-            throw new RuntimeException("培训计划存在学习记录，无法删除");
+            throw new BusinessException("培训计划存在学习记录，无法删除");
         }
         return baseMapper.deleteById(id) > 0;
     }
@@ -116,12 +131,17 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         // 获取当前培训计划状态
         TrainingPlan existingPlan = baseMapper.selectById(id);
         if (existingPlan == null) {
-            throw new RuntimeException("培训计划不存在");
+            throw new BusinessException("培训计划不存在");
         }
         
         // 校验状态流转：只能从草稿(0)状态发布
         if (existingPlan.getStatus() != 0) {
-            throw new RuntimeException("当前状态不允许发布，只有草稿状态可以发布");
+            throw new BusinessException("当前状态不允许发布，只有草稿状态可以发布");
+        }
+        
+        // 验证必要字段
+        if (existingPlan.getStartDate() == null || existingPlan.getEndDate() == null) {
+            throw new BusinessException("请先设置培训计划的开始日期和结束日期");
         }
         
         TrainingPlan plan = new TrainingPlan();
@@ -136,12 +156,12 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         // 获取当前培训计划状态
         TrainingPlan existingPlan = baseMapper.selectById(id);
         if (existingPlan == null) {
-            throw new RuntimeException("培训计划不存在");
+            throw new BusinessException("培训计划不存在");
         }
         
         // 校验状态流转：只能从已结束(3)状态归档
         if (existingPlan.getStatus() != 3) {
-            throw new RuntimeException("当前状态不允许归档，只有已结束状态可以归档");
+            throw new BusinessException("当前状态不允许归档，只有已结束状态可以归档");
         }
         
         TrainingPlan plan = new TrainingPlan();
@@ -156,12 +176,12 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         // 获取当前培训计划状态
         TrainingPlan existingPlan = baseMapper.selectById(id);
         if (existingPlan == null) {
-            throw new RuntimeException("培训计划不存在");
+            throw new BusinessException("培训计划不存在");
         }
         
         // 校验状态流转：只能从已发布(1)或进行中(2)状态结束
         if (existingPlan.getStatus() != 1 && existingPlan.getStatus() != 2) {
-            throw new RuntimeException("当前状态不允许结束，只有已发布或进行中状态可以结束");
+            throw new BusinessException("当前状态不允许结束，只有已发布或进行中状态可以结束");
         }
         
         TrainingPlan plan = new TrainingPlan();

@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.Position;
+import com.etms.entity.User;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.PositionMapper;
+import com.etms.mapper.UserMapper;
 import com.etms.service.PositionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> implements PositionService {
+    
+    private final UserMapper userMapper;
     
     @Override
     public Page<Position> pagePositions(Page<Position> page, String positionName, String positionCode, Integer status) {
@@ -81,7 +85,12 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
     @Override
     public void deletePosition(Long id) {
         // 检查是否有用户关联此岗位
-        // 可以根据实际业务添加检查逻辑
+        Long userCount = userMapper.selectCount(
+            new LambdaQueryWrapper<User>().eq(User::getPositionId, id)
+        );
+        if (userCount > 0) {
+            throw new BusinessException("该岗位下存在用户，无法删除");
+        }
         
         baseMapper.deleteById(id);
     }

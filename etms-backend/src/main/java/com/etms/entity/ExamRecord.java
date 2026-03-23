@@ -76,4 +76,9 @@ public class ExamRecord extends BaseEntity {
      * 答题详情（JSON格式）
      */
     private String answerDetail;
+
+    /**
+     * 补考次数
+     */
+    private Integer retakeCount;
 }

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.Course;
 import com.etms.entity.PlanCourse;
+import com.etms.exception.BusinessException;
 import com.etms.mapper.CourseMapper;
 import com.etms.mapper.PlanCourseMapper;
 import com.etms.service.CourseService;
@@ -87,7 +88,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             new LambdaQueryWrapper<Course>().eq(Course::getCourseCode, course.getCourseCode())
         );
         if (count > 0) {
-            throw new RuntimeException("课程编码已存在");
+            throw new BusinessException("课程编码已存在");
         }
         
         course.setStatus(0); // 草稿状态
@@ -107,7 +108,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                 .ne(Course::getId, course.getId())
         );
         if (count > 0) {
-            throw new RuntimeException("课程编码已存在");
+            throw new BusinessException("课程编码已存在");
         }
         
         return baseMapper.updateById(course) > 0;
@@ -121,7 +122,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             new LambdaQueryWrapper<PlanCourse>().eq(PlanCourse::getCourseId, id)
         );
         if (count > 0) {
-            throw new RuntimeException("课程已被培训计划引用，无法删除");
+            throw new BusinessException("课程已被培训计划引用，无法删除");
         }
         
         return baseMapper.deleteById(id) > 0;
@@ -133,12 +134,12 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         // 获取当前课程状态
         Course existingCourse = baseMapper.selectById(id);
         if (existingCourse == null) {
-            throw new RuntimeException("课程不存在");
+            throw new BusinessException("课程不存在");
         }
         
         // 校验状态流转：只能从草稿(0)或审核驳回(4)状态提交审核
         if (existingCourse.getStatus() != 0 && existingCourse.getStatus() != 4) {
-            throw new RuntimeException("当前状态不允许提交审核，只有草稿或审核驳回状态可以提交");
+            throw new BusinessException("当前状态不允许提交审核，只有草稿或审核驳回状态可以提交");
         }
         
         Course course = new Course();
@@ -153,17 +154,17 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         // 获取当前课程状态
         Course existingCourse = baseMapper.selectById(id);
         if (existingCourse == null) {
-            throw new RuntimeException("课程不存在");
+            throw new BusinessException("课程不存在");
         }
         
         // 校验状态流转：只能审核待审核(1)状态的课程
         if (existingCourse.getStatus() != 1) {
-            throw new RuntimeException("当前状态不允许审核，只有待审核状态可以审核");
+            throw new BusinessException("当前状态不允许审核，只有待审核状态可以审核");
         }
         
         // 校验审核状态值：审核通过(2)或审核驳回(4)
         if (status != 2 && status != 4) {
-            throw new RuntimeException("审核状态无效，审核通过状态为2，审核驳回状态为4");
+            throw new BusinessException("审核状态无效，审核通过状态为2，审核驳回状态为4");
         }
         
         Course course = new Course();
@@ -181,13 +182,13 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         // 获取当前课程状态
         Course existingCourse = baseMapper.selectById(id);
         if (existingCourse == null) {
-            throw new RuntimeException("课程不存在");
+            throw new BusinessException("课程不存在");
         }
         
         // 校验状态流转：只允许已下架(3)状态的课程重新上架
         // 审核通过(2)的课程已经是已上架状态，不需要再上架
         if (existingCourse.getStatus() != 3) {
-            throw new RuntimeException("当前状态不允许上架操作，只有已下架状态的课程可以上架");
+            throw new BusinessException("当前状态不允许上架操作，只有已下架状态的课程可以上架");
         }
         
         Course course = new Course();
@@ -202,12 +203,12 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         // 获取当前课程状态
         Course existingCourse = baseMapper.selectById(id);
         if (existingCourse == null) {
-            throw new RuntimeException("课程不存在");
+            throw new BusinessException("课程不存在");
         }
         
         // 校验状态流转：只能从已上架(2)状态下架
         if (existingCourse.getStatus() != 2) {
-            throw new RuntimeException("当前状态不允许下架操作，只有已上架状态可以下架");
+            throw new BusinessException("当前状态不允许下架操作，只有已上架状态可以下架");
         }
         
         Course course = new Course();

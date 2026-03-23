@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.PaperQuestion;
 import com.etms.entity.Question;
+import com.etms.exception.BusinessException;
 import com.etms.mapper.PaperQuestionMapper;
 import com.etms.mapper.QuestionMapper;
 import com.etms.service.QuestionService;
@@ -98,32 +99,116 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             String optionD = question.getOptionD();
             String optionE = question.getOptionE();
             
+            // 至少需要两个选项（A和B）
+            if (!hasContent(optionA) || !hasContent(optionB)) {
+                throw new BusinessException("选择题至少需要填写A、B两个选项");
+            }
+            
             // 如果填写了C选项，必须先有A、B选项
             if (hasContent(optionC)) {
                 if (!hasContent(optionA) || !hasContent(optionB)) {
-                    throw new RuntimeException("填写C选项前，必须先填写A、B选项");
+                    throw new BusinessException("填写C选项前，必须先填写A、B选项");
                 }
             }
             
             // 如果填写了D选项，必须先有C选项
             if (hasContent(optionD)) {
                 if (!hasContent(optionC)) {
-                    throw new RuntimeException("填写D选项前，必须先填写C选项");
+                    throw new BusinessException("填写D选项前，必须先填写C选项");
                 }
             }
             
             // 如果填写了E选项，必须先有D选项
             if (hasContent(optionE)) {
                 if (!hasContent(optionD)) {
-                    throw new RuntimeException("填写E选项前，必须先填写D选项");
+                    throw new BusinessException("填写E选项前，必须先填写D选项");
                 }
             }
             
-            // 至少需要两个选项（A和B）
-            if (!hasContent(optionA) || !hasContent(optionB)) {
-                throw new RuntimeException("选择题至少需要填写A、B两个选项");
+            // 验证答案必须在有效选项范围内
+            validateAnswer(question);
+        }
+        
+        // 判断题验证
+        if (question.getQuestionType() != null && question.getQuestionType() == 3) {
+            String answer = question.getAnswer();
+            if (answer != null && !answer.trim().isEmpty()) {
+                String normalizedAnswer = normalizeJudgeAnswer(answer);
+                if (!normalizedAnswer.equals("A") && !normalizedAnswer.equals("B")) {
+                    throw new BusinessException("判断题答案必须是A(正确)或B(错误)");
+                }
             }
         }
+    }
+    
+    /**
+     * 验证答案是否在有效选项范围内
+     */
+    private void validateAnswer(Question question) {
+        String answer = question.getAnswer();
+        if (answer == null || answer.trim().isEmpty()) {
+            return; // 答案可以为空，允许后续补充
+        }
+        
+        String normalizedAnswer = answer.toUpperCase().trim();
+        
+        // 单选题答案验证
+        if (question.getQuestionType() == 1) {
+            if (!isValidOption(normalizedAnswer, question)) {
+                throw new BusinessException("单选题答案必须是有效选项(A-E)");
+            }
+        }
+        
+        // 多选题答案验证
+        if (question.getQuestionType() == 2) {
+            String[] answers = normalizedAnswer.split("[,，]\\s*");
+            for (String a : answers) {
+                if (!isValidOption(a.trim(), question)) {
+                    throw new BusinessException("多选题答案包含无效选项: " + a);
+                }
+            }
+        }
+    }
+    
+    /**
+     * 检查选项是否有效
+     */
+    private boolean isValidOption(String option, Question question) {
+        if (option == null || option.length() != 1) {
+            return false;
+        }
+        char c = option.charAt(0);
+        if (c < 'A' || c > 'E') {
+            return false;
+        }
+        // 检查对应选项是否存在
+        switch (c) {
+            case 'A': return hasContent(question.getOptionA());
+            case 'B': return hasContent(question.getOptionB());
+            case 'C': return hasContent(question.getOptionC());
+            case 'D': return hasContent(question.getOptionD());
+            case 'E': return hasContent(question.getOptionE());
+            default: return false;
+        }
+    }
+    
+    /**
+     * 标准化判断题答案
+     */
+    private String normalizeJudgeAnswer(String answer) {
+        if (answer == null) return "";
+        answer = answer.trim();
+        // 将"正确"、"对"、"T"、"True"转换为"A"
+        if (answer.equals("正确") || answer.equals("对") || answer.equalsIgnoreCase("T") 
+            || answer.equalsIgnoreCase("True") || answer.equals("A")) {
+            return "A";
+        }
+        // 将"错误"、"错"、"F"、"False"转换为"B"
+        if (answer.equals("错误") || answer.equals("错") || answer.equalsIgnoreCase("F") 
+            || answer.equalsIgnoreCase("False") || answer.equals("B")) {
+            return "B";
+        }
+        return answer;
     }
     
     /**
@@ -141,7 +226,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getQuestionId, id)
         );
         if (count > 0) {
-            throw new RuntimeException("题目已被试卷引用，无法删除");
+            throw new BusinessException("题目已被试卷引用，无法删除");
         }
         return baseMapper.deleteById(id) > 0;
     }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.OperationLog;
+import com.etms.exception.BusinessException;
 import com.etms.mapper.OperationLogMapper;
 import com.etms.service.LogService;
 import lombok.RequiredArgsConstructor;
@@ -140,7 +141,7 @@ public class LogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog
             workbook.write(response.getOutputStream());
         } catch (IOException e) {
             log.error("导出日志失败", e);
-            throw new RuntimeException("导出日志失败: " + e.getMessage());
+            throw new BusinessException("导出日志失败: " + e.getMessage());
         }
     }
 }
