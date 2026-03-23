@@ -798,6 +798,27 @@ ALTER TABLE exam_question ADD INDEX idx_deleted (deleted);
 ALTER TABLE exam_paper ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
 ALTER TABLE exam_paper ADD INDEX idx_deleted (deleted);
 
+-- =============================================
+-- 修复12：修复exam_record表结构与实体类不匹配的问题
+-- =============================================
+
+-- 添加缺失的字段
+ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS total_score INT(11) DEFAULT NULL COMMENT '总分';
+ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS user_score INT(11) DEFAULT NULL COMMENT '得分';
+ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS passed TINYINT(1) DEFAULT 0 COMMENT '是否通过(0否 1是)';
+ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS start_time DATETIME DEFAULT NULL COMMENT '开始时间';
+ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS objective_score INT(11) DEFAULT NULL COMMENT '客观题得分';
+ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS subjective_score INT(11) DEFAULT NULL COMMENT '主观题得分';
+ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS answer_detail TEXT DEFAULT NULL COMMENT '答题详情(JSON)';
+ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS retake_count INT(11) DEFAULT 0 COMMENT '补考次数';
+
+-- 迁移数据：将exam_start_time数据迁移到start_time
+UPDATE exam_record SET start_time = exam_start_time WHERE start_time IS NULL AND exam_start_time IS NOT NULL;
+
+-- 添加索引
+ALTER TABLE exam_record ADD INDEX IF NOT EXISTS idx_passed (passed);
+ALTER TABLE exam_record ADD INDEX IF NOT EXISTS idx_start_time (start_time);
+
 -- 为字典表添加逻辑删除字段（修复：使用正确的表名 sys_dict）
 ALTER TABLE sys_dict ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
 ALTER TABLE sys_dict ADD INDEX idx_deleted (deleted);

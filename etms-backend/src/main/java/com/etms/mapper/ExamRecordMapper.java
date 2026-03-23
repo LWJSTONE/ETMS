@@ -20,6 +20,6 @@ public interface ExamRecordMapper extends BaseMapper<ExamRecord> {
      * @param newStatus 新状态
      * @return 影响的行数（0表示更新失败，状态已被其他线程修改）
      */
-    @Update("UPDATE etms_exam_record SET status = #{newStatus}, update_time = NOW() WHERE id = #{recordId} AND status = #{expectedStatus}")
+    @Update("UPDATE exam_record SET status = #{newStatus} WHERE id = #{recordId} AND status = #{expectedStatus}")
     int updateStatusToSubmitted(@Param("recordId") Long recordId, @Param("expectedStatus") Integer expectedStatus, @Param("newStatus") Integer newStatus);
 }

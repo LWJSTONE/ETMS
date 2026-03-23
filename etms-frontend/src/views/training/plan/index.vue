@@ -191,6 +191,66 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <!-- 目标选择：部门 -->
+        <el-row :gutter="20" v-if="form.targetType === 1">
+          <el-col :span="24">
+            <el-form-item label="目标部门" prop="targetSelection">
+              <el-tree-select
+                v-model="form.targetDeptIds"
+                :data="deptList"
+                multiple
+                :render-after-expand="false"
+                check-strictly
+                placeholder="请选择目标部门"
+                style="width: 100%"
+                node-key="id"
+                :props="{ label: 'deptName', children: 'children' }"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <!-- 目标选择：岗位 -->
+        <el-row :gutter="20" v-if="form.targetType === 2">
+          <el-col :span="24">
+            <el-form-item label="目标岗位" prop="targetSelection">
+              <el-select
+                v-model="form.targetPositionIds"
+                multiple
+                filterable
+                placeholder="请选择目标岗位"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="pos in positionList"
+                  :key="pos.id"
+                  :label="pos.positionName"
+                  :value="pos.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <!-- 目标选择：个人 -->
+        <el-row :gutter="20" v-if="form.targetType === 3">
+          <el-col :span="24">
+            <el-form-item label="目标人员" prop="targetSelection">
+              <el-select
+                v-model="form.targetUserIds"
+                multiple
+                filterable
+                placeholder="请选择目标人员"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="user in userList"
+                  :key="user.id"
+                  :label="`${user.realName}(${user.username})`"
+                  :value="user.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-row :gutter="20" v-if="form.needExam === 1">
           <el-col :span="12">
             <el-form-item label="及格分数" prop="passScore">
@@ -279,6 +339,9 @@ import {
   endPlan
 } from '@/api/training'
 import { getCourseListAll } from '@/api/course'
+import { getDeptTree } from '@/api/dept'
+import { getPositionList } from '@/api/position'
+import { getUserList } from '@/api/user'
 
 // 搜索表单
 const searchForm = reactive({
@@ -306,6 +369,11 @@ const formRef = ref<FormInstance>()
 // 课程列表
 const courseList = ref<any[]>([])
 
+// 目标选项列表
+const deptList = ref<any[]>([])
+const positionList = ref<any[]>([])
+const userList = ref<any[]>([])
+
 // 表单数据
 const form = reactive({
   id: null as number | null,
@@ -315,6 +383,9 @@ const form = reactive({
   courseId: null as number | null,
   dateRange: [] as string[],
   targetType: 1 as number,
+  targetDeptIds: [] as number[],
+  targetPositionIds: [] as number[],
+  targetUserIds: [] as number[],
   needExam: 0 as number,
   passScore: 60 as number,
   maxRetake: 3 as number,
@@ -341,6 +412,23 @@ const validateDateRange = (rule: any, value: string[], callback: any) => {
   callback()
 }
 
+// 目标选择验证器
+const validateTargetSelection = (rule: any, value: any, callback: any) => {
+  if (form.targetType === 1 && (!form.targetDeptIds || form.targetDeptIds.length === 0)) {
+    callback(new Error('请选择目标部门'))
+    return
+  }
+  if (form.targetType === 2 && (!form.targetPositionIds || form.targetPositionIds.length === 0)) {
+    callback(new Error('请选择目标岗位'))
+    return
+  }
+  if (form.targetType === 3 && (!form.targetUserIds || form.targetUserIds.length === 0)) {
+    callback(new Error('请选择目标人员'))
+    return
+  }
+  callback()
+}
+
 // 表单验证规则
 const rules: FormRules = {
   planName: [
@@ -360,6 +448,9 @@ const rules: FormRules = {
   ],
   targetType: [
     { required: true, message: '请选择目标类型', trigger: 'change' }
+  ],
+  targetSelection: [
+    { required: true, validator: validateTargetSelection, trigger: 'change' }
   ]
 }
 
@@ -448,6 +539,9 @@ const resetForm = () => {
     courseId: null,
     dateRange: [],
     targetType: 1,
+    targetDeptIds: [],
+    targetPositionIds: [],
+    targetUserIds: [],
     needExam: 0,
     passScore: 60,
     maxRetake: 3,
@@ -472,6 +566,19 @@ const handleEdit = async (row: any) => {
   try {
     const res = await getPlanDetail(row.id)
     const data = res.data
+    // 解析目标ID
+    let targetDeptIds: number[] = []
+    let targetPositionIds: number[] = []
+    let targetUserIds: number[] = []
+    
+    try {
+      if (data.targetDeptIds) targetDeptIds = JSON.parse(data.targetDeptIds)
+      if (data.targetPositionIds) targetPositionIds = JSON.parse(data.targetPositionIds)
+      if (data.targetUserIds) targetUserIds = JSON.parse(data.targetUserIds)
+    } catch (e) {
+      console.warn('解析目标ID失败', e)
+    }
+    
     Object.assign(form, {
       id: data.id,
       planName: data.planName,
@@ -480,6 +587,9 @@ const handleEdit = async (row: any) => {
       courseId: data.courseId,
       dateRange: data.startDate && data.endDate ? [data.startDate, data.endDate] : [],
       targetType: data.targetType || 1,
+      targetDeptIds,
+      targetPositionIds,
+      targetUserIds,
       needExam: data.needExam || 0,
       passScore: data.passScore || 60,
       maxRetake: data.maxRetake || 3,
@@ -570,6 +680,9 @@ const handleSubmit = async () => {
       startDate: form.dateRange?.[0] || null,
       endDate: form.dateRange?.[1] || null,
       targetType: form.targetType,
+      targetDeptIds: JSON.stringify(form.targetDeptIds),
+      targetPositionIds: JSON.stringify(form.targetPositionIds),
+      targetUserIds: JSON.stringify(form.targetUserIds),
       needExam: form.needExam,
       passScore: form.passScore,
       maxRetake: form.maxRetake,
@@ -596,9 +709,42 @@ const handleSubmit = async () => {
   }
 }
 
+// 获取部门列表
+const getDeptList = async () => {
+  try {
+    const res = await getDeptTree()
+    deptList.value = res.data || []
+  } catch (error: any) {
+    console.error(error)
+  }
+}
+
+// 获取岗位列表
+const getPositionListAll = async () => {
+  try {
+    const res = await getPositionList({ current: 1, size: 1000, status: 1 })
+    positionList.value = res.data?.records || []
+  } catch (error: any) {
+    console.error(error)
+  }
+}
+
+// 获取用户列表
+const getUserListAll = async () => {
+  try {
+    const res = await getUserList({ current: 1, size: 1000, status: 1 })
+    userList.value = res.data?.records || []
+  } catch (error: any) {
+    console.error(error)
+  }
+}
+
 onMounted(() => {
   getList()
   getCourseList()
+  getDeptList()
+  getPositionListAll()
+  getUserListAll()
 })
 </script>
 

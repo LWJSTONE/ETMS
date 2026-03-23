@@ -22,7 +22,7 @@ public interface QuestionMapper extends BaseMapper<Question> {
      * @return 题目列表
      */
     @Select("<script>" +
-            "SELECT * FROM etms_question " +
+            "SELECT * FROM exam_question " +
             "WHERE status = 1 " +
             "<if test='questionType != null'> AND question_type = #{questionType} </if>" +
             "<if test='difficulty != null'> AND difficulty = #{difficulty} </if>" +
