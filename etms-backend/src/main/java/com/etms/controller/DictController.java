@@ -109,4 +109,13 @@ public class DictController {
         dictService.deleteDictData(id);
         return Result.success();
     }
+    
+    // ==================== 字典缓存相关 ====================
+    
+    @ApiOperation(value = "刷新字典缓存")
+    @PostMapping("/system/dict/cache/refresh")
+    public Result<Void> refreshCache() {
+        dictService.refreshCache();
+        return Result.success();
+    }
 }

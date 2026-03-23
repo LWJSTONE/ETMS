@@ -157,7 +157,7 @@ import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import { getUserList } from '@/api/user'
 import { getCourseList } from '@/api/course'
-import { getPlanList, getProgressList } from '@/api/training'
+import { getPlanList, getMyProgress } from '@/api/training'
 import { getPaperList, getExamRecordList } from '@/api/exam'
 
 const userStore = useUserStore()
@@ -208,7 +208,7 @@ const getStatistics = async () => {
     overview.value.examCount = examRes.data?.total || 0
 
     // 获取我的待学习课程数
-    const progressRes = await getProgressList({ current: 1, size: 100, status: 1 })
+    const progressRes = await getMyProgress({ current: 1, size: 100, status: 1 })
     stats.value.courseCount = progressRes.data?.records?.filter((r: any) => r.status === 1).length || 0
 
     // 获取待参加考试数

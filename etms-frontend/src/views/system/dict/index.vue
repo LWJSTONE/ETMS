@@ -8,7 +8,7 @@
             <div class="card-header">
               <span>字典类型</span>
               <div class="header-btns">
-                <el-button type="primary" link @click="handleRefreshCache">
+                <el-button type="primary" link @click="handleRefreshCache" :loading="cacheLoading">
                   <el-icon><Refresh /></el-icon>刷新缓存
                 </el-button>
                 <el-button type="primary" @click="handleAddType">
@@ -141,7 +141,7 @@
       </el-form>
       <template #footer>
         <el-button @click="typeDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleTypeSubmit">确定</el-button>
+        <el-button type="primary" @click="handleTypeSubmit" :loading="submitLoading">确定</el-button>
       </template>
     </el-dialog>
     
@@ -169,7 +169,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dataDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleDataSubmit">确定</el-button>
+        <el-button type="primary" @click="handleDataSubmit" :loading="submitLoading">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -179,95 +179,38 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-
-// ==================== 类型定义 ====================
-interface DictType {
-  id: number
-  dictName: string
-  dictType: string
-  status: number
-  remark: string
-  createTime: string
-}
-
-interface DictData {
-  id: number
-  dictTypeId: number
-  dictLabel: string
-  dictValue: string
-  dictSort: number
-  status: number
-  remark: string
-  createTime: string
-}
-
-// ==================== 模拟数据 ====================
-const mockDictTypes: DictType[] = [
-  { id: 1, dictName: '用户性别', dictType: 'sys_user_sex', status: 1, remark: '用户性别字典', createTime: '2024-01-01 10:00:00' },
-  { id: 2, dictName: '菜单状态', dictType: 'sys_menu_status', status: 1, remark: '菜单状态字典', createTime: '2024-01-01 10:00:00' },
-  { id: 3, dictName: '正常状态', dictType: 'sys_normal_disable', status: 1, remark: '正常禁用状态', createTime: '2024-01-01 10:00:00' },
-  { id: 4, dictName: '任务状态', dictType: 'sys_job_status', status: 1, remark: '任务状态字典', createTime: '2024-01-01 10:00:00' },
-  { id: 5, dictName: '任务分组', dictType: 'sys_job_group', status: 1, remark: '任务分组字典', createTime: '2024-01-01 10:00:00' },
-  { id: 6, dictName: '通知类型', dictType: 'sys_notice_type', status: 1, remark: '通知类型字典', createTime: '2024-01-01 10:00:00' },
-  { id: 7, dictName: '课程状态', dictType: 'course_status', status: 1, remark: '课程状态字典', createTime: '2024-01-01 10:00:00' },
-  { id: 8, dictName: '培训类型', dictType: 'training_type', status: 1, remark: '培训类型字典', createTime: '2024-01-01 10:00:00' },
-  { id: 9, dictName: '考试状态', dictType: 'exam_status', status: 0, remark: '考试状态字典', createTime: '2024-01-01 10:00:00' },
-  { id: 10, dictName: '签到类型', dictType: 'attendance_type', status: 1, remark: '签到类型字典', createTime: '2024-01-01 10:00:00' }
-]
-
-const mockDictData: DictData[] = [
-  // 用户性别
-  { id: 1, dictTypeId: 1, dictLabel: '男', dictValue: '1', dictSort: 1, status: 1, remark: '性别-男', createTime: '2024-01-01 10:00:00' },
-  { id: 2, dictTypeId: 1, dictLabel: '女', dictValue: '2', dictSort: 2, status: 1, remark: '性别-女', createTime: '2024-01-01 10:00:00' },
-  { id: 3, dictTypeId: 1, dictLabel: '未知', dictValue: '0', dictSort: 3, status: 1, remark: '性别-未知', createTime: '2024-01-01 10:00:00' },
-  // 菜单状态
-  { id: 4, dictTypeId: 2, dictLabel: '显示', dictValue: '1', dictSort: 1, status: 1, remark: '菜单显示', createTime: '2024-01-01 10:00:00' },
-  { id: 5, dictTypeId: 2, dictLabel: '隐藏', dictValue: '0', dictSort: 2, status: 1, remark: '菜单隐藏', createTime: '2024-01-01 10:00:00' },
-  // 正常禁用状态
-  { id: 6, dictTypeId: 3, dictLabel: '正常', dictValue: '1', dictSort: 1, status: 1, remark: '正常状态', createTime: '2024-01-01 10:00:00' },
-  { id: 7, dictTypeId: 3, dictLabel: '禁用', dictValue: '0', dictSort: 2, status: 1, remark: '禁用状态', createTime: '2024-01-01 10:00:00' },
-  // 任务状态
-  { id: 8, dictTypeId: 4, dictLabel: '正常', dictValue: '0', dictSort: 1, status: 1, remark: '任务正常', createTime: '2024-01-01 10:00:00' },
-  { id: 9, dictTypeId: 4, dictLabel: '暂停', dictValue: '1', dictSort: 2, status: 1, remark: '任务暂停', createTime: '2024-01-01 10:00:00' },
-  // 任务分组
-  { id: 10, dictTypeId: 5, dictLabel: '默认', dictValue: 'DEFAULT', dictSort: 1, status: 1, remark: '默认分组', createTime: '2024-01-01 10:00:00' },
-  { id: 11, dictTypeId: 5, dictLabel: '系统', dictValue: 'SYSTEM', dictSort: 2, status: 1, remark: '系统分组', createTime: '2024-01-01 10:00:00' },
-  // 通知类型
-  { id: 12, dictTypeId: 6, dictLabel: '通知', dictValue: '1', dictSort: 1, status: 1, remark: '通知类型', createTime: '2024-01-01 10:00:00' },
-  { id: 13, dictTypeId: 6, dictLabel: '公告', dictValue: '2', dictSort: 2, status: 1, remark: '公告类型', createTime: '2024-01-01 10:00:00' },
-  // 课程状态
-  { id: 14, dictTypeId: 7, dictLabel: '未发布', dictValue: '0', dictSort: 1, status: 1, remark: '课程未发布', createTime: '2024-01-01 10:00:00' },
-  { id: 15, dictTypeId: 7, dictLabel: '已发布', dictValue: '1', dictSort: 2, status: 1, remark: '课程已发布', createTime: '2024-01-01 10:00:00' },
-  { id: 16, dictTypeId: 7, dictLabel: '已下架', dictValue: '2', dictSort: 3, status: 1, remark: '课程已下架', createTime: '2024-01-01 10:00:00' },
-  // 培训类型
-  { id: 17, dictTypeId: 8, dictLabel: '入职培训', dictValue: '1', dictSort: 1, status: 1, remark: '入职培训', createTime: '2024-01-01 10:00:00' },
-  { id: 18, dictTypeId: 8, dictLabel: '岗位培训', dictValue: '2', dictSort: 2, status: 1, remark: '岗位培训', createTime: '2024-01-01 10:00:00' },
-  { id: 19, dictTypeId: 8, dictLabel: '技能培训', dictValue: '3', dictSort: 3, status: 1, remark: '技能培训', createTime: '2024-01-01 10:00:00' },
-  { id: 20, dictTypeId: 8, dictLabel: '安全培训', dictValue: '4', dictSort: 4, status: 0, remark: '安全培训', createTime: '2024-01-01 10:00:00' },
-  // 考试状态
-  { id: 21, dictTypeId: 9, dictLabel: '未开始', dictValue: '0', dictSort: 1, status: 1, remark: '考试未开始', createTime: '2024-01-01 10:00:00' },
-  { id: 22, dictTypeId: 9, dictLabel: '进行中', dictValue: '1', dictSort: 2, status: 1, remark: '考试进行中', createTime: '2024-01-01 10:00:00' },
-  { id: 23, dictTypeId: 9, dictLabel: '已结束', dictValue: '2', dictSort: 3, status: 1, remark: '考试已结束', createTime: '2024-01-01 10:00:00' },
-  // 签到类型
-  { id: 24, dictTypeId: 10, dictLabel: '上班签到', dictValue: '1', dictSort: 1, status: 1, remark: '上班签到', createTime: '2024-01-01 10:00:00' },
-  { id: 25, dictTypeId: 10, dictLabel: '下班签退', dictValue: '2', dictSort: 2, status: 1, remark: '下班签退', createTime: '2024-01-01 10:00:00' }
-]
+import {
+  getDictTypeList,
+  createDictType,
+  updateDictType,
+  deleteDictType,
+  getDictDataList,
+  createDictData,
+  updateDictData,
+  deleteDictData,
+  refreshDictCache
+} from '@/api/dict'
+import type { DictType, DictData } from '@/api/dict'
 
 // ==================== 响应式数据 ====================
 // 字典类型相关
-const typeList = ref<DictType[]>([...mockDictTypes])
+const typeList = ref<DictType[]>([])
 const typeLoading = ref(false)
 const typeSearchKeyword = ref('')
 const currentType = ref<DictType | null>(null)
 const typeTableRef = ref()
 
 // 字典数据相关
-const dataList = ref<DictData[]>([...mockDictData])
+const dataList = ref<DictData[]>([])
 const dataLoading = ref(false)
 const dataSearchForm = reactive({
   dictLabel: '',
   status: null as number | null
 })
+
+// 提交加载状态
+const submitLoading = ref(false)
+const cacheLoading = ref(false)
 
 // 字典类型对话框
 const typeDialogVisible = ref(false)
@@ -321,7 +264,7 @@ const filteredTypeList = computed(() => {
 
 // 过滤后的字典数据列表
 const filteredDataList = computed(() => {
-  let result = dataList.value.filter(item => item.dictTypeId === currentType.value?.id)
+  let result = dataList.value
   if (dataSearchForm.dictLabel) {
     result = result.filter(item => 
       item.dictLabel.toLowerCase().includes(dataSearchForm.dictLabel.toLowerCase())
@@ -333,6 +276,43 @@ const filteredDataList = computed(() => {
   return result.sort((a, b) => a.dictSort - b.dictSort)
 })
 
+// ==================== API 调用方法 ====================
+// 获取字典类型列表
+const fetchTypeList = async () => {
+  typeLoading.value = true
+  try {
+    const res = await getDictTypeList({ current: 1, size: 1000 })
+    if (res.code === 200 && res.data) {
+      typeList.value = res.data.records || []
+    } else {
+      ElMessage.error(res.message || '获取字典类型列表失败')
+    }
+  } catch (error) {
+    console.error('获取字典类型列表失败:', error)
+    ElMessage.error('获取字典类型列表失败')
+  } finally {
+    typeLoading.value = false
+  }
+}
+
+// 获取字典数据列表
+const fetchDataList = async (dictTypeId: number) => {
+  dataLoading.value = true
+  try {
+    const res = await getDictDataList(dictTypeId)
+    if (res.code === 200 && res.data) {
+      dataList.value = res.data || []
+    } else {
+      ElMessage.error(res.message || '获取字典数据列表失败')
+    }
+  } catch (error) {
+    console.error('获取字典数据列表失败:', error)
+    ElMessage.error('获取字典数据列表失败')
+  } finally {
+    dataLoading.value = false
+  }
+}
+
 // ==================== 字典类型相关方法 ====================
 // 字典类型搜索
 const handleTypeSearch = () => {
@@ -342,6 +322,11 @@ const handleTypeSearch = () => {
 // 选择字典类型
 const handleTypeSelect = (row: DictType | null) => {
   currentType.value = row
+  if (row) {
+    fetchDataList(row.id)
+  } else {
+    dataList.value = []
+  }
 }
 
 // 新增字典类型
@@ -372,27 +357,32 @@ const handleEditType = (row: DictType) => {
 
 // 删除字典类型
 const handleDeleteType = async (row: DictType) => {
-  await ElMessageBox.confirm(
-    `确定要删除字典类型【${row.dictName}】吗？删除后将同时删除该类型下的所有字典数据！`,
-    '提示',
-    { type: 'warning' }
-  )
-  
-  // 删除字典类型
-  const typeIndex = typeList.value.findIndex(item => item.id === row.id)
-  if (typeIndex > -1) {
-    typeList.value.splice(typeIndex, 1)
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除字典类型【${row.dictName}】吗？删除后将同时删除该类型下的所有字典数据！`,
+      '提示',
+      { type: 'warning' }
+    )
+    
+    const res = await deleteDictType(row.id)
+    if (res.code === 200) {
+      ElMessage.success('删除成功')
+      // 重新获取列表
+      await fetchTypeList()
+      // 清除当前选中
+      if (currentType.value?.id === row.id) {
+        currentType.value = null
+        dataList.value = []
+      }
+    } else {
+      ElMessage.error(res.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除字典类型失败:', error)
+      ElMessage.error('删除失败')
+    }
   }
-  
-  // 删除关联的字典数据
-  dataList.value = dataList.value.filter(item => item.dictTypeId !== row.id)
-  
-  // 清除当前选中
-  if (currentType.value?.id === row.id) {
-    currentType.value = null
-  }
-  
-  ElMessage.success('删除成功')
 }
 
 // 提交字典类型表单
@@ -400,33 +390,36 @@ const handleTypeSubmit = async () => {
   const valid = await typeFormRef.value?.validate()
   if (!valid) return
   
-  if (isEditType.value) {
-    // 编辑
-    const index = typeList.value.findIndex(item => item.id === typeForm.id)
-    if (index > -1) {
-      typeList.value[index] = {
-        ...typeList.value[index],
-        dictName: typeForm.dictName,
-        status: typeForm.status,
-        remark: typeForm.remark
-      }
-    }
-    ElMessage.success('修改成功')
-  } else {
-    // 新增
-    const newType: DictType = {
-      id: Math.max(...typeList.value.map(t => t.id), 0) + 1,
+  submitLoading.value = true
+  try {
+    const data = {
       dictName: typeForm.dictName,
       dictType: typeForm.dictType,
       status: typeForm.status,
-      remark: typeForm.remark,
-      createTime: new Date().toLocaleString().replace(/\//g, '-')
+      remark: typeForm.remark
     }
-    typeList.value.push(newType)
-    ElMessage.success('新增成功')
+    
+    let res
+    if (isEditType.value) {
+      res = await updateDictType(typeForm.id!, data)
+    } else {
+      res = await createDictType(data)
+    }
+    
+    if (res.code === 200) {
+      ElMessage.success(isEditType.value ? '修改成功' : '新增成功')
+      typeDialogVisible.value = false
+      // 重新获取列表
+      await fetchTypeList()
+    } else {
+      ElMessage.error(res.message || '操作失败')
+    }
+  } catch (error) {
+    console.error('提交字典类型失败:', error)
+    ElMessage.error('操作失败')
+  } finally {
+    submitLoading.value = false
   }
-  
-  typeDialogVisible.value = false
 }
 
 // ==================== 字典数据相关方法 ====================
@@ -456,7 +449,7 @@ const handleAddData = () => {
     dictTypeId: currentType.value.id,
     dictLabel: '',
     dictValue: '',
-    dictSort: Math.max(...dataList.value.filter(d => d.dictTypeId === currentType.value?.id).map(d => d.dictSort), 0) + 1,
+    dictSort: dataList.value.length > 0 ? Math.max(...dataList.value.map(d => d.dictSort)) + 1 : 1,
     status: 1,
     remark: ''
   })
@@ -480,18 +473,29 @@ const handleEditData = (row: DictData) => {
 
 // 删除字典数据
 const handleDeleteData = async (row: DictData) => {
-  await ElMessageBox.confirm(
-    `确定要删除字典数据【${row.dictLabel}】吗？`,
-    '提示',
-    { type: 'warning' }
-  )
-  
-  const index = dataList.value.findIndex(item => item.id === row.id)
-  if (index > -1) {
-    dataList.value.splice(index, 1)
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除字典数据【${row.dictLabel}】吗？`,
+      '提示',
+      { type: 'warning' }
+    )
+    
+    const res = await deleteDictData(row.id)
+    if (res.code === 200) {
+      ElMessage.success('删除成功')
+      // 重新获取当前类型的字典数据
+      if (currentType.value) {
+        await fetchDataList(currentType.value.id)
+      }
+    } else {
+      ElMessage.error(res.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除字典数据失败:', error)
+      ElMessage.error('删除失败')
+    }
   }
-  
-  ElMessage.success('删除成功')
 }
 
 // 提交字典数据表单
@@ -499,46 +503,65 @@ const handleDataSubmit = async () => {
   const valid = await dataFormRef.value?.validate()
   if (!valid) return
   
-  if (isEditData.value) {
-    // 编辑
-    const index = dataList.value.findIndex(item => item.id === dataForm.id)
-    if (index > -1) {
-      dataList.value[index] = {
-        ...dataList.value[index],
-        dictLabel: dataForm.dictLabel,
-        dictValue: dataForm.dictValue,
-        dictSort: dataForm.dictSort,
-        status: dataForm.status,
-        remark: dataForm.remark
-      }
-    }
-    ElMessage.success('修改成功')
-  } else {
-    // 新增
-    const newData: DictData = {
-      id: Math.max(...dataList.value.map(d => d.id), 0) + 1,
-      dictTypeId: dataForm.dictTypeId!,
+  submitLoading.value = true
+  try {
+    const data = {
+      dictTypeId: dataForm.dictTypeId,
       dictLabel: dataForm.dictLabel,
       dictValue: dataForm.dictValue,
       dictSort: dataForm.dictSort,
       status: dataForm.status,
-      remark: dataForm.remark,
-      createTime: new Date().toLocaleString().replace(/\//g, '-')
+      remark: dataForm.remark
     }
-    dataList.value.push(newData)
-    ElMessage.success('新增成功')
+    
+    let res
+    if (isEditData.value) {
+      res = await updateDictData(dataForm.id!, data)
+    } else {
+      res = await createDictData(data)
+    }
+    
+    if (res.code === 200) {
+      ElMessage.success(isEditData.value ? '修改成功' : '新增成功')
+      dataDialogVisible.value = false
+      // 重新获取当前类型的字典数据
+      if (currentType.value) {
+        await fetchDataList(currentType.value.id)
+      }
+    } else {
+      ElMessage.error(res.message || '操作失败')
+    }
+  } catch (error) {
+    console.error('提交字典数据失败:', error)
+    ElMessage.error('操作失败')
+  } finally {
+    submitLoading.value = false
   }
-  
-  dataDialogVisible.value = false
 }
 
 // ==================== 刷新缓存 ====================
-const handleRefreshCache = () => {
-  ElMessage.success('字典缓存刷新成功')
+const handleRefreshCache = async () => {
+  cacheLoading.value = true
+  try {
+    const res = await refreshDictCache()
+    if (res.code === 200) {
+      ElMessage.success('字典缓存刷新成功')
+    } else {
+      ElMessage.error(res.message || '刷新缓存失败')
+    }
+  } catch (error) {
+    console.error('刷新缓存失败:', error)
+    ElMessage.error('刷新缓存失败')
+  } finally {
+    cacheLoading.value = false
+  }
 }
 
 // ==================== 初始化 ====================
-onMounted(() => {
+onMounted(async () => {
+  // 获取字典类型列表
+  await fetchTypeList()
+  
   // 默认选中第一个字典类型
   if (typeList.value.length > 0) {
     currentType.value = typeList.value[0]
@@ -546,6 +569,8 @@ onMounted(() => {
     setTimeout(() => {
       typeTableRef.value?.setCurrentRow(typeList.value[0])
     }, 100)
+    // 获取对应的字典数据
+    await fetchDataList(typeList.value[0].id)
   }
 })
 </script>

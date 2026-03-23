@@ -108,7 +108,7 @@
       <el-table :data="tableData" v-loading="loading" stripe border>
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="paperName" label="试卷名称" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="examScore" label="得分" width="100" align="center">
+        <el-table-column prop="userScore" label="得分" width="100" align="center">
           <template #default="{ row }">
             <span :class="getScoreClass(row)">{{ row.userScore }}</span>
           </template>
@@ -172,7 +172,7 @@
         <el-descriptions :column="3" border class="detail-info">
           <el-descriptions-item label="试卷名称" :span="3">{{ detailData.paperName }}</el-descriptions-item>
           <el-descriptions-item label="考试得分">
-            <span :class="getScoreClass(detailData)">{{ detailData.examScore }} / {{ detailData.totalScore }}</span>
+            <span :class="getScoreClass(detailData)">{{ detailData.userScore }} / {{ detailData.totalScore }}</span>
           </el-descriptions-item>
           <el-descriptions-item label="及格分数">{{ detailData.passScore }}分</el-descriptions-item>
           <el-descriptions-item label="考试结果">

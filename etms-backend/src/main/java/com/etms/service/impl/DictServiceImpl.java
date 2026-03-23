@@ -122,4 +122,11 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
         }
         return getDictDataList(type.getId());
     }
+    
+    @Override
+    public void refreshCache() {
+        // TODO: 实现字典缓存刷新逻辑
+        // 如果使用了Redis缓存，可以在这里清除字典相关的缓存
+        // 目前为空实现，后续可根据实际缓存方案进行扩展
+    }
 }

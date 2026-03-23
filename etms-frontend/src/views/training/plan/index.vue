@@ -371,8 +371,9 @@ const getList = async () => {
     })
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取培训计划列表失败')
   } finally {
     loading.value = false
   }
@@ -383,8 +384,9 @@ const getCourseList = async () => {
   try {
     const res = await getCourseListAll()
     courseList.value = res.data || []
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取课程列表失败')
   }
 }
 
@@ -455,44 +457,54 @@ const handleEdit = async (row: any) => {
       planObjective: data.planObjective || ''
     })
     dialogVisible.value = true
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取培训计划详情失败')
   }
 }
 
 // 删除
 const handleDelete = async (row: any) => {
-  await ElMessageBox.confirm('确定要删除该培训计划吗？', '提示', { type: 'warning' })
   try {
+    await ElMessageBox.confirm('确定要删除该培训计划吗？', '提示', { type: 'warning' })
     await deletePlan(row.id)
     ElMessage.success('删除成功')
     getList()
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '删除失败')
+    }
   }
 }
 
 // 发布
 const handlePublish = async (row: any) => {
-  await ElMessageBox.confirm('确定要发布该培训计划吗？发布后将无法修改。', '提示', { type: 'warning' })
   try {
+    await ElMessageBox.confirm('确定要发布该培训计划吗？发布后将无法修改。', '提示', { type: 'warning' })
     await publishPlan(row.id)
     ElMessage.success('发布成功')
     getList()
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '发布失败')
+    }
   }
 }
 
 // 归档
 const handleArchive = async (row: any) => {
-  await ElMessageBox.confirm('确定要归档该培训计划吗？', '提示', { type: 'warning' })
   try {
+    await ElMessageBox.confirm('确定要归档该培训计划吗？', '提示', { type: 'warning' })
     await archivePlan(row.id)
     ElMessage.success('归档成功')
     getList()
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '归档失败')
+    }
   }
 }
 
@@ -529,8 +541,9 @@ const handleSubmit = async () => {
     }
     dialogVisible.value = false
     getList()
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '保存失败')
   } finally {
     submitLoading.value = false
   }

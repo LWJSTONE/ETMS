@@ -47,3 +47,17 @@ export function assignPermissions(id: number, permissionIds: number[]): Promise<
 export function getRolePermissions(id: number): Promise<ApiResponse<number[]>> {
   return request.get(`/system/roles/${id}/permissions`)
 }
+
+// 获取权限树
+export interface PermissionTreeNode {
+  id: number
+  permName: string
+  permCode?: string
+  parentId?: number
+  sortOrder?: number
+  children?: PermissionTreeNode[]
+}
+
+export function getPermissionTree(): Promise<ApiResponse<PermissionTreeNode[]>> {
+  return request.get('/system/permissions/tree')
+}

@@ -191,7 +191,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Timer, DataLine, CircleCheck, Document, Clock } from '@element-plus/icons-vue'
-import { getPaperList, getExamRecordList, startExam, getExamRecordDetail } from '@/api/exam'
+import { getPaperList, getMyExamRecordList, startExam, getExamRecordDetail } from '@/api/exam'
 
 const router = useRouter()
 
@@ -343,7 +343,7 @@ const getAvailableExams = async () => {
 const getHistoryRecords = async () => {
   historyLoading.value = true
   try {
-    const res = await getExamRecordList({
+    const res = await getMyExamRecordList({
       current: historyPagination.current,
       size: historyPagination.size
     })

@@ -33,9 +33,11 @@ public class ExamRecordController {
             @RequestParam(defaultValue = "10") Long size,
             @RequestParam(required = false) Long paperId,
             @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String userName,
+            @RequestParam(required = false) String paperName) {
         Page<ExamRecord> page = new Page<>(current, size);
-        Page<ExamRecordVO> voPage = examRecordService.pageExamRecords(page, paperId, userId, status);
+        Page<ExamRecordVO> voPage = examRecordService.pageExamRecords(page, paperId, userId, status, userName, paperName);
         PageResult<ExamRecordVO> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );

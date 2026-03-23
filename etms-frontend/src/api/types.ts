@@ -164,6 +164,7 @@ export interface Course {
   categoryId?: number
   categoryName?: string
   duration?: number
+  credit?: number
   difficulty?: number
   targetAudience?: string
   prerequisite?: string
@@ -191,6 +192,7 @@ export interface CourseCreateParams {
   pptUrl?: string
   categoryId?: number
   duration?: number
+  credit?: number
   difficulty?: number
   targetAudience?: string
   prerequisite?: string
@@ -208,6 +210,7 @@ export interface CourseUpdateParams {
   pptUrl?: string
   categoryId?: number
   duration?: number
+  credit?: number
   difficulty?: number
   targetAudience?: string
   prerequisite?: string
@@ -494,8 +497,10 @@ export interface LearningProgress {
   courseId: number
   courseName?: string
   progress: number
+  studyTime?: number
   status: number
   startTime?: string
+  lastStudyTime?: string
   completeTime?: string
   createTime?: string
   updateTime?: string

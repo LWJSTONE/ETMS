@@ -178,7 +178,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
     }
     
     @Override
-    public Page<LearningProgressVO> getMyProgress(Long current, Long size, Integer status) {
+    public Page<LearningProgressVO> getMyProgress(Long current, Long size, Integer status, String keyword, Long planId) {
         // 获取当前用户ID
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
@@ -191,7 +191,145 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             throw new BusinessException("用户不存在");
         }
         
-        return pageProgress(current, size, null, user.getId(), status, null, null);
+        return pageProgressWithKeyword(current, size, planId, user.getId(), status, keyword);
+    }
+    
+    /**
+     * 支持课程名称关键字过滤的分页查询
+     */
+    private Page<LearningProgressVO> pageProgressWithKeyword(Long current, Long size, Long planId, Long userId, Integer status, String keyword) {
+        Page<UserPlan> page = new Page<>(current, size);
+        
+        LambdaQueryWrapper<UserPlan> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(planId != null, UserPlan::getPlanId, planId)
+               .eq(userId != null, UserPlan::getUserId, userId)
+               .eq(status != null, UserPlan::getStatus, status)
+               .orderByDesc(UserPlan::getCreateTime);
+        
+        Page<UserPlan> userPlanPage = baseMapper.selectPage(page, wrapper);
+        
+        // 转换为VO
+        Page<LearningProgressVO> voPage = new Page<>(current, size, userPlanPage.getTotal());
+        
+        if (userPlanPage.getRecords().isEmpty()) {
+            voPage.setRecords(new ArrayList<>());
+            return voPage;
+        }
+        
+        // 批量获取用户信息
+        Set<Long> userIds = userPlanPage.getRecords().stream()
+                .map(UserPlan::getUserId)
+                .collect(Collectors.toSet());
+        Map<Long, User> userMap = new HashMap<>();
+        Map<Long, String> deptNameMap = new HashMap<>();
+        if (!userIds.isEmpty()) {
+            List<User> users = userMapper.selectBatchIds(userIds);
+            userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u));
+            
+            // 批量获取部门名称
+            Set<Long> deptIds = users.stream()
+                    .map(User::getDeptId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (!deptIds.isEmpty()) {
+                List<Dept> depts = deptMapper.selectBatchIds(deptIds);
+                deptNameMap = depts.stream().collect(Collectors.toMap(Dept::getId, Dept::getDeptName));
+            }
+        }
+        
+        // 批量获取培训计划信息
+        Set<Long> planIds = userPlanPage.getRecords().stream()
+                .map(UserPlan::getPlanId)
+                .collect(Collectors.toSet());
+        Map<Long, TrainingPlan> planMap = new HashMap<>();
+        if (!planIds.isEmpty()) {
+            List<TrainingPlan> plans = trainingPlanMapper.selectBatchIds(planIds);
+            planMap = plans.stream().collect(Collectors.toMap(TrainingPlan::getId, p -> p));
+        }
+        
+        // 批量获取课程信息
+        Set<Long> courseIds = userPlanPage.getRecords().stream()
+                .map(UserPlan::getCourseId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        // 从培训计划中获取关联的课程ID
+        for (TrainingPlan plan : planMap.values()) {
+            if (plan.getCourseId() != null) {
+                courseIds.add(plan.getCourseId());
+            }
+        }
+        Map<Long, Course> courseMap = new HashMap<>();
+        if (!courseIds.isEmpty()) {
+            List<Course> courses = courseMapper.selectBatchIds(courseIds);
+            courseMap = courses.stream().collect(Collectors.toMap(Course::getId, c -> c));
+        }
+        
+        // 过滤不符合条件的记录
+        final Map<Long, User> finalUserMap = userMap;
+        final Map<Long, String> finalDeptNameMap = deptNameMap;
+        final Map<Long, TrainingPlan> finalPlanMap = planMap;
+        final Map<Long, Course> finalCourseMap = courseMap;
+        
+        List<LearningProgressVO> voList = userPlanPage.getRecords().stream()
+                .filter(up -> {
+                    // 过滤课程名称关键字
+                    if (keyword != null && !keyword.isEmpty()) {
+                        Long courseId = up.getCourseId() != null ? up.getCourseId() : 
+                                       (finalPlanMap.get(up.getPlanId()) != null ? finalPlanMap.get(up.getPlanId()).getCourseId() : null);
+                        if (courseId != null) {
+                            Course course = finalCourseMap.get(courseId);
+                            if (course == null || course.getCourseName() == null || !course.getCourseName().contains(keyword)) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .map(up -> {
+                    LearningProgressVO vo = new LearningProgressVO();
+                    BeanUtils.copyProperties(up, vo);
+                    
+                    // 设置用户信息
+                    User u = finalUserMap.get(up.getUserId());
+                    if (u != null) {
+                        vo.setUserName(u.getUsername());
+                        vo.setRealName(u.getRealName());
+                        vo.setDeptName(finalDeptNameMap.get(u.getDeptId()));
+                    }
+                    
+                    // 设置培训计划信息
+                    TrainingPlan plan = finalPlanMap.get(up.getPlanId());
+                    if (plan != null) {
+                        vo.setPlanName(plan.getPlanName());
+                    }
+                    
+                    // 设置课程信息
+                    Long courseId = up.getCourseId() != null ? up.getCourseId() : 
+                                   (plan != null ? plan.getCourseId() : null);
+                    if (courseId != null) {
+                        Course course = finalCourseMap.get(courseId);
+                        if (course != null) {
+                            vo.setCourseId(courseId);
+                            vo.setCourseName(course.getCourseName());
+                            vo.setCourseType(course.getCourseType());
+                            vo.setCoverImage(course.getCoverImage());
+                            vo.setCourseDesc(course.getCourseDesc());
+                            vo.setDuration(course.getDuration());
+                            vo.setCredit(course.getCredit());
+                        }
+                    }
+                    
+                    // 设置状态名称
+                    vo.setStatusName(getStatusName(up.getStatus()));
+                    
+                    return vo;
+                })
+                .collect(Collectors.toList());
+        
+        voPage.setRecords(voList);
+        return voPage;
     }
     
     @Override

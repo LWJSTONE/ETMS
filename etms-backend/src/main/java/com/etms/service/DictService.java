@@ -61,4 +61,9 @@ public interface DictService extends IService<DictType> {
      * 根据字典类型获取字典数据
      */
     List<DictData> getDictDataByType(String dictType);
+    
+    /**
+     * 刷新字典缓存
+     */
+    void refreshCache();
 }

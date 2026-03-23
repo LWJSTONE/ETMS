@@ -72,3 +72,8 @@ export function updateDictData(id: number, data: DictData): Promise<ApiResponse<
 export function deleteDictData(id: number): Promise<ApiResponse<void>> {
   return request.delete(`/system/dict/data/${id}`)
 }
+
+// 刷新字典缓存
+export function refreshDictCache(): Promise<ApiResponse<void>> {
+  return request.post('/system/dict/cache/refresh')
+}

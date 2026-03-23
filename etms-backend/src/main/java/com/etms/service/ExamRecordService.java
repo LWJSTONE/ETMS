@@ -13,7 +13,7 @@ public interface ExamRecordService {
     /**
      * 分页查询考试记录
      */
-    Page<ExamRecordVO> pageExamRecords(Page<ExamRecord> page, Long paperId, Long userId, Integer status);
+    Page<ExamRecordVO> pageExamRecords(Page<ExamRecord> page, Long paperId, Long userId, Integer status, String userName, String paperName);
     
     /**
      * 获取考试记录详情
@@ -43,7 +43,7 @@ public interface ExamRecordService {
     /**
      * 获取我的成绩
      */
-    Page<ExamResultVO> getMyResults(Long current, Long size, Integer passed);
+    Page<ExamResultVO> getMyResults(Long current, Long size, Integer passed, String paperName, String startTime, String endTime);
     
     /**
      * 获取成绩详情

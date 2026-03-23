@@ -146,7 +146,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { getUserList, createUser, updateUser, deleteUser, resetPassword, assignRoles } from '@/api/user'
+import { getUserList, getUserDetail, createUser, updateUser, deleteUser, resetPassword, assignRoles } from '@/api/user'
 import { getRoleListAll } from '@/api/role'
 
 const searchForm = reactive({ username: '', realName: '', status: null as number | null })
@@ -240,18 +240,36 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (row: any) => { 
+const handleEdit = async (row: any) => { 
   isEdit.value = true
-  Object.assign(form, { 
-    id: row.id, 
-    username: row.username, 
-    password: '',  // 编辑时清空密码
-    realName: row.realName, 
-    gender: row.gender, 
-    phone: row.phone, 
-    email: row.email, 
-    status: row.status 
-  })
+  try {
+    // 调用API获取用户详情
+    const res = await getUserDetail(row.id)
+    const userData = res.data
+    Object.assign(form, { 
+      id: userData.id, 
+      username: userData.username, 
+      password: '',  // 编辑时清空密码
+      realName: userData.realName, 
+      gender: userData.gender || 1, 
+      phone: userData.phone || '', 
+      email: userData.email || '', 
+      status: userData.status 
+    })
+  } catch (error) {
+    console.warn('获取用户详情失败，使用表格数据:', error)
+    // 如果API调用失败，使用表格行数据
+    Object.assign(form, { 
+      id: row.id, 
+      username: row.username, 
+      password: '',
+      realName: row.realName, 
+      gender: row.gender || 1, 
+      phone: row.phone || '', 
+      email: row.email || '', 
+      status: row.status 
+    })
+  }
   dialogVisible.value = true
 }
 

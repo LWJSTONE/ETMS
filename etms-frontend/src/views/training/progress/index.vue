@@ -83,9 +83,9 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="duration" label="学习时长" width="120" sortable="custom">
+        <el-table-column prop="studyTime" label="学习时长" width="120" sortable="custom">
           <template #default="{ row }">
-            <span>{{ formatDuration(row.duration) }}</span>
+            <span>{{ formatDuration(row.studyTime) }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="完成状态" width="100">
@@ -149,7 +149,7 @@
           </div>
         </el-descriptions-item>
         <el-descriptions-item label="学习时长">
-          {{ formatDuration(detailData.duration) }}
+          {{ formatDuration(detailData.studyTime) }}
         </el-descriptions-item>
         <el-descriptions-item label="完成状态">
           <el-tag :type="getStatusType(detailData.status)" effect="light">
@@ -207,7 +207,7 @@ interface ProgressItem {
   courseId: number
   courseName: string
   progress: number
-  duration: number
+  studyTime: number
   status: number
   lastStudyTime: string
   createTime: string
@@ -414,7 +414,7 @@ const handleExport = async () => {
       '培训计划': item.planName,
       '课程名称': item.courseName,
       '学习进度': `${item.progress}%`,
-      '学习时长': formatDuration(item.duration),
+      '学习时长': formatDuration(item.studyTime),
       '完成状态': getStatusName(item.status),
       '最后学习时间': item.lastStudyTime || '-'
     }))

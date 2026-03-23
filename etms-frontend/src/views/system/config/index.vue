@@ -162,166 +162,17 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import {
+  getConfigList,
+  createConfig,
+  updateConfig,
+  deleteConfig,
+  refreshConfigCache
+} from '@/api/config'
+import type { Config } from '@/api/config'
 
-// 定义配置项类型
-interface ConfigItem {
-  id: number
-  configName: string
-  configKey: string
-  configValue: string
-  configType: 'Y' | 'N'
-  remark: string
-  status: number
-  createTime: string
-}
-
-// 模拟数据
-const mockData: ConfigItem[] = [
-  {
-    id: 1,
-    configName: '系统名称',
-    configKey: 'sys.system.name',
-    configValue: '企业培训管理系统',
-    configType: 'Y',
-    remark: '系统显示名称，用于浏览器标题和登录页面',
-    status: 1,
-    createTime: '2024-01-01 10:00:00'
-  },
-  {
-    id: 2,
-    configName: '系统版本',
-    configKey: 'sys.system.version',
-    configValue: 'v1.0.0',
-    configType: 'Y',
-    remark: '系统版本号',
-    status: 1,
-    createTime: '2024-01-01 10:00:00'
-  },
-  {
-    id: 3,
-    configName: '文件上传路径',
-    configKey: 'sys.file.uploadPath',
-    configValue: '/upload/files',
-    configType: 'Y',
-    remark: '文件上传存储路径',
-    status: 1,
-    createTime: '2024-01-01 10:00:00'
-  },
-  {
-    id: 4,
-    configName: '文件大小限制',
-    configKey: 'sys.file.maxSize',
-    configValue: '10',
-    configType: 'Y',
-    remark: '文件上传大小限制，单位MB',
-    status: 1,
-    createTime: '2024-01-01 10:00:00'
-  },
-  {
-    id: 5,
-    configName: '验证码开关',
-    configKey: 'sys.captcha.enabled',
-    configValue: 'true',
-    configType: 'Y',
-    remark: '是否开启验证码功能',
-    status: 1,
-    createTime: '2024-01-01 10:00:00'
-  },
-  {
-    id: 6,
-    configName: '登录失败次数',
-    configKey: 'sys.login.failCount',
-    configValue: '5',
-    configType: 'Y',
-    remark: '登录失败次数限制，超过后锁定账户',
-    status: 1,
-    createTime: '2024-01-01 10:00:00'
-  },
-  {
-    id: 7,
-    configName: '密码最小长度',
-    configKey: 'sys.password.minLength',
-    configValue: '6',
-    configType: 'Y',
-    remark: '密码最小长度要求',
-    status: 1,
-    createTime: '2024-01-01 10:00:00'
-  },
-  {
-    id: 8,
-    configName: '会话超时时间',
-    configKey: 'sys.session.timeout',
-    configValue: '30',
-    configType: 'Y',
-    remark: '会话超时时间，单位分钟',
-    status: 1,
-    createTime: '2024-01-01 10:00:00'
-  },
-  {
-    id: 9,
-    configName: '考试默认时长',
-    configKey: 'exam.default.duration',
-    configValue: '60',
-    configType: 'N',
-    remark: '考试默认时长，单位分钟',
-    status: 1,
-    createTime: '2024-01-15 14:30:00'
-  },
-  {
-    id: 10,
-    configName: '考试及格分数',
-    configKey: 'exam.default.passScore',
-    configValue: '60',
-    configType: 'N',
-    remark: '考试默认及格分数',
-    status: 1,
-    createTime: '2024-01-15 14:30:00'
-  },
-  {
-    id: 11,
-    configName: '签到开始时间',
-    configKey: 'attendance.startTime',
-    configValue: '08:30',
-    configType: 'N',
-    remark: '签到开始时间',
-    status: 1,
-    createTime: '2024-01-20 09:00:00'
-  },
-  {
-    id: 12,
-    configName: '签到结束时间',
-    configKey: 'attendance.endTime',
-    configValue: '09:00',
-    configType: 'N',
-    remark: '签到结束时间，超过视为迟到',
-    status: 1,
-    createTime: '2024-01-20 09:00:00'
-  },
-  {
-    id: 13,
-    configName: '补签天数限制',
-    configKey: 'attendance.reissueDays',
-    configValue: '3',
-    configType: 'N',
-    remark: '允许补签的天数限制',
-    status: 1,
-    createTime: '2024-01-20 09:00:00'
-  },
-  {
-    id: 14,
-    configName: '系统公告',
-    configKey: 'sys.notice.content',
-    configValue: '欢迎使用企业培训管理系统',
-    configType: 'N',
-    remark: '系统首页公告内容',
-    status: 0,
-    createTime: '2024-02-01 08:00:00'
-  }
-]
-
-// 存储数据副本用于模拟操作
-let configData = [...mockData]
-let nextId = mockData.length + 1
+// 定义配置项类型（使用API中的Config类型）
+type ConfigItem = Config
 
 // 搜索表单
 const searchForm = reactive({
@@ -373,48 +224,27 @@ const rules: FormRules = {
   ]
 }
 
-// 获取当前时间字符串
-const getCurrentTime = () => {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  const seconds = String(now.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
-
 // 获取列表
-const getList = () => {
+const getList = async () => {
   loading.value = true
-  
-  // 模拟异步请求
-  setTimeout(() => {
-    let filteredData = [...configData]
-    
-    // 按参数名称搜索
-    if (searchForm.configName) {
-      filteredData = filteredData.filter(item => 
-        item.configName.toLowerCase().includes(searchForm.configName.toLowerCase())
-      )
+  try {
+    const res = await getConfigList({
+      current: pagination.current,
+      size: pagination.size,
+      configName: searchForm.configName || undefined,
+      configKey: searchForm.configKey || undefined
+    })
+    if (res.code === 200 && res.data) {
+      tableData.value = res.data.records
+      pagination.total = res.data.total
+    } else {
+      ElMessage.error(res.message || '获取配置列表失败')
     }
-    
-    // 按参数键名搜索
-    if (searchForm.configKey) {
-      filteredData = filteredData.filter(item => 
-        item.configKey.toLowerCase().includes(searchForm.configKey.toLowerCase())
-      )
-    }
-    
-    // 计算分页
-    pagination.total = filteredData.length
-    const startIndex = (pagination.current - 1) * pagination.size
-    const endIndex = startIndex + pagination.size
-    tableData.value = filteredData.slice(startIndex, endIndex)
-    
+  } catch (error: any) {
+    ElMessage.error(error.message || '获取配置列表失败')
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 // 搜索
@@ -483,10 +313,17 @@ const handleDelete = async (row: ConfigItem) => {
     }
   )
   
-  // 模拟删除操作
-  configData = configData.filter(item => item.id !== row.id)
-  ElMessage.success('删除成功')
-  getList()
+  try {
+    const res = await deleteConfig(row.id)
+    if (res.code === 200) {
+      ElMessage.success('删除成功')
+      getList()
+    } else {
+      ElMessage.error(res.message || '删除失败')
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '删除失败')
+  }
 }
 
 // 刷新缓存
@@ -502,11 +339,18 @@ const handleRefreshCache = async () => {
   )
   
   loading.value = true
-  // 模拟刷新缓存
-  setTimeout(() => {
+  try {
+    const res = await refreshConfigCache()
+    if (res.code === 200) {
+      ElMessage.success('缓存刷新成功')
+    } else {
+      ElMessage.error(res.message || '缓存刷新失败')
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '缓存刷新失败')
+  } finally {
     loading.value = false
-    ElMessage.success('缓存刷新成功')
-  }, 1000)
+  }
 }
 
 // 提交表单
@@ -515,52 +359,42 @@ const handleSubmit = async () => {
   if (!valid) return
   
   submitLoading.value = true
-  
-  // 模拟异步请求
-  setTimeout(() => {
-    if (isEdit.value) {
-      // 编辑
-      const index = configData.findIndex(item => item.id === form.id)
-      if (index !== -1) {
-        configData[index] = {
-          ...configData[index],
-          configName: form.configName,
-          configKey: form.configKey,
-          configValue: form.configValue,
-          configType: form.configType,
-          remark: form.remark,
-          status: form.status
-        }
-      }
-      ElMessage.success('更新成功')
-    } else {
-      // 新增 - 检查键名是否重复
-      const exists = configData.some(item => item.configKey === form.configKey)
-      if (exists) {
-        ElMessage.error('参数键名已存在')
-        submitLoading.value = false
-        return
-      }
-      
-      // 添加新记录
-      const newConfig: ConfigItem = {
-        id: nextId++,
-        configName: form.configName,
-        configKey: form.configKey,
-        configValue: form.configValue,
-        configType: form.configType as 'Y' | 'N',
-        remark: form.remark,
-        status: form.status,
-        createTime: getCurrentTime()
-      }
-      configData.unshift(newConfig)
-      ElMessage.success('新增成功')
+  try {
+    const data = {
+      configName: form.configName,
+      configKey: form.configKey,
+      configValue: form.configValue,
+      configType: form.configType,
+      remark: form.remark,
+      status: form.status
     }
     
+    if (isEdit.value && form.id) {
+      // 编辑
+      const res = await updateConfig(form.id, data)
+      if (res.code === 200) {
+        ElMessage.success('更新成功')
+        dialogVisible.value = false
+        getList()
+      } else {
+        ElMessage.error(res.message || '更新失败')
+      }
+    } else {
+      // 新增
+      const res = await createConfig(data)
+      if (res.code === 200) {
+        ElMessage.success('新增成功')
+        dialogVisible.value = false
+        getList()
+      } else {
+        ElMessage.error(res.message || '新增失败')
+      }
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '操作失败')
+  } finally {
     submitLoading.value = false
-    dialogVisible.value = false
-    getList()
-  }, 500)
+  }
 }
 
 onMounted(() => {

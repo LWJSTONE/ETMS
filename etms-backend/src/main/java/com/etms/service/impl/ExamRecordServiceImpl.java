@@ -47,7 +47,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     private final DeptMapper deptMapper;
     
     @Override
-    public Page<ExamRecordVO> pageExamRecords(Page<ExamRecord> page, Long paperId, Long userId, Integer status) {
+    public Page<ExamRecordVO> pageExamRecords(Page<ExamRecord> page, Long paperId, Long userId, Integer status, String userName, String paperName) {
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(paperId != null, ExamRecord::getPaperId, paperId)
                .eq(userId != null, ExamRecord::getUserId, userId)
@@ -79,26 +79,47 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 userMapper.selectBatchIds(userIds).stream()
                         .collect(Collectors.toMap(User::getId, u -> u));
         
-        List<ExamRecordVO> voList = recordPage.getRecords().stream().map(record -> {
-            ExamRecordVO vo = new ExamRecordVO();
-            BeanUtils.copyProperties(record, vo);
-            
-            Paper paper = paperMap.get(record.getPaperId());
-            if (paper != null) {
-                vo.setPaperName(paper.getPaperName());
-                vo.setTotalScore(paper.getTotalScore());
-                vo.setPassScore(paper.getPassScore());
-                vo.setDuration(paper.getExamDuration());
-            }
-            
-            User user = userMap.get(record.getUserId());
-            if (user != null) {
-                vo.setUserName(user.getUsername());
-                vo.setRealName(user.getRealName());
-            }
-            
-            return vo;
-        }).collect(Collectors.toList());
+        // 过滤并转换
+        List<ExamRecordVO> voList = recordPage.getRecords().stream()
+                .filter(record -> {
+                    // 过滤用户名
+                    if (userName != null && !userName.isEmpty()) {
+                        User user = userMap.get(record.getUserId());
+                        if (user == null || 
+                            (user.getRealName() == null || !user.getRealName().contains(userName)) &&
+                            (user.getUsername() == null || !user.getUsername().contains(userName))) {
+                            return false;
+                        }
+                    }
+                    // 过滤试卷名
+                    if (paperName != null && !paperName.isEmpty()) {
+                        Paper paper = paperMap.get(record.getPaperId());
+                        if (paper == null || paper.getPaperName() == null || !paper.getPaperName().contains(paperName)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .map(record -> {
+                    ExamRecordVO vo = new ExamRecordVO();
+                    BeanUtils.copyProperties(record, vo);
+                    
+                    Paper paper = paperMap.get(record.getPaperId());
+                    if (paper != null) {
+                        vo.setPaperName(paper.getPaperName());
+                        vo.setTotalScore(paper.getTotalScore());
+                        vo.setPassScore(paper.getPassScore());
+                        vo.setDuration(paper.getExamDuration());
+                    }
+                    
+                    User user = userMap.get(record.getUserId());
+                    if (user != null) {
+                        vo.setUserName(user.getUsername());
+                        vo.setRealName(user.getRealName());
+                    }
+                    
+                    return vo;
+                }).collect(Collectors.toList());
         
         voPage.setRecords(voList);
         return voPage;
@@ -223,7 +244,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             throw new BusinessException("用户未登录");
         }
         
-        return pageExamRecords(page, null, currentUser.getId(), status);
+        return pageExamRecords(page, null, currentUser.getId(), status, null, null);
     }
     
     /**
@@ -432,13 +453,13 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     }
     
     @Override
-    public Page<ExamResultVO> getMyResults(Long current, Long size, Integer passed) {
+    public Page<ExamResultVO> getMyResults(Long current, Long size, Integer passed, String paperName, String startTime, String endTime) {
         User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
             throw new BusinessException("用户未登录");
         }
         
-        return pageResults(current, size, null, currentUser.getId(), passed, null, null, null, null);
+        return pageResults(current, size, null, currentUser.getId(), passed, null, paperName, startTime, endTime);
     }
     
     @Override

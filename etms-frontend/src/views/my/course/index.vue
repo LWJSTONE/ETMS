@@ -370,16 +370,14 @@ const handleReset = () => {
 
 // 开始学习
 const handleStartLearning = (course: any) => {
-  // 跳转到课程学习页面
-  ElMessage.success(`正在进入课程：${course.courseName}`)
-  // 可以跳转到学习详情页面
-  // router.push({
-  //   path: '/my/learning',
-  //   query: {
-  //     courseId: course.courseId || course.id,
-  //     progressId: course.id
-  //   }
-  // })
+  // 跳转到学习页面
+  router.push({
+    path: '/my/learning',
+    query: {
+      courseId: course.courseId || course.id,
+      progressId: course.id
+    }
+  })
 }
 
 onMounted(() => {

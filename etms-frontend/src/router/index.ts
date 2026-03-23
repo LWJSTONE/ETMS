@@ -202,6 +202,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '我的课程', icon: 'Reading' }
       },
       {
+        path: 'learning',
+        name: 'MyLearning',
+        component: () => import('@/views/my/learning/index.vue'),
+        meta: { title: '课程学习', icon: 'Reading', hidden: true }
+      },
+      {
         path: 'exam',
         name: 'MyExam',
         component: () => import('@/views/my/exam/index.vue'),

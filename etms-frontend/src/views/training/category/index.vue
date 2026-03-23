@@ -56,10 +56,17 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
             <el-button type="success" link @click="handleAddChild(row)">新增</el-button>
+            <el-button
+              :type="row.status === 1 ? 'warning' : 'success'"
+              link
+              @click="handleToggleStatus(row)"
+            >
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -122,6 +129,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  updateCategoryStatus,
   type Category
 } from '@/api/category'
 
@@ -530,17 +538,17 @@ const handleDelete = async (row: Category) => {
     return
   }
 
-  await ElMessageBox.confirm(
-    `确定要删除分类【${row.categoryName}】吗？`,
-    '提示',
-    { type: 'warning' }
-  )
-
   try {
+    await ElMessageBox.confirm(
+      `确定要删除分类【${row.categoryName}】吗？`,
+      '提示',
+      { type: 'warning' }
+    )
     await deleteCategory(row.id)
     ElMessage.success('删除成功')
     getCategoryTreeData()
-  } catch (error) {
+  } catch (error: any) {
+    if (error === 'cancel') return
     console.warn('删除接口不可用，使用本地删除:', error)
     // 本地删除
     const removeNode = (nodes: Category[], id: number): boolean => {
@@ -559,6 +567,46 @@ const handleDelete = async (row: Category) => {
     removeNode(localCategoryData, row.id)
     ElMessage.success('删除成功')
     getCategoryTreeData()
+  }
+}
+
+// 切换状态
+const handleToggleStatus = async (row: Category) => {
+  const newStatus = row.status === 1 ? 0 : 1
+  const statusText = newStatus === 1 ? '启用' : '禁用'
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要${statusText}分类【${row.categoryName}】吗？`,
+      '提示',
+      { type: 'warning' }
+    )
+
+    try {
+      await updateCategoryStatus(row.id, newStatus)
+      ElMessage.success(`${statusText}成功`)
+      getCategoryTreeData()
+    } catch (error) {
+      console.warn('状态更新接口不可用，使用本地更新:', error)
+      // 本地更新状态
+      const updateStatus = (nodes: Category[], id: number, status: number): boolean => {
+        for (const node of nodes) {
+          if (node.id === id) {
+            node.status = status
+            return true
+          }
+          if (node.children && updateStatus(node.children, id, status)) {
+            return true
+          }
+        }
+        return false
+      }
+      updateStatus(localCategoryData, row.id, newStatus)
+      ElMessage.success(`${statusText}成功`)
+      getCategoryTreeData()
+    }
+  } catch {
+    // 用户取消操作
   }
 }
 

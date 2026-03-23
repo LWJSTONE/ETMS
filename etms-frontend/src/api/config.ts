@@ -13,6 +13,16 @@ export interface Config {
   createTime: string
 }
 
+// 新增/更新配置参数类型
+export interface ConfigParams {
+  configName: string
+  configKey: string
+  configValue: string
+  configType: string
+  status: number
+  remark?: string
+}
+
 // 获取配置列表
 export function getConfigList(params: PageParams & { configName?: string; configKey?: string; status?: number }): Promise<ApiResponse<PageResult<Config>>> {
   return request.get('/system/configs', params)
@@ -29,12 +39,12 @@ export function getConfigValue(configKey: string): Promise<ApiResponse<string>> 
 }
 
 // 新增配置
-export function createConfig(data: Config): Promise<ApiResponse<void>> {
+export function createConfig(data: ConfigParams): Promise<ApiResponse<void>> {
   return request.post('/system/configs', data)
 }
 
 // 更新配置
-export function updateConfig(id: number, data: Config): Promise<ApiResponse<void>> {
+export function updateConfig(id: number, data: ConfigParams): Promise<ApiResponse<void>> {
   return request.put(`/system/configs/${id}`, data)
 }
 

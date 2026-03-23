@@ -285,7 +285,7 @@ import {
   View,
   List
 } from '@element-plus/icons-vue'
-import { getResultList } from '@/api/exam'
+import { getResultList, getExamRecordDetail } from '@/api/exam'
 
 // 统计数据
 const stats = reactive({
@@ -432,23 +432,63 @@ const handleExport = async () => {
 }
 
 // 查看详情
-const handleViewDetail = (row: any) => {
-  detailData.value = row
-  
-  // 解析答题详情
-  if (row.answerDetail) {
-    try {
-      answerList.value = typeof row.answerDetail === 'string' 
-        ? JSON.parse(row.answerDetail) 
-        : row.answerDetail
-    } catch {
-      answerList.value = []
-    }
-  } else {
-    answerList.value = []
-  }
-  
+const handleViewDetail = async (row: any) => {
   detailVisible.value = true
+  detailData.value = row
+  answerList.value = []
+  
+  try {
+    // 调用API获取完整的答题详情
+    const res = await getExamRecordDetail(row.id)
+    const detailInfo = res.data
+    
+    // 更新详情数据
+    if (detailInfo) {
+      detailData.value = {
+        ...row,
+        ...detailInfo
+      }
+      
+      // 解析答题详情
+      if (detailInfo.answerDetail) {
+        try {
+          answerList.value = typeof detailInfo.answerDetail === 'string' 
+            ? JSON.parse(detailInfo.answerDetail) 
+            : detailInfo.answerDetail
+        } catch {
+          answerList.value = []
+        }
+      } else if (detailInfo.answers) {
+        // 处理answers字段
+        answerList.value = detailInfo.answers.map((ans: any, index: number) => ({
+          questionContent: ans.questionContent || `题目${index + 1}`,
+          questionType: ans.questionType || 1,
+          userAnswer: ans.userAnswer || '',
+          answer: ans.correctAnswer || ans.answer || '',
+          score: ans.score || 0,
+          isCorrect: ans.isCorrect,
+          answerAnalysis: ans.answerAnalysis || '',
+          optionA: ans.optionA,
+          optionB: ans.optionB,
+          optionC: ans.optionC,
+          optionD: ans.optionD,
+          optionE: ans.optionE
+        }))
+      }
+    }
+  } catch (error) {
+    console.warn('获取详情API失败，使用行数据:', error)
+    // 如果API调用失败，使用行数据
+    if (row.answerDetail) {
+      try {
+        answerList.value = typeof row.answerDetail === 'string' 
+          ? JSON.parse(row.answerDetail) 
+          : row.answerDetail
+      } catch {
+        answerList.value = []
+      }
+    }
+  }
 }
 
 // 格式化日期时间

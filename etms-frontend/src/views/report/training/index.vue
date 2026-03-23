@@ -289,6 +289,8 @@ import { Search, Refresh, Download, Calendar, CircleCheck, Timer, TrendCharts } 
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import { getDeptList } from '@/api/dept'
+import { getPlanList, getProgressList } from '@/api/training'
+import type { TrainingPlan, LearningProgress } from '@/api/types'
 
 // 日期快捷选项
 const dateShortcuts = [
@@ -359,11 +361,16 @@ const overview = reactive({
 // 表格数据
 const tableData = ref<any[]>([])
 const loading = ref(false)
+const statsLoading = ref(false)
 const pagination = reactive({
   current: 1,
   size: 10,
   total: 0
 })
+
+// 原始数据存储（用于统计计算）
+const allPlans = ref<TrainingPlan[]>([])
+const allProgress = ref<LearningProgress[]>([])
 
 // 图表类型
 const planChartType = ref<'bar' | 'pie'>('bar')
@@ -396,185 +403,197 @@ const getDeptData = async () => {
 
 // 获取统计数据
 const getStatistics = async () => {
-  // 模拟数据，实际应调用API
-  const data = {
-    overview: {
-      planTotal: 48,
-      completedTotal: 36,
-      totalHours: 1256,
-      completionRate: 85.6
-    },
-    planStatus: [
-      { name: '已完成', value: 36 },
-      { name: '进行中', value: 8 },
-      { name: '未开始', value: 4 }
-    ],
-    deptProgress: [
-      { deptName: '技术研发部', total: 12, completed: 10, rate: 83.3 },
-      { deptName: '市场营销部', total: 8, completed: 7, rate: 87.5 },
-      { deptName: '人力资源部', total: 6, completed: 6, rate: 100 },
-      { deptName: '财务管理部', total: 5, completed: 4, rate: 80 },
-      { deptName: '运营管理部', total: 9, completed: 8, rate: 88.9 },
-      { deptName: '客户服务部', total: 8, completed: 6, rate: 75 }
-    ],
-    monthlyHours: [
-      { month: '1月', hours: 98 },
-      { month: '2月', hours: 86 },
-      { month: '3月', hours: 112 },
-      { month: '4月', hours: 125 },
-      { month: '5月', hours: 105 },
-      { month: '6月', hours: 130 },
-      { month: '7月', hours: 118 },
-      { month: '8月', hours: 95 },
-      { month: '9月', hours: 142 },
-      { month: '10月', hours: 108 },
-      { month: '11月', hours: 76 },
-      { month: '12月', hours: 61 }
-    ],
-    typeDistribution: [
-      { name: '技能培训', value: 18 },
-      { name: '管理培训', value: 12 },
-      { name: '安全培训', value: 8 },
-      { name: '入职培训', value: 6 },
-      { name: '其他培训', value: 4 }
-    ]
+  statsLoading.value = true
+  try {
+    // 获取所有培训计划数据（用于统计）
+    const planRes = await getPlanList({ current: 1, size: 1000 })
+    allPlans.value = planRes.data?.records || []
+    
+    // 获取所有学习进度数据（用于统计）
+    const progressRes = await getProgressList({ current: 1, size: 10000 })
+    allProgress.value = progressRes.data?.records || []
+    
+    // 计算统计数据
+    const stats = calculateStatistics(allPlans.value, allProgress.value)
+    
+    // 更新概览数据
+    Object.assign(overview, stats.overview)
+
+    // 初始化图表
+    await nextTick()
+    initPlanChart(stats.planStatus)
+    initDeptProgressChart(stats.deptProgress)
+    initHoursChart(stats.monthlyHours)
+    initTypeChart(stats.typeDistribution)
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+    ElMessage.error('获取统计数据失败')
+  } finally {
+    statsLoading.value = false
   }
+}
 
-  // 更新概览数据
-  Object.assign(overview, data.overview)
-
-  // 初始化图表
-  await nextTick()
-  initPlanChart(data.planStatus)
-  initDeptProgressChart(data.deptProgress)
-  initHoursChart(data.monthlyHours)
-  initTypeChart(data.typeDistribution)
+// 计算统计数据
+const calculateStatistics = (plans: TrainingPlan[], progressList: LearningProgress[]) => {
+  // 概览统计
+  const planTotal = plans.length
+  const completedPlans = plans.filter(p => p.status === 3 || p.status === 4) // 已结束或已归档
+  
+  // 计算总培训时长（从学习进度中统计）
+  const totalHours = Math.round(progressList.reduce((sum, p) => sum + (p.progress || 0), 0) / 60) || 0
+  
+  // 计算完成率
+  const completedProgress = progressList.filter(p => p.status === 2) // 已完成状态
+  const completionRate = progressList.length > 0 
+    ? Math.round((completedProgress.length / progressList.length) * 100) 
+    : 0
+  
+  // 培训计划状态分布
+  const statusMap: Record<number, { name: string; value: number }> = {
+    0: { name: '草稿', value: 0 },
+    1: { name: '已发布', value: 0 },
+    2: { name: '进行中', value: 0 },
+    3: { name: '已结束', value: 0 },
+    4: { name: '已归档', value: 0 }
+  }
+  plans.forEach(p => {
+    if (statusMap[p.status]) {
+      statusMap[p.status].value++
+    }
+  })
+  const planStatus = [
+    { name: '已完成', value: (statusMap[3].value + statusMap[4].value) },
+    { name: '进行中', value: statusMap[2].value },
+    { name: '未开始', value: (statusMap[0].value + statusMap[1].value) }
+  ].filter(s => s.value > 0)
+  
+  // 部门培训进度
+  const deptMap = new Map<string, { total: number; completed: number }>()
+  progressList.forEach(p => {
+    const deptName = p.deptName || '未分配部门'
+    if (!deptMap.has(deptName)) {
+      deptMap.set(deptName, { total: 0, completed: 0 })
+    }
+    const dept = deptMap.get(deptName)!
+    dept.total++
+    if (p.status === 2) {
+      dept.completed++
+    }
+  })
+  const deptProgress = Array.from(deptMap.entries())
+    .map(([deptName, data]) => ({
+      deptName,
+      total: data.total,
+      completed: data.completed,
+      rate: data.total > 0 ? Math.round((data.completed / data.total) * 1000) / 10 : 0
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10) // 取前10个部门
+  
+  // 月度培训时长统计（基于学习进度的创建时间）
+  const monthMap = new Map<string, number>()
+  for (let i = 1; i <= 12; i++) {
+    monthMap.set(`${i}月`, 0)
+  }
+  progressList.forEach(p => {
+    if (p.createTime) {
+      const month = dayjs(p.createTime).month() + 1
+      const key = `${month}月`
+      monthMap.set(key, (monthMap.get(key) || 0) + (p.progress || 0))
+    }
+  })
+  const monthlyHours = Array.from(monthMap.entries())
+    .map(([month, minutes]) => ({ month, hours: Math.round(minutes / 60) }))
+  
+  // 培训类型分布
+  const typeMap = new Map<string, number>()
+  plans.forEach(p => {
+    const typeName = p.planType === 1 ? '必修培训' : '选修培训'
+    typeMap.set(typeName, (typeMap.get(typeName) || 0) + 1)
+  })
+  const typeDistribution = Array.from(typeMap.entries())
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+  
+  // 如果没有数据，添加默认分类
+  if (typeDistribution.length === 0) {
+    typeDistribution.push({ name: '暂无数据', value: 1 })
+  }
+  
+  return {
+    overview: {
+      planTotal,
+      completedTotal: completedPlans.length,
+      totalHours,
+      completionRate
+    },
+    planStatus: planStatus.length > 0 ? planStatus : [{ name: '暂无数据', value: 1 }],
+    deptProgress: deptProgress.length > 0 ? deptProgress : [{ deptName: '暂无数据', total: 1, completed: 0, rate: 0 }],
+    monthlyHours,
+    typeDistribution
+  }
 }
 
 // 获取表格数据
 const getTableList = async () => {
   loading.value = true
   try {
-    // 模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // 构建查询参数
+    const params: any = {
+      current: pagination.current,
+      size: pagination.size
+    }
     
-    tableData.value = [
-      {
-        id: 1,
-        planName: 'Java高级编程培训',
-        deptName: '技术研发部',
-        planType: 1,
-        totalPerson: 25,
-        completedPerson: 22,
-        completionRate: 88,
-        totalHours: 32,
-        avgScore: 85.5,
-        status: 2,
-        startDate: '2024-01-01',
-        endDate: '2024-03-31'
-      },
-      {
-        id: 2,
-        planName: '销售技巧提升培训',
-        deptName: '市场营销部',
-        planType: 2,
-        totalPerson: 18,
-        completedPerson: 15,
-        completionRate: 83,
-        totalHours: 24,
-        avgScore: 78.2,
-        status: 2,
-        startDate: '2024-02-01',
-        endDate: '2024-04-30'
-      },
-      {
-        id: 3,
-        planName: '新员工入职培训',
-        deptName: '人力资源部',
-        planType: 1,
-        totalPerson: 12,
-        completedPerson: 12,
-        completionRate: 100,
-        totalHours: 16,
-        avgScore: 92.3,
-        status: 3,
-        startDate: '2024-01-15',
-        endDate: '2024-02-15'
-      },
-      {
-        id: 4,
-        planName: '安全生产培训',
-        deptName: '运营管理部',
-        planType: 1,
-        totalPerson: 35,
-        completedPerson: 28,
-        completionRate: 80,
-        totalHours: 8,
-        avgScore: 88.6,
-        status: 2,
-        startDate: '2024-03-01',
-        endDate: '2024-03-31'
-      },
-      {
-        id: 5,
-        planName: '财务管理规范培训',
-        deptName: '财务管理部',
-        planType: 2,
-        totalPerson: 10,
-        completedPerson: 8,
-        completionRate: 80,
-        totalHours: 12,
-        avgScore: 81.4,
-        status: 2,
-        startDate: '2024-02-15',
-        endDate: '2024-04-15'
-      },
-      {
-        id: 6,
-        planName: '客户服务技巧培训',
-        deptName: '客户服务部',
-        planType: 2,
-        totalPerson: 20,
-        completedPerson: 15,
-        completionRate: 75,
-        totalHours: 20,
-        avgScore: 76.8,
-        status: 2,
-        startDate: '2024-03-01',
-        endDate: '2024-05-31'
-      },
-      {
-        id: 7,
-        planName: 'Vue3前端开发培训',
-        deptName: '技术研发部',
-        planType: 2,
-        totalPerson: 15,
-        completedPerson: 12,
-        completionRate: 80,
-        totalHours: 28,
-        avgScore: 82.1,
-        status: 2,
-        startDate: '2024-02-01',
-        endDate: '2024-04-30'
-      },
-      {
-        id: 8,
-        planName: '项目管理实战培训',
-        deptName: '运营管理部',
-        planType: 1,
-        totalPerson: 20,
-        completedPerson: 0,
-        completionRate: 0,
-        totalHours: 24,
-        avgScore: null,
-        status: 1,
-        startDate: '2024-04-01',
-        endDate: '2024-06-30'
+    // 添加筛选条件
+    if (searchForm.planType !== null) {
+      params.planType = searchForm.planType
+    }
+    
+    // 调用API获取培训计划列表
+    const planRes = await getPlanList(params)
+    const plans = planRes.data?.records || []
+    pagination.total = planRes.data?.total || 0
+    
+    // 获取所有学习进度用于计算统计数据
+    const progressRes = await getProgressList({ current: 1, size: 10000 })
+    const allProgressData = progressRes.data?.records || []
+    
+    // 为每个培训计划计算统计数据
+    tableData.value = plans.map((plan: TrainingPlan) => {
+      // 筛选该培训计划的学习进度
+      const planProgress = allProgressData.filter((p: LearningProgress) => p.planId === plan.id)
+      
+      // 计算统计数据
+      const totalPerson = planProgress.length
+      const completedPerson = planProgress.filter((p: LearningProgress) => p.status === 2).length
+      const completionRate = totalPerson > 0 ? Math.round((completedPerson / totalPerson) * 100) : 0
+      const totalHours = Math.round(planProgress.reduce((sum: number, p: LearningProgress) => sum + (p.progress || 0), 0) / 60)
+      
+      // 计算平均分数（如果有考试成绩的话）
+      const scores = planProgress.filter((p: any) => p.score !== null && p.score !== undefined).map((p: any) => p.score)
+      const avgScore = scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length * 10) / 10 : null
+      
+      // 获取部门名称（从第一个学习进度记录中获取，或者使用空字符串）
+      const deptName = planProgress.length > 0 ? (planProgress[0] as LearningProgress).deptName || '-' : '-'
+      
+      return {
+        id: plan.id,
+        planName: plan.planName,
+        deptName,
+        planType: plan.planType,
+        totalPerson,
+        completedPerson,
+        completionRate,
+        totalHours,
+        avgScore,
+        status: plan.status,
+        startDate: plan.startDate,
+        endDate: plan.endDate
       }
-    ]
-    pagination.total = tableData.value.length
+    })
   } catch (error) {
     console.error('获取表格数据失败:', error)
+    ElMessage.error('获取培训数据失败')
   } finally {
     loading.value = false
   }
@@ -930,18 +949,33 @@ const getSummary = (param: any) => {
 }
 
 // 查看详情
-const handleViewDetail = (row: any) => {
-  currentDetail.value = {
-    ...row,
-    participants: [
-      { userName: '张三', deptName: row.deptName, progress: 100, studyHours: 32, score: 92, completeTime: '2024-03-25 18:30', status: 1 },
-      { userName: '李四', deptName: row.deptName, progress: 85, studyHours: 28, score: 78, completeTime: '2024-03-26 14:20', status: 1 },
-      { userName: '王五', deptName: row.deptName, progress: 60, studyHours: 20, score: null, completeTime: null, status: 0 },
-      { userName: '赵六', deptName: row.deptName, progress: 100, studyHours: 35, score: 88, completeTime: '2024-03-24 16:45', status: 1 },
-      { userName: '钱七', deptName: row.deptName, progress: 45, studyHours: 15, score: null, completeTime: null, status: 0 }
-    ]
+const handleViewDetail = async (row: any) => {
+  try {
+    // 获取该培训计划的学习进度（参与者）数据
+    const res = await getProgressList({ 
+      planId: row.id,
+      current: 1, 
+      size: 1000 
+    })
+    const participants = (res.data?.records || []).map((p: LearningProgress) => ({
+      userName: p.realName || p.userName,
+      deptName: p.deptName || '-',
+      progress: p.progress || 0,
+      studyHours: p.progress ? Math.round(p.progress / 60 * 10) / 10 : 0, // 转换为小时
+      score: (p as any).score || null,
+      completeTime: p.completeTime ? dayjs(p.completeTime).format('YYYY-MM-DD HH:mm') : null,
+      status: p.status === 2 ? 1 : 0 // 2=已完成转为1，其他转为0
+    }))
+    
+    currentDetail.value = {
+      ...row,
+      participants: participants.length > 0 ? participants : []
+    }
+    detailDialogVisible.value = true
+  } catch (error) {
+    console.error('获取培训详情失败:', error)
+    ElMessage.error('获取培训详情失败')
   }
-  detailDialogVisible.value = true
 }
 
 // 搜索
@@ -963,8 +997,49 @@ const handleReset = () => {
 
 // 导出报表
 const handleExport = () => {
-  ElMessage.success('报表导出功能开发中...')
-  // 实际项目中可以使用 xlsx 或 file-saver 库实现导出
+  if (tableData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+  
+  try {
+    // 构建CSV内容
+    const headers = ['培训计划名称', '所属部门', '培训类型', '应参加人数', '已完成人数', '完成率(%)', '培训时长(h)', '平均分数', '状态', '开始日期', '结束日期']
+    const rows = tableData.value.map((row: any) => [
+      row.planName,
+      row.deptName,
+      row.planType === 1 ? '必修' : '选修',
+      row.totalPerson,
+      row.completedPerson,
+      row.completionRate,
+      row.totalHours,
+      row.avgScore || '-',
+      getStatusName(row.status),
+      row.startDate,
+      row.endDate
+    ])
+    
+    // 添加BOM以支持中文
+    const BOM = '\uFEFF'
+    const csvContent = BOM + [headers, ...rows].map((row: string[]) => row.map((cell: string) => `"${cell}"`).join(',')).join('\n')
+    
+    // 创建Blob并下载
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `培训报表_${dayjs().format('YYYY-MM-DD_HHmmss')}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    
+    ElMessage.success('报表导出成功')
+  } catch (error) {
+    console.error('导出报表失败:', error)
+    ElMessage.error('导出报表失败')
+  }
 }
 
 // 窗口大小变化时重新渲染图表

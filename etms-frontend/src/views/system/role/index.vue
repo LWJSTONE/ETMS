@@ -132,7 +132,9 @@ import {
   updateRole, 
   deleteRole, 
   assignPermissions, 
-  getRolePermissions 
+  getRolePermissions,
+  getPermissionTree,
+  type PermissionTreeNode
 } from '@/api/role'
 
 // 数据范围映射
@@ -182,69 +184,8 @@ const currentRoleId = ref<number | null>(null)
 const checkedPermIds = ref<number[]>([])
 
 // 权限树数据
-const permissionTree = ref([
-  {
-    id: 1,
-    permName: '系统管理',
-    children: [
-      { id: 2, permName: '用户管理' },
-      { id: 3, permName: '角色管理' },
-      { id: 4, permName: '部门管理' },
-      { id: 5, permName: '岗位管理' },
-      { id: 6, permName: '权限管理' },
-      { id: 7, permName: '系统配置' },
-      { id: 8, permName: '字典管理' },
-      { id: 9, permName: '日志管理' },
-      { id: 10, permName: '通知公告' }
-    ]
-  },
-  {
-    id: 20,
-    permName: '培训管理',
-    children: [
-      { id: 21, permName: '课程管理' },
-      { id: 22, permName: '课程分类' },
-      { id: 23, permName: '培训计划' },
-      { id: 24, permName: '学习进度' }
-    ]
-  },
-  {
-    id: 30,
-    permName: '签到管理',
-    children: [
-      { id: 31, permName: '签到记录' },
-      { id: 32, permName: '补签申请' }
-    ]
-  },
-  {
-    id: 40,
-    permName: '考核管理',
-    children: [
-      { id: 41, permName: '题库管理' },
-      { id: 42, permName: '试卷管理' },
-      { id: 43, permName: '考试记录' },
-      { id: 44, permName: '成绩管理' }
-    ]
-  },
-  {
-    id: 50,
-    permName: '报表分析',
-    children: [
-      { id: 51, permName: '培训报表' },
-      { id: 52, permName: '考核报表' }
-    ]
-  },
-  {
-    id: 60,
-    permName: '我的培训',
-    children: [
-      { id: 61, permName: '我的课程' },
-      { id: 62, permName: '我的考试' },
-      { id: 63, permName: '学习记录' },
-      { id: 64, permName: '我的成绩' }
-    ]
-  }
-])
+const permissionTree = ref<PermissionTreeNode[]>([])
+const permissionTreeLoading = ref(false)
 
 // 获取列表
 const getList = async () => {
@@ -261,6 +202,82 @@ const getList = async () => {
     console.error(error)
   } finally {
     loading.value = false
+  }
+}
+
+// 获取权限树数据
+const getPermissionTreeData = async () => {
+  permissionTreeLoading.value = true
+  try {
+    const res = await getPermissionTree()
+    permissionTree.value = res.data || []
+  } catch (error) {
+    console.error('获取权限树失败:', error)
+    // 如果后端接口不可用，使用默认权限树
+    permissionTree.value = [
+      {
+        id: 1,
+        permName: '系统管理',
+        children: [
+          { id: 2, permName: '用户管理' },
+          { id: 3, permName: '角色管理' },
+          { id: 4, permName: '部门管理' },
+          { id: 5, permName: '岗位管理' },
+          { id: 6, permName: '权限管理' },
+          { id: 7, permName: '系统配置' },
+          { id: 8, permName: '字典管理' },
+          { id: 9, permName: '日志管理' }
+        ]
+      },
+      {
+        id: 20,
+        permName: '培训管理',
+        children: [
+          { id: 21, permName: '课程管理' },
+          { id: 22, permName: '课程分类' },
+          { id: 23, permName: '培训计划' },
+          { id: 24, permName: '学习进度' }
+        ]
+      },
+      {
+        id: 30,
+        permName: '签到管理',
+        children: [
+          { id: 31, permName: '签到记录' },
+          { id: 32, permName: '补签申请' }
+        ]
+      },
+      {
+        id: 40,
+        permName: '考核管理',
+        children: [
+          { id: 41, permName: '题库管理' },
+          { id: 42, permName: '试卷管理' },
+          { id: 43, permName: '考试记录' },
+          { id: 44, permName: '成绩管理' }
+        ]
+      },
+      {
+        id: 50,
+        permName: '报表分析',
+        children: [
+          { id: 51, permName: '培训报表' },
+          { id: 52, permName: '考核报表' }
+        ]
+      },
+      {
+        id: 60,
+        permName: '我的培训',
+        children: [
+          { id: 61, permName: '我的课程' },
+          { id: 62, permName: '我的考试' },
+          { id: 63, permName: '学习记录' },
+          { id: 64, permName: '我的成绩' }
+        ]
+      }
+    ]
+  } finally {
+    permissionTreeLoading.value = false
   }
 }
 
@@ -358,7 +375,8 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => { 
-  getList() 
+  getList()
+  getPermissionTreeData()
 })
 </script>
 

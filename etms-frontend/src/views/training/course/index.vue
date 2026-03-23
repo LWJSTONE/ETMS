@@ -360,8 +360,9 @@ const getList = async () => {
     const res = await getCourseList(params)
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取课程列表失败:', error)
+    ElMessage.error(error.message || '获取课程列表失败')
   } finally {
     loading.value = false
   }
@@ -442,8 +443,9 @@ const handleSubmit = async () => {
     }
     dialogVisible.value = false
     getList()
-  } catch (error) {
+  } catch (error: any) {
     console.error('保存失败:', error)
+    ElMessage.error(error.message || '保存失败')
   } finally {
     submitLoading.value = false
   }
@@ -451,25 +453,31 @@ const handleSubmit = async () => {
 
 // 删除
 const handleDelete = async (row: any) => {
-  await ElMessageBox.confirm('确定要删除该课程吗？', '提示', { type: 'warning' })
   try {
+    await ElMessageBox.confirm('确定要删除该课程吗？', '提示', { type: 'warning' })
     await deleteCourse(row.id)
     ElMessage.success('删除成功')
     getList()
-  } catch (error) {
-    console.error('删除失败:', error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error(error.message || '删除失败')
+    }
   }
 }
 
 // 提交审核
 const handleSubmitAudit = async (row: any) => {
-  await ElMessageBox.confirm('确定要提交审核吗？', '提示', { type: 'info' })
   try {
+    await ElMessageBox.confirm('确定要提交审核吗？', '提示', { type: 'info' })
     await submitCourseAudit(row.id)
     ElMessage.success('提交成功')
     getList()
-  } catch (error) {
-    console.error('提交审核失败:', error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('提交审核失败:', error)
+      ElMessage.error(error.message || '提交审核失败')
+    }
   }
 }
 
@@ -483,13 +491,16 @@ const handleAudit = async (row: any, status: number) => {
     auditDialogVisible.value = true
   } else {
     // 审核通过
-    await ElMessageBox.confirm('确定审核通过吗？', '提示', { type: 'info' })
     try {
+      await ElMessageBox.confirm('确定审核通过吗？', '提示', { type: 'info' })
       await auditCourse(row.id, { status })
       ElMessage.success('审核成功')
       getList()
-    } catch (error) {
-      console.error('审核失败:', error)
+    } catch (error: any) {
+      if (error !== 'cancel') {
+        console.error('审核失败:', error)
+        ElMessage.error(error.message || '审核失败')
+      }
     }
   }
 }
@@ -506,8 +517,9 @@ const confirmAudit = async () => {
     ElMessage.success('审核成功')
     auditDialogVisible.value = false
     getList()
-  } catch (error) {
+  } catch (error: any) {
     console.error('审核失败:', error)
+    ElMessage.error(error.message || '审核失败')
   } finally {
     auditLoading.value = false
   }
@@ -515,25 +527,31 @@ const confirmAudit = async () => {
 
 // 上架
 const handlePublish = async (row: any) => {
-  await ElMessageBox.confirm('确定要上架该课程吗？', '提示', { type: 'info' })
   try {
+    await ElMessageBox.confirm('确定要上架该课程吗？', '提示', { type: 'info' })
     await publishCourse(row.id)
     ElMessage.success('上架成功')
     getList()
-  } catch (error) {
-    console.error('上架失败:', error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('上架失败:', error)
+      ElMessage.error(error.message || '上架失败')
+    }
   }
 }
 
 // 下架
 const handleUnpublish = async (row: any) => {
-  await ElMessageBox.confirm('确定要下架该课程吗？', '提示', { type: 'warning' })
   try {
+    await ElMessageBox.confirm('确定要下架该课程吗？', '提示', { type: 'warning' })
     await unpublishCourse(row.id)
     ElMessage.success('下架成功')
     getList()
-  } catch (error) {
-    console.error('下架失败:', error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('下架失败:', error)
+      ElMessage.error(error.message || '下架失败')
+    }
   }
 }
 
@@ -546,8 +564,9 @@ const getCategoryTreeData = async () => {
     categoryTreeOptions.value = [
       { id: 0, parentId: null, categoryName: '顶级分类', categoryCode: '', level: 0, sortOrder: 0, icon: null, status: 1, children: treeData }
     ] as Category[]
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取分类树失败:', error)
+    ElMessage.error(error.message || '获取分类树失败')
   }
 }
 

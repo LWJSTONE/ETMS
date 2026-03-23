@@ -402,7 +402,7 @@ const getDeptList = async () => {
     const res = await getDeptTree()
     const flattenDepts = (depts: any[]): any[] => {
       return depts.reduce((acc, dept) => {
-        acc.push({ id: dept.id, name: dept.name })
+        acc.push({ id: dept.id, deptName: dept.deptName })
         if (dept.children && dept.children.length > 0) {
           acc.push(...flattenDepts(dept.children))
         }

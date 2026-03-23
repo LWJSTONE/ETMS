@@ -49,8 +49,10 @@ public class LearningProgressController {
     public Result<PageResult<LearningProgressVO>> myProgress(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
-            @RequestParam(required = false) Integer status) {
-        Page<LearningProgressVO> page = learningProgressService.getMyProgress(current, size, status);
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long planId) {
+        Page<LearningProgressVO> page = learningProgressService.getMyProgress(current, size, status, keyword, planId);
         PageResult<LearningProgressVO> pageResult = new PageResult<>(
                 page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize()
         );

@@ -334,8 +334,9 @@ const getList = async () => {
     })
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取试卷列表失败')
   } finally {
     loading.value = false
   }
@@ -396,8 +397,9 @@ const handleEdit = async (row: any) => {
       description: data.description || ''
     })
     dialogVisible.value = true
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取试卷详情失败')
   }
 }
 
@@ -407,44 +409,54 @@ const handleView = async (row: any) => {
     const res = await getPaperDetail(row.id)
     detailData.value = res.data
     detailVisible.value = true
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取试卷详情失败')
   }
 }
 
 // 删除
 const handleDelete = async (row: any) => {
-  await ElMessageBox.confirm('确定要删除该试卷吗？删除后无法恢复。', '提示', { type: 'warning' })
   try {
+    await ElMessageBox.confirm('确定要删除该试卷吗？删除后无法恢复。', '提示', { type: 'warning' })
     await deletePaper(row.id)
     ElMessage.success('删除成功')
     getList()
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '删除失败')
+    }
   }
 }
 
 // 发布
 const handlePublish = async (row: any) => {
-  await ElMessageBox.confirm('确定要发布该试卷吗？发布后考生可以参加考试。', '提示', { type: 'warning' })
   try {
+    await ElMessageBox.confirm('确定要发布该试卷吗？发布后考生可以参加考试。', '提示', { type: 'warning' })
     await publishPaper(row.id)
     ElMessage.success('发布成功')
     getList()
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '发布失败')
+    }
   }
 }
 
 // 停用
 const handleDisable = async (row: any) => {
-  await ElMessageBox.confirm('确定要停用该试卷吗？停用后考生将无法继续考试。', '提示', { type: 'warning' })
   try {
+    await ElMessageBox.confirm('确定要停用该试卷吗？停用后考生将无法继续考试。', '提示', { type: 'warning' })
     await disablePaper(row.id)
     ElMessage.success('停用成功')
     getList()
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '停用失败')
+    }
   }
 }
 
@@ -476,8 +488,9 @@ const handleSubmit = async () => {
     }
     dialogVisible.value = false
     getList()
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '保存失败')
   } finally {
     submitLoading.value = false
   }

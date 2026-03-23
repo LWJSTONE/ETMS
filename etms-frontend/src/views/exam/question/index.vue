@@ -426,8 +426,9 @@ const getList = async () => {
     const res = await getQuestionList(params)
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取题目列表失败:', error)
+    ElMessage.error(error.message || '获取题目列表失败')
   } finally {
     loading.value = false
   }
@@ -515,9 +516,9 @@ const handleEdit = async (row: any) => {
       multiAnswer.value = form.answer.split(',')
     }
     dialogVisible.value = true
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取题目详情失败:', error)
-    ElMessage.error('获取题目详情失败')
+    ElMessage.error(error.message || '获取题目详情失败')
   }
 }
 
@@ -553,8 +554,9 @@ const handleSubmit = async () => {
     }
     dialogVisible.value = false
     getList()
-  } catch (error) {
+  } catch (error: any) {
     console.error('保存失败:', error)
+    ElMessage.error(error.message || '保存失败')
   } finally {
     submitLoading.value = false
   }
@@ -562,13 +564,16 @@ const handleSubmit = async () => {
 
 // 删除
 const handleDelete = async (row: any) => {
-  await ElMessageBox.confirm('确定要删除该题目吗？', '提示', { type: 'warning' })
   try {
+    await ElMessageBox.confirm('确定要删除该题目吗？', '提示', { type: 'warning' })
     await deleteQuestion(row.id)
     ElMessage.success('删除成功')
     getList()
-  } catch (error) {
-    console.error('删除失败:', error)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error(error.message || '删除失败')
+    }
   }
 }
 
@@ -577,8 +582,9 @@ const getCourses = async () => {
   try {
     const res = await getCourseListAll()
     courseList.value = res.data || []
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取课程列表失败:', error)
+    ElMessage.error(error.message || '获取课程列表失败')
   }
 }
 

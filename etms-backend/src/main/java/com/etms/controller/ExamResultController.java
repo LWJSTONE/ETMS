@@ -47,8 +47,11 @@ public class ExamResultController {
     public Result<PageResult<ExamResultVO>> myResults(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
-            @RequestParam(required = false) Integer passed) {
-        Page<ExamResultVO> page = examRecordService.getMyResults(current, size, passed);
+            @RequestParam(required = false) Integer passed,
+            @RequestParam(required = false) String paperName,
+            @RequestParam(required = false) String examStartTime,
+            @RequestParam(required = false) String examEndTime) {
+        Page<ExamResultVO> page = examRecordService.getMyResults(current, size, passed, paperName, examStartTime, examEndTime);
         PageResult<ExamResultVO> pageResult = new PageResult<>(
                 page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize()
         );

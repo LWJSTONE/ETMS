@@ -18,7 +18,7 @@ public interface LearningProgressService extends IService<UserPlan> {
     /**
      * 获取我的学习进度
      */
-    Page<LearningProgressVO> getMyProgress(Long current, Long size, Integer status);
+    Page<LearningProgressVO> getMyProgress(Long current, Long size, Integer status, String keyword, Long planId);
     
     /**
      * 更新学习进度
