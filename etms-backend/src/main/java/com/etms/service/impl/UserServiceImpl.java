@@ -386,14 +386,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateUser(UserDTO userDTO) {
-        // 检查用户名是否重复（排除自身）
-        Long count = baseMapper.selectCount(
-            new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, userDTO.getUsername())
-                .ne(User::getId, userDTO.getId())
-        );
-        if (count > 0) {
-            throw new BusinessException("用户名已存在");
+        // 修复：检查用户名是否重复前，先判断username是否为空
+        if (StringUtils.hasText(userDTO.getUsername())) {
+            // 检查用户名是否重复（排除自身）
+            Long count = baseMapper.selectCount(
+                new LambdaQueryWrapper<User>()
+                    .eq(User::getUsername, userDTO.getUsername())
+                    .ne(User::getId, userDTO.getId())
+            );
+            if (count > 0) {
+                throw new BusinessException("用户名已存在");
+            }
         }
         
         // 获取原用户信息，用于保护admin账户
@@ -614,13 +617,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public void exportUsers(UserDTO userDTO, HttpServletResponse response) {
-        // 查询所有符合条件的用户
+        // 构建查询条件
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(userDTO.getUsername()), User::getUsername, userDTO.getUsername())
                .like(StringUtils.hasText(userDTO.getRealName()), User::getRealName, userDTO.getRealName())
                .eq(userDTO.getStatus() != null, User::getStatus, userDTO.getStatus())
                .orderByDesc(User::getCreateTime);
         
+        // 修复：先查询count，再决定是否导出，避免大量数据查询导致内存溢出
+        Long totalCount = baseMapper.selectCount(wrapper);
+        if (totalCount == null || totalCount == 0) {
+            throw new BusinessException("没有可导出的数据");
+        }
+        if (totalCount > 10000) {
+            throw new BusinessException("导出数据量过大，请缩小查询范围后重试");
+        }
+        
+        // 数量符合要求，再查询实际数据
         List<User> users = baseMapper.selectList(wrapper);
         
         // 批量查询部门名称
@@ -644,11 +657,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".csv");
         } catch (java.io.UnsupportedEncodingException e) {
             throw new BusinessException("编码转换失败：" + e.getMessage());
-        }
-        
-        // 修复：添加导出数量限制，防止内存溢出
-        if (users.size() > 10000) {
-            throw new BusinessException("导出数据量过大，请缩小查询范围后重试");
         }
         StringBuilder sb = new StringBuilder();
         // 添加UTF-8 BOM以支持Excel正确打开

@@ -83,6 +83,12 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
     
     @Override
     public void updateConfig(Config config) {
+        // 获取原配置信息
+        Config oldConfig = baseMapper.selectById(config.getId());
+        if (oldConfig == null) {
+            throw new BusinessException("配置不存在");
+        }
+        
         // 检查配置键名是否重复（排除自身）
         Long count = baseMapper.selectCount(
             new LambdaQueryWrapper<Config>()
@@ -94,7 +100,13 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
         }
         
         baseMapper.updateById(config);
-        // 更新缓存
+        
+        // 修复：如果configKey变更，需要清理旧key的缓存
+        if (oldConfig.getConfigKey() != null && !oldConfig.getConfigKey().equals(config.getConfigKey())) {
+            configCache.remove(oldConfig.getConfigKey());
+        }
+        
+        // 更新新key的缓存
         configCache.put(config.getConfigKey(), config.getConfigValue());
     }
     

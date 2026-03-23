@@ -96,6 +96,23 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             throw new BusinessException("用户未登录，无法签到");
         }
         
+        // 修复问题1：校验培训计划是否存在及状态
+        TrainingPlan plan = trainingPlanMapper.selectById(planId);
+        if (plan == null) {
+            throw new BusinessException("培训计划不存在");
+        }
+        // 校验培训计划状态：只有已发布(1)或进行中(2)状态可以签到
+        if (plan.getStatus() != 1 && plan.getStatus() != 2) {
+            throw new BusinessException("培训计划未发布或已结束，无法签到");
+        }
+        
+        // 修复问题3：GPS签到时验证location参数
+        if (signType != null && signType == 2) {
+            if (location == null || location.trim().isEmpty()) {
+                throw new BusinessException("GPS签到必须提供位置信息");
+            }
+        }
+        
         // 校验用户是否属于该培训计划
         Long userPlanCount = userPlanMapper.selectCount(
             new LambdaQueryWrapper<UserPlan>()
@@ -136,8 +153,28 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setIpAddress(ipAddress);
         record.setDeviceInfo(deviceInfo);
         
-        // 根据培训计划时间自动判断迟到/早退状态
-        int status = calculateAttendanceStatus(planId, signCategory);
+        // 修复问题4：根据培训计划时间自动判断迟到/早退状态，并记录分钟数
+        LocalDateTime now = LocalDateTime.now();
+        int status = 1; // 默认正常
+        if (signCategory == null || signCategory == 1) {
+            // 签到时判断是否迟到
+            LocalDateTime signStartTime = plan.getSignStartTime();
+            if (signStartTime != null && now.isAfter(signStartTime)) {
+                status = 2; // 迟到
+                // 计算迟到分钟数
+                long lateMins = java.time.Duration.between(signStartTime, now).toMinutes();
+                record.setLateMinutes((int) lateMins);
+            }
+        } else if (signCategory == 2) {
+            // 签退时判断是否早退
+            LocalDateTime signEndTime = plan.getSignEndTime();
+            if (signEndTime != null && now.isBefore(signEndTime)) {
+                status = 3; // 早退
+                // 计算早退分钟数
+                long earlyMins = java.time.Duration.between(now, signEndTime).toMinutes();
+                record.setEarlyMinutes((int) earlyMins);
+            }
+        }
         record.setStatus(status);
         
         return baseMapper.insert(record) > 0;

@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -374,7 +375,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
      * @param answers 用户答案（JSON格式）
      * @return 用户得分
      */
-    private int calculateScore(Long paperId, String answers) {
+    @Override
+    public int calculateScore(Long paperId, String answers) {
         if (answers == null || answers.isEmpty()) {
             return 0;
         }
@@ -462,10 +464,13 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             }
             
             return totalScore;
+        } catch (BusinessException e) {
+            // 业务异常直接抛出
+            throw e;
         } catch (Exception e) {
-            // 解析失败记录日志
-            log.error("计算分数失败: {}", e.getMessage(), e);
-            return 0;
+            // 修复问题：分数计算失败时应记录日志并抛出异常，而非静默返回0分
+            log.error("计算分数失败，试卷ID: {}, 答案内容: {}, 错误信息: {}", paperId, answers, e.getMessage(), e);
+            throw new BusinessException("分数计算失败：" + e.getMessage());
         }
     }
     
@@ -514,6 +519,43 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                .eq(passed != null, ExamRecord::getPassed, passed)
                .orderByDesc(ExamRecord::getSubmitTime);
         
+        // 修复分页性能问题：在SQL层面过滤用户名和试卷名，避免内存过滤导致分页不准确
+        // 查询匹配用户名的用户ID列表
+        List<Long> matchedUserIds = null;
+        if (userName != null && !userName.isEmpty()) {
+            matchedUserIds = userMapper.selectList(
+                new LambdaQueryWrapper<User>()
+                    .like(User::getRealName, userName)
+                    .or()
+                    .like(User::getUsername, userName)
+            ).stream().map(User::getId).collect(Collectors.toList());
+            
+            if (matchedUserIds.isEmpty()) {
+                // 没有匹配的用户，返回空结果
+                Page<ExamResultVO> emptyPage = new Page<>(current, size, 0);
+                emptyPage.setRecords(new java.util.ArrayList<>());
+                return emptyPage;
+            }
+            wrapper.in(ExamRecord::getUserId, matchedUserIds);
+        }
+        
+        // 查询匹配试卷名的试卷ID列表
+        List<Long> matchedPaperIds = null;
+        if (paperName != null && !paperName.isEmpty()) {
+            matchedPaperIds = paperMapper.selectList(
+                new LambdaQueryWrapper<Paper>()
+                    .like(Paper::getPaperName, paperName)
+            ).stream().map(Paper::getId).collect(Collectors.toList());
+            
+            if (matchedPaperIds.isEmpty()) {
+                // 没有匹配的试卷，返回空结果
+                Page<ExamResultVO> emptyPage = new Page<>(current, size, 0);
+                emptyPage.setRecords(new java.util.ArrayList<>());
+                return emptyPage;
+            }
+            wrapper.in(ExamRecord::getPaperId, matchedPaperIds);
+        }
+        
         Page<ExamRecord> recordPage = baseMapper.selectPage(page, wrapper);
         
         // 转换为VO
@@ -551,27 +593,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 deptMapper.selectBatchIds(deptIds).stream()
                         .collect(java.util.stream.Collectors.toMap(Dept::getId, Dept::getDeptName));
         
-        // 过滤和转换
+        // 转换（不再需要内存过滤，过滤条件已在SQL层面处理）
         java.util.List<ExamResultVO> voList = recordPage.getRecords().stream()
-                .filter(record -> {
-                    // 过滤用户名
-                    if (userName != null && !userName.isEmpty()) {
-                        User user = userMap.get(record.getUserId());
-                        if (user == null || 
-                            (user.getRealName() == null || !user.getRealName().contains(userName)) &&
-                            (user.getUsername() == null || !user.getUsername().contains(userName))) {
-                            return false;
-                        }
-                    }
-                    // 过滤试卷名
-                    if (paperName != null && !paperName.isEmpty()) {
-                        Paper paper = paperMap.get(record.getPaperId());
-                        if (paper == null || paper.getPaperName() == null || !paper.getPaperName().contains(paperName)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                })
                 .map(record -> {
                     ExamResultVO vo = new ExamResultVO();
                     BeanUtils.copyProperties(record, vo);
@@ -760,7 +783,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             
             // 填充数据
             int rowNum = 1;
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            // 修复问题：SimpleDateFormat非线程安全，改用DateTimeFormatter
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             
             for (ExamRecord record : records) {
                 // 过滤
@@ -790,8 +814,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 row.createCell(3).setCellValue(record.getUserScore() != null ? record.getUserScore() : 0);
                 row.createCell(4).setCellValue(record.getPassed() != null && record.getPassed() == 1 ? "通过" : "未通过");
                 row.createCell(5).setCellValue(getStatusName(record.getStatus()));
-                row.createCell(6).setCellValue(record.getStartTime() != null ? sdf.format(java.sql.Timestamp.valueOf(record.getStartTime())) : "");
-                row.createCell(7).setCellValue(record.getSubmitTime() != null ? sdf.format(java.sql.Timestamp.valueOf(record.getSubmitTime())) : "");
+                row.createCell(6).setCellValue(record.getStartTime() != null ? record.getStartTime().format(dateFormatter) : "");
+                row.createCell(7).setCellValue(record.getSubmitTime() != null ? record.getSubmitTime().format(dateFormatter) : "");
             }
             
             // 写入输出流
@@ -880,7 +904,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             
             // 填充数据
             int rowNum = 1;
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            // 修复问题：SimpleDateFormat非线程安全，改用DateTimeFormatter
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             
             for (ExamRecord record : records) {
                 // 过滤用户名
@@ -913,7 +938,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 row.createCell(5).setCellValue(paper != null && paper.getPassScore() != null ? paper.getPassScore() : 0);
                 row.createCell(6).setCellValue(record.getPassed() != null && record.getPassed() == 1 ? "通过" : "未通过");
                 row.createCell(7).setCellValue(record.getRetakeCount() != null ? record.getRetakeCount() : 0);
-                row.createCell(8).setCellValue(record.getSubmitTime() != null ? sdf.format(java.sql.Timestamp.valueOf(record.getSubmitTime())) : "");
+                row.createCell(8).setCellValue(record.getSubmitTime() != null ? record.getSubmitTime().format(dateFormatter) : "");
                 row.createCell(9).setCellValue(record.getDurationUsed() != null ? record.getDurationUsed() : 0);
             }
             

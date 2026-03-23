@@ -6,10 +6,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.TrainingPlan;
 import com.etms.entity.UserPlan;
 import com.etms.entity.Course;
+import com.etms.entity.PlanCourse;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.TrainingPlanMapper;
 import com.etms.mapper.UserPlanMapper;
 import com.etms.mapper.CourseMapper;
+import com.etms.mapper.PlanCourseMapper;
 import com.etms.service.TrainingPlanService;
 import com.etms.vo.TrainingPlanVO;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     
     private final UserPlanMapper userPlanMapper;
     private final CourseMapper courseMapper;
+    private final PlanCourseMapper planCourseMapper;
     
     @Override
     public Page<TrainingPlanVO> pagePlans(Page<TrainingPlan> page, String planName, Integer status, Integer planType, String startDate, String endDate, Long deptId) {
@@ -149,6 +152,12 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         if (count > 0) {
             throw new BusinessException("培训计划存在学习记录，无法删除");
         }
+        
+        // 修复：删除培训计划时清理PlanCourse关联数据
+        planCourseMapper.delete(
+            new LambdaQueryWrapper<PlanCourse>().eq(PlanCourse::getPlanId, id)
+        );
+        
         return baseMapper.deleteById(id) > 0;
     }
     

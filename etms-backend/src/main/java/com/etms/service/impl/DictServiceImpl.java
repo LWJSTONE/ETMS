@@ -88,12 +88,26 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteDictType(Long id) {
+        // 获取字典类型信息
+        DictType dictType = baseMapper.selectById(id);
+        if (dictType == null) {
+            throw new BusinessException("字典类型不存在");
+        }
+        
+        // 修复：系统内置字典类型保护机制（以sys_开头的为系统内置）
+        if (dictType.getDictType() != null && dictType.getDictType().startsWith("sys_")) {
+            throw new BusinessException("系统内置字典类型不能删除");
+        }
+        
         // 删除字典类型下的所有数据
         dictDataMapper.delete(
             new LambdaQueryWrapper<DictData>().eq(DictData::getDictTypeId, id)
         );
         // 删除字典类型
         baseMapper.deleteById(id);
+        
+        // 清除缓存
+        dictCache.remove(dictType.getDictType());
     }
     
     @Override
@@ -107,6 +121,16 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     
     @Override
     public void addDictData(DictData dictData) {
+        // 修复：添加字典数据唯一性校验（同一字典类型下dictLabel不能重复）
+        Long count = dictDataMapper.selectCount(
+            new LambdaQueryWrapper<DictData>()
+                .eq(DictData::getDictTypeId, dictData.getDictTypeId())
+                .eq(DictData::getDictLabel, dictData.getDictLabel())
+        );
+        if (count > 0) {
+            throw new BusinessException("该字典类型下已存在相同标签的数据");
+        }
+        
         if (dictData.getStatus() == null) {
             dictData.setStatus(1);
         }
@@ -114,16 +138,31 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
             dictData.setDictSort(0);
         }
         dictDataMapper.insert(dictData);
+        
+        // 修复：更新缓存
+        refreshCacheByDictTypeId(dictData.getDictTypeId());
     }
     
     @Override
     public void updateDictData(DictData dictData) {
         dictDataMapper.updateById(dictData);
+        
+        // 修复：更新缓存
+        refreshCacheByDictTypeId(dictData.getDictTypeId());
     }
     
     @Override
     public void deleteDictData(Long id) {
+        // 获取字典数据信息，用于更新缓存
+        DictData dictData = dictDataMapper.selectById(id);
+        if (dictData == null) {
+            throw new BusinessException("字典数据不存在");
+        }
+        
         dictDataMapper.deleteById(id);
+        
+        // 修复：更新缓存
+        refreshCacheByDictTypeId(dictData.getDictTypeId());
     }
     
     @Override
@@ -168,5 +207,36 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
             );
             dictCache.put(dictType.getDictType(), dataList);
         }
+    }
+    
+    /**
+     * 根据字典类型ID更新缓存
+     * @param dictTypeId 字典类型ID
+     */
+    private void refreshCacheByDictTypeId(Long dictTypeId) {
+        if (dictTypeId == null) {
+            return;
+        }
+        
+        // 获取字典类型信息
+        DictType dictType = baseMapper.selectById(dictTypeId);
+        if (dictType == null || dictType.getStatus() != 1) {
+            // 如果字典类型不存在或被禁用，从缓存中移除
+            if (dictType != null) {
+                dictCache.remove(dictType.getDictType());
+            }
+            return;
+        }
+        
+        // 查询该字典类型下的所有启用数据
+        List<DictData> dataList = dictDataMapper.selectList(
+            new LambdaQueryWrapper<DictData>()
+                .eq(DictData::getDictTypeId, dictTypeId)
+                .eq(DictData::getStatus, 1)
+                .orderByAsc(DictData::getDictSort)
+        );
+        
+        // 更新缓存
+        dictCache.put(dictType.getDictType(), dataList);
     }
 }

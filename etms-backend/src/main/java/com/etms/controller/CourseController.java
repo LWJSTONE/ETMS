@@ -5,6 +5,7 @@ import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.dto.CourseAuditDTO;
 import com.etms.entity.Course;
+import com.etms.exception.BusinessException;
 import com.etms.service.CourseService;
 import com.etms.vo.CourseVO;
 import io.swagger.annotations.ApiOperation;
@@ -51,6 +52,10 @@ public class CourseController {
     @GetMapping("/{id}")
     public Result<CourseVO> get(@PathVariable Long id) {
         CourseVO vo = courseService.getCourseDetail(id);
+        // 修复：课程不存在时抛出业务异常
+        if (vo == null) {
+            throw new BusinessException("课程不存在");
+        }
         return Result.success(vo);
     }
     

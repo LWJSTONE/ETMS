@@ -123,6 +123,25 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> delete(@PathVariable Long id) {
+        // 获取当前登录用户信息
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Result.error("未登录");
+        }
+        
+        String currentUsername = authentication.getName();
+        
+        // 获取目标用户信息
+        User targetUser = userService.getById(id);
+        if (targetUser == null) {
+            return Result.error("用户不存在");
+        }
+        
+        // 安全检查：不能删除当前登录用户自己
+        if (currentUsername.equals(targetUser.getUsername())) {
+            return Result.error("不能删除当前登录用户");
+        }
+        
         userService.deleteUser(id);
         return Result.success();
     }

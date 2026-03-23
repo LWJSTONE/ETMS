@@ -28,7 +28,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("用户不存在: " + username);
         }
         
-        if (user.getStatus() != 1) {
+        // 状态检查：处理status为null的情况
+        if (user.getStatus() == null || user.getStatus() != 1) {
             throw new UsernameNotFoundException("用户已被禁用或已离职");
         }
         
@@ -38,12 +39,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // 获取用户权限
         List<String> permissions = userMapper.selectPermissionsByUserId(user.getId());
         
-        // 合并角色和权限
-        roles.addAll(permissions);
+        // 构建权限列表：角色添加ROLE_前缀，权限直接使用
+        List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
         
-        List<SimpleGrantedAuthority> authorities = roles.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
+        // 添加角色（添加ROLE_前缀）
+        for (String role : roles) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+        }
+        
+        // 添加权限
+        for (String permission : permissions) {
+            authorities.add(new SimpleGrantedAuthority(permission));
+        }
         
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),

@@ -41,7 +41,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
             // 检查Token是否在黑名单中
             if (isTokenBlacklisted(token)) {
-                filterChain.doFilter(request, response);
+                // Token已被注销，返回401认证失败响应
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":401,\"message\":\"Token已失效，请重新登录\"}");
                 return;
             }
             

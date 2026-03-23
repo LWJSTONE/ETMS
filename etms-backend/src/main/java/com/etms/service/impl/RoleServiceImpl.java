@@ -192,6 +192,17 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void assignPermissions(Long roleId, List<Long> permissionIds) {
+        // 获取角色信息
+        Role role = baseMapper.selectById(roleId);
+        if (role == null) {
+            throw new BusinessException("角色不存在");
+        }
+        
+        // 修复：校验角色状态，禁用状态的角色不能分配权限
+        if (role.getStatus() == null || role.getStatus() != 1) {
+            throw new BusinessException("角色已被禁用，无法分配权限");
+        }
+        
         // 先删除原有关联
         rolePermissionService.remove(
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, roleId)
@@ -199,6 +210,15 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
 
         // 批量插入权限记录
         if (permissionIds != null && !permissionIds.isEmpty()) {
+            // 修复：权限存在性验证
+            List<Long> existingPermissionIds = permissionIds.stream()
+                .filter(id -> permissionMapper.selectById(id) != null)
+                .collect(Collectors.toList());
+            
+            if (existingPermissionIds.size() != permissionIds.size()) {
+                throw new BusinessException("存在无效的权限ID，请刷新页面后重试");
+            }
+            
             // 自动补充父权限
             Set<Long> allPermissionIds = new java.util.HashSet<>(permissionIds);
             for (Long permissionId : permissionIds) {

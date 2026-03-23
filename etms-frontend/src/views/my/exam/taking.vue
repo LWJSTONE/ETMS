@@ -151,6 +151,16 @@
                 placeholder="请输入答案"
                 class="answer-input"
               />
+
+              <!-- 简答题 -->
+              <el-input
+                v-else-if="currentQuestion.questionType === 5"
+                v-model="answers[currentQuestion.id]"
+                type="textarea"
+                :rows="6"
+                placeholder="请输入详细答案"
+                class="answer-input"
+              />
             </div>
 
             <!-- 题目操作按钮 -->

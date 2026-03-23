@@ -622,6 +622,60 @@ const handleDelete = async (row: any) => {
 
 // 发布
 const handlePublish = async (row: any) => {
+  // 验证必填字段是否完整
+  const missingFields: string[] = []
+  
+  if (!row.planName || row.planName.trim() === '') {
+    missingFields.push('计划名称')
+  }
+  if (!row.planCode || row.planCode.trim() === '') {
+    missingFields.push('计划编码')
+  }
+  if (!row.planType) {
+    missingFields.push('计划类型')
+  }
+  if (!row.courseId) {
+    missingFields.push('关联课程')
+  }
+  if (!row.startDate || !row.endDate) {
+    missingFields.push('培训日期')
+  }
+  if (!row.targetType) {
+    missingFields.push('目标类型')
+  } else {
+    // 验证目标选择
+    if (row.targetType === 1) {
+      let targetDeptIds: number[] = []
+      try {
+        targetDeptIds = row.targetDeptIds ? JSON.parse(row.targetDeptIds) : []
+      } catch (e) { /* ignore */ }
+      if (targetDeptIds.length === 0) {
+        missingFields.push('目标部门')
+      }
+    } else if (row.targetType === 2) {
+      let targetPositionIds: number[] = []
+      try {
+        targetPositionIds = row.targetPositionIds ? JSON.parse(row.targetPositionIds) : []
+      } catch (e) { /* ignore */ }
+      if (targetPositionIds.length === 0) {
+        missingFields.push('目标岗位')
+      }
+    } else if (row.targetType === 3) {
+      let targetUserIds: number[] = []
+      try {
+        targetUserIds = row.targetUserIds ? JSON.parse(row.targetUserIds) : []
+      } catch (e) { /* ignore */ }
+      if (targetUserIds.length === 0) {
+        missingFields.push('目标人员')
+      }
+    }
+  }
+  
+  if (missingFields.length > 0) {
+    ElMessage.warning(`以下必填字段未完善：${missingFields.join('、')}，请先编辑完善后再发布`)
+    return
+  }
+  
   try {
     await ElMessageBox.confirm('确定要发布该培训计划吗？发布后将无法修改。', '提示', { type: 'warning' })
     await publishPlan(row.id)

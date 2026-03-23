@@ -294,14 +294,14 @@ const form = reactive({
   description: ''
 })
 
-// 自定义验证规则：及格分不能大于总分
+// 自定义验证规则：及格分不能大于总分且必须大于0
 const validatePassScore = (rule: any, value: number, callback: any) => {
   if (value === undefined || value === null) {
     callback(new Error('请输入及格分数'))
+  } else if (value <= 0) {
+    callback(new Error('及格分数必须大于0'))
   } else if (value > form.totalScore) {
     callback(new Error('及格分数不能大于总分'))
-  } else if (value < 0) {
-    callback(new Error('及格分数不能为负数'))
   } else {
     callback()
   }
@@ -486,6 +486,16 @@ const handleDelete = async (row: any) => {
 
 // 发布
 const handlePublish = async (row: any) => {
+  // 验证试卷是否已添加题目
+  if (!row.questionCount || row.questionCount === 0) {
+    ElMessage.warning('试卷未添加题目，无法发布')
+    return
+  }
+  // 验证及格分数是否有效
+  if (!row.passScore || row.passScore <= 0) {
+    ElMessage.warning('及格分数必须大于0，请先编辑试卷设置及格分数')
+    return
+  }
   try {
     await ElMessageBox.confirm('确定要发布该试卷吗？发布后考生可以参加考试。', '提示', { type: 'warning' })
     await publishPaper(row.id)

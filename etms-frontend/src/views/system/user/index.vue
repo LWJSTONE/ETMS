@@ -238,7 +238,11 @@ const emailValidator = (rule: any, value: string, callback: any) => {
 }
 
 const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '用户名长度为3-20个字符', trigger: 'blur' },
+    { pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/, message: '用户名必须以字母开头，只能包含字母、数字和下划线', trigger: 'blur' }
+  ],
   password: [{ 
     required: true, 
     message: '请输入密码', 
@@ -348,10 +352,17 @@ const handleDelete = async (row: any) => {
     ElMessage.warning('admin账户不能删除')
     return
   }
-  await ElMessageBox.confirm('确定要删除该用户吗？', '提示', { type: 'warning' })
-  await deleteUser(row.id)
-  ElMessage.success('删除成功')
-  getList()
+  try {
+    await ElMessageBox.confirm('确定要删除该用户吗？', '提示', { type: 'warning' })
+    await deleteUser(row.id)
+    ElMessage.success('删除成功')
+    getList()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '删除失败')
+    }
+  }
 }
 
 const handleResetPassword = async (row: any) => {

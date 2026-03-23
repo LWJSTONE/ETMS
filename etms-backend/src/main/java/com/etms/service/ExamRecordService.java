@@ -72,4 +72,12 @@ public interface ExamRecordService {
      * 导出成绩列表
      */
     void exportResults(Long paperId, Long userId, Integer passed, String userName, String paperName, String startTime, String endTime, OutputStream outputStream);
+    
+    /**
+     * 计算考试分数
+     * @param paperId 试卷ID
+     * @param answers 用户答案（JSON格式）
+     * @return 用户得分
+     */
+    int calculateScore(Long paperId, String answers);
 }

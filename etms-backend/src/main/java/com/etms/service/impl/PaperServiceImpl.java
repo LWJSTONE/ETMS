@@ -440,9 +440,10 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             throw new BusinessException("只有已发布的试卷可以停用");
         }
         
-        Paper paper = new Paper();
-        paper.setId(id);
-        paper.setStatus(2); // 已停用（与前端状态码保持一致）
-        baseMapper.updateById(paper);
+        // 修复并发问题：使用乐观锁方式更新状态，避免并发操作导致状态不一致
+        int updateCount = baseMapper.disablePaperWithOptimisticLock(id, 1, 2);
+        if (updateCount == 0) {
+            throw new BusinessException("停用失败，试卷状态已被修改，请刷新后重试");
+        }
     }
 }
