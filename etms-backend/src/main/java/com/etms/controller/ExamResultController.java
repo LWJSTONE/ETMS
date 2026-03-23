@@ -69,6 +69,7 @@ public class ExamResultController {
     @ApiOperation(value = "获取成绩详情")
     @GetMapping("/{id}")
     public Result<ExamResultVO> get(@PathVariable Long id) {
+        // 权限验证在Service层处理：用户只能查看自己的成绩，管理员可以查看所有成绩
         ExamResultVO vo = examRecordService.getResultDetail(id);
         return Result.success(vo);
     }

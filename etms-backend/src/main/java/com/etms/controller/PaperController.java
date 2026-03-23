@@ -45,12 +45,13 @@ public class PaperController {
     @ApiOperation(value = "获取试卷详情")
     @GetMapping("/{id}")
     public Result<?> get(@PathVariable Long id, 
-                          @RequestParam(required = false, defaultValue = "false") boolean forExam) {
+                          @RequestParam(required = false, defaultValue = "false") boolean forExam,
+                          @RequestParam(required = false) Long planId) {
         // 修复：根据场景区分权限
-        // 考试场景(forExam=true)：登录用户可访问，答案会被隐藏（Service层处理）
+        // 考试场景(forExam=true)：登录用户可访问，但需验证考试资格
         // 管理场景(forExam=false)：需要管理员权限查看完整信息（包含答案）
-        // 当前设计：任何登录用户都可以访问，答案是否返回由Service层根据forExam参数控制
-        return Result.success(paperService.getPaperDetail(id, forExam));
+        // 当forExam=true且planId不为空时，会验证用户是否有考试资格
+        return Result.success(paperService.getPaperDetail(id, forExam, planId));
     }
     
     @ApiOperation(value = "新增试卷")

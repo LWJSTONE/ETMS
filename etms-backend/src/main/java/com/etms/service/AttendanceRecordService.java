@@ -18,8 +18,9 @@ public interface AttendanceRecordService extends IService<AttendanceRecord> {
     
     /**
      * 签到/签退
+     * 修复问题5：添加IP地址和设备信息参数
      */
-    boolean signIn(Long planId, Integer signType, Integer signCategory, String location);
+    boolean signIn(Long planId, Integer signType, Integer signCategory, String location, String ipAddress, String deviceInfo);
     
     /**
      * 补签申请

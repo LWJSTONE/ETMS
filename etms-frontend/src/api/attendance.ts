@@ -39,7 +39,17 @@ export function auditAttendance(id: number, data: AttendanceAuditParams): Promis
   return request.post(`/attendance/records/${id}/audit`, data)
 }
 
-// 获取签到统计
+// 获取个人签到统计
+export function getMyAttendanceStats(): Promise<ApiResponse<AttendanceStats>> {
+  return request.get('/attendance/records/stats/personal')
+}
+
+// 获取指定用户签到统计（管理员）
+export function getUserAttendanceStats(userId: number): Promise<ApiResponse<AttendanceStats>> {
+  return request.get(`/attendance/records/stats/${userId}`)
+}
+
+// 兼容旧API（已废弃，建议使用getMyAttendanceStats或getUserAttendanceStats）
 export function getAttendanceStats(userId: number): Promise<ApiResponse<AttendanceStats>> {
   return request.get(`/attendance/records/stats/${userId}`)
 }

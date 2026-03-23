@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 /**
@@ -51,7 +52,7 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "签到/签退")
     @PostMapping("/sign")
-    public Result<Void> signIn(@RequestBody Map<String, Object> body) {
+    public Result<Void> signIn(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         // 参数验证
         if (body.get("planId") == null) {
             return Result.error("培训计划ID不能为空");
@@ -71,7 +72,11 @@ public class AttendanceRecordController {
             return Result.error("签到类别不合法，有效值为1-2");
         }
         
-        attendanceRecordService.signIn(planId, signType, signCategory, location);
+        // 修复问题5：获取客户端IP和设备信息
+        String ipAddress = getClientIp(request);
+        String deviceInfo = request.getHeader("User-Agent");
+        
+        attendanceRecordService.signIn(planId, signType, signCategory, location, ipAddress, deviceInfo);
         return Result.success();
     }
     
@@ -148,5 +153,33 @@ public class AttendanceRecordController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
     public Result<?> getUserStats(@PathVariable Long userId) {
         return Result.success(attendanceRecordService.getPersonalStats(userId));
+    }
+    
+    /**
+     * 获取客户端真实IP地址
+     * 修复问题5：支持从代理服务器获取真实IP
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 对于多次代理的情况，取第一个非unknown的IP
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 }

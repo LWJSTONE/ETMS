@@ -7,12 +7,16 @@ import com.etms.entity.ExamRecord;
 import com.etms.entity.Paper;
 import com.etms.entity.PaperQuestion;
 import com.etms.entity.Question;
+import com.etms.entity.TrainingPlan;
+import com.etms.entity.User;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.ExamRecordMapper;
 import com.etms.mapper.PaperMapper;
 import com.etms.mapper.PaperQuestionMapper;
 import com.etms.mapper.QuestionMapper;
+import com.etms.mapper.TrainingPlanMapper;
 import com.etms.service.PaperService;
+import com.etms.service.UserService;
 import com.etms.vo.PaperQuestionVO;
 import com.etms.vo.PaperVO;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +42,8 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     private final ExamRecordMapper examRecordMapper;
     private final PaperQuestionMapper paperQuestionMapper;
     private final QuestionMapper questionMapper;
+    private final TrainingPlanMapper trainingPlanMapper;
+    private final UserService userService;
 
     @Override
     public Page<Paper> pagePapers(Page<Paper> page, String paperName, String paperCode, Integer status) {
@@ -49,14 +57,41 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
 
     @Override
     public Object getPaperDetail(Long id) {
-        return getPaperDetail(id, false);
+        return getPaperDetail(id, false, null);
     }
     
     @Override
     public Object getPaperDetail(Long id, boolean forExam) {
+        return getPaperDetail(id, forExam, null);
+    }
+    
+    @Override
+    public Object getPaperDetail(Long id, boolean forExam, Long planId) {
         Paper paper = baseMapper.selectById(id);
         if (paper == null) {
             return null;
+        }
+
+        // 考试场景下的权限验证
+        if (forExam) {
+            // 验证试卷状态
+            if (paper.getStatus() != 1) {
+                throw new BusinessException("试卷未发布，无法参加考试");
+            }
+            
+            // 验证考试时间窗口
+            LocalDateTime now = LocalDateTime.now();
+            if (paper.getStartTime() != null && now.isBefore(paper.getStartTime())) {
+                throw new BusinessException("考试尚未开始");
+            }
+            if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
+                throw new BusinessException("考试已结束");
+            }
+            
+            // 如果关联了培训计划，验证用户是否有考试资格
+            if (planId != null) {
+                validateExamEligibility(paper, planId);
+            }
         }
 
         PaperVO vo = new PaperVO();
@@ -117,6 +152,137 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         }
 
         return vo;
+    }
+    
+    /**
+     * 验证用户是否有考试资格
+     * 修复问题：试卷详情接口权限控制不完善
+     */
+    private void validateExamEligibility(Paper paper, Long planId) {
+        // 获取当前用户
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            throw new BusinessException("用户未登录");
+        }
+        
+        // 获取培训计划
+        TrainingPlan plan = trainingPlanMapper.selectById(planId);
+        if (plan == null) {
+            throw new BusinessException("培训计划不存在");
+        }
+        
+        // 验证培训计划状态
+        if (plan.getStatus() != 1 && plan.getStatus() != 2) {
+            throw new BusinessException("培训计划未发布或未开始");
+        }
+        
+        // 验证培训计划时间窗口
+        LocalDate today = LocalDate.now();
+        if (plan.getStartDate() != null && today.isBefore(plan.getStartDate())) {
+            throw new BusinessException("培训计划尚未开始");
+        }
+        if (plan.getEndDate() != null && today.isAfter(plan.getEndDate())) {
+            throw new BusinessException("培训计划已结束");
+        }
+        
+        // 验证用户是否在培训计划目标范围内
+        if (!isUserInPlanTarget(currentUser, plan)) {
+            throw new BusinessException("您不在该培训计划的目标范围内");
+        }
+        
+        // 检查是否已有进行中的考试
+        Long inProgressCount = examRecordMapper.selectCount(
+            new LambdaQueryWrapper<ExamRecord>()
+                .eq(ExamRecord::getUserId, currentUser.getId())
+                .eq(ExamRecord::getPaperId, paper.getId())
+                .eq(ExamRecord::getStatus, 1)
+        );
+        if (inProgressCount > 0) {
+            throw new BusinessException("您已有进行中的考试，请先完成后再获取新试卷");
+        }
+        
+        // 检查考试次数限制
+        if (plan.getMaxRetake() != null && plan.getMaxRetake() > 0) {
+            Long completedAttempts = examRecordMapper.selectCount(
+                new LambdaQueryWrapper<ExamRecord>()
+                    .eq(ExamRecord::getUserId, currentUser.getId())
+                    .eq(ExamRecord::getPaperId, paper.getId())
+                    .eq(ExamRecord::getPlanId, planId)
+                    .in(ExamRecord::getStatus, 2, 3)
+            );
+            if (completedAttempts >= plan.getMaxRetake()) {
+                throw new BusinessException("您已达到最大考试次数限制");
+            }
+        }
+    }
+    
+    /**
+     * 检查用户是否在培训计划目标范围内
+     */
+    private boolean isUserInPlanTarget(User user, TrainingPlan plan) {
+        Integer targetType = plan.getTargetType();
+        if (targetType == null) {
+            return true; // 没有设置目标类型，默认允许
+        }
+        
+        try {
+            switch (targetType) {
+                case 1: // 部门
+                    String targetDeptIds = plan.getTargetDeptIds();
+                    if (targetDeptIds == null || targetDeptIds.trim().isEmpty()) {
+                        return true;
+                    }
+                    if (user.getDeptId() == null) {
+                        return false;
+                    }
+                    return isIdInJsonArray(targetDeptIds, user.getDeptId());
+                    
+                case 2: // 岗位
+                    String targetPositionIds = plan.getTargetPositionIds();
+                    if (targetPositionIds == null || targetPositionIds.trim().isEmpty()) {
+                        return true;
+                    }
+                    if (user.getPositionId() == null) {
+                        return false;
+                    }
+                    return isIdInJsonArray(targetPositionIds, user.getPositionId());
+                    
+                case 3: // 个人
+                    String targetUserIds = plan.getTargetUserIds();
+                    if (targetUserIds == null || targetUserIds.trim().isEmpty()) {
+                        return true;
+                    }
+                    return isIdInJsonArray(targetUserIds, user.getId());
+                    
+                default:
+                    return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * 检查ID是否在JSON数组字符串中
+     */
+    private boolean isIdInJsonArray(String jsonArrayStr, Long targetId) {
+        if (jsonArrayStr == null || jsonArrayStr.trim().isEmpty()) {
+            return false;
+        }
+        
+        String str = jsonArrayStr.trim();
+        if (str.startsWith("[") && str.endsWith("]")) {
+            str = str.substring(1, str.length() - 1);
+        }
+        
+        String[] parts = str.split(",");
+        for (String part : parts) {
+            String idStr = part.trim().replace("\"", "");
+            if (idStr.equals(String.valueOf(targetId))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

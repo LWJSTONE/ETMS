@@ -403,6 +403,15 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             throw new BusinessException("培训计划未发布或未开始，无法学习");
         }
         
+        // 修复问题7：验证当前时间是否在培训计划有效期内
+        LocalDate today = LocalDate.now();
+        if (plan.getStartDate() != null && today.isBefore(plan.getStartDate())) {
+            throw new BusinessException("培训计划尚未开始，开始日期：" + plan.getStartDate());
+        }
+        if (plan.getEndDate() != null && today.isAfter(plan.getEndDate())) {
+            throw new BusinessException("培训计划已结束，无法更新进度。结束日期：" + plan.getEndDate());
+        }
+        
         // 验证用户是否有权限参与该培训计划（是否在目标范围内）
         if (!checkUserInPlanTarget(user, plan)) {
             throw new BusinessException("您不在该培训计划的目标范围内，无法学习");

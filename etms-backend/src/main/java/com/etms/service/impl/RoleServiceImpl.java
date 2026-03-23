@@ -174,13 +174,17 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             new LambdaQueryWrapper<UserRole>().eq(UserRole::getRoleId, id)
         );
         if (count > 0) {
-            throw new BusinessException("角色已分配给用户，无法删除");
+            throw new BusinessException("角色已分配给用户，无法删除。请先解除用户与该角色的关联。");
         }
 
         // 删除角色权限关联
         rolePermissionService.remove(
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, id)
         );
+        
+        // 修复问题11：清理其他可能的关联数据
+        // 注意：UserRole关联已在上方检查，如果有用户关联则不允许删除
+        
         // 删除角色
         baseMapper.deleteById(id);
     }

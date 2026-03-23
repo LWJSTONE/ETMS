@@ -4,9 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.Course;
+import com.etms.entity.Paper;
+import com.etms.entity.Question;
 import com.etms.entity.PlanCourse;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.CourseMapper;
+import com.etms.mapper.PaperMapper;
+import com.etms.mapper.QuestionMapper;
 import com.etms.mapper.PlanCourseMapper;
 import com.etms.service.CourseService;
 import com.etms.vo.CourseVO;
@@ -27,6 +31,8 @@ import java.util.stream.Collectors;
 public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> implements CourseService {
     
     private final PlanCourseMapper planCourseMapper;
+    private final PaperMapper paperMapper;
+    private final QuestionMapper questionMapper;
     
     @Override
     public Page<CourseVO> pageCourses(Page<Course> page, String courseName, String courseCode, Long categoryId, Integer courseType, Integer status, Integer difficulty) {
@@ -126,11 +132,27 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteCourse(Long id) {
         // 检查课程是否被培训计划引用
-        Long count = planCourseMapper.selectCount(
+        Long planCount = planCourseMapper.selectCount(
             new LambdaQueryWrapper<PlanCourse>().eq(PlanCourse::getCourseId, id)
         );
-        if (count > 0) {
+        if (planCount > 0) {
             throw new BusinessException("课程已被培训计划引用，无法删除");
+        }
+        
+        // 修复问题9：检查课程是否被试卷引用
+        Long paperCount = paperMapper.selectCount(
+            new LambdaQueryWrapper<Paper>().eq(Paper::getCourseId, id)
+        );
+        if (paperCount > 0) {
+            throw new BusinessException("课程已被试卷引用，无法删除。请先删除相关试卷。");
+        }
+        
+        // 修复问题9：检查课程是否被题目引用
+        Long questionCount = questionMapper.selectCount(
+            new LambdaQueryWrapper<Question>().eq(Question::getCourseId, id)
+        );
+        if (questionCount > 0) {
+            throw new BusinessException("课程已被题目引用，无法删除。请先删除相关题目。");
         }
         
         return baseMapper.deleteById(id) > 0;

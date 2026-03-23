@@ -89,7 +89,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean signIn(Long planId, Integer signType, Integer signCategory, String location) {
+    public boolean signIn(Long planId, Integer signType, Integer signCategory, String location, String ipAddress, String deviceInfo) {
         Long currentUserId = getCurrentUserId();
         // 添加空指针处理
         if (currentUserId == null) {
@@ -132,6 +132,10 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setCreateTime(LocalDateTime.now());
         record.setUserId(currentUserId);
         
+        // 修复问题5：记录IP地址和设备信息
+        record.setIpAddress(ipAddress);
+        record.setDeviceInfo(deviceInfo);
+        
         // 根据培训计划时间自动判断迟到/早退状态
         int status = calculateAttendanceStatus(planId, signCategory);
         record.setStatus(status);
@@ -146,6 +150,12 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         // 添加空指针处理
         if (currentUserId == null) {
             throw new BusinessException("用户未登录，无法申请补签");
+        }
+        
+        // 校验培训计划是否存在
+        TrainingPlan plan = trainingPlanMapper.selectById(planId);
+        if (plan == null) {
+            throw new BusinessException("培训计划不存在");
         }
         
         // 校验用户是否属于该培训计划（与签到方法保持一致）
@@ -170,6 +180,14 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
                 // 校验补签时间不能超过30天
                 if (parsedSignTime.isBefore(LocalDateTime.now().minusDays(30))) {
                     throw new BusinessException("只能补签30天内的记录");
+                }
+                // 修复问题6：验证补签时间是否在培训计划有效期内
+                LocalDate signDate = parsedSignTime.toLocalDate();
+                if (plan.getStartDate() != null && signDate.isBefore(plan.getStartDate())) {
+                    throw new BusinessException("补签时间不能早于培训计划开始日期(" + plan.getStartDate() + ")");
+                }
+                if (plan.getEndDate() != null && signDate.isAfter(plan.getEndDate())) {
+                    throw new BusinessException("补签时间不能晚于培训计划结束日期(" + plan.getEndDate() + ")");
                 }
             } catch (BusinessException e) {
                 throw e;

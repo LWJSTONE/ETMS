@@ -8,12 +8,14 @@ import com.etms.entity.Paper;
 import com.etms.entity.PaperQuestion;
 import com.etms.entity.Question;
 import com.etms.entity.User;
+import com.etms.entity.TrainingPlan;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.ExamRecordMapper;
 import com.etms.mapper.PaperMapper;
 import com.etms.mapper.PaperQuestionMapper;
 import com.etms.mapper.QuestionMapper;
 import com.etms.mapper.UserMapper;
+import com.etms.mapper.TrainingPlanMapper;
 import com.etms.service.ExamRecordService;
 import com.etms.service.UserService;
 import com.etms.vo.ExamRecordVO;
@@ -51,6 +53,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     private final PaperQuestionMapper paperQuestionMapper;
     private final QuestionMapper questionMapper;
     private final DeptMapper deptMapper;
+    private final TrainingPlanMapper trainingPlanMapper;
     
     @Override
     public Page<ExamRecordVO> pageExamRecords(Page<ExamRecord> page, Long paperId, Long userId, Integer status, String userName, String paperName) {
@@ -219,6 +222,24 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         );
         if (count > 0) {
             throw new BusinessException("您已有进行中的考试，请先完成");
+        }
+        
+        // 修复：检查考试次数限制（补考次数限制）
+        if (planId != null) {
+            TrainingPlan plan = trainingPlanMapper.selectById(planId);
+            if (plan != null && plan.getMaxRetake() != null && plan.getMaxRetake() > 0) {
+                // 统计用户已完成的考试次数（不包括进行中和已放弃的）
+                Long totalAttempts = baseMapper.selectCount(
+                    new LambdaQueryWrapper<ExamRecord>()
+                        .eq(ExamRecord::getUserId, currentUser.getId())
+                        .eq(ExamRecord::getPaperId, paperId)
+                        .eq(ExamRecord::getPlanId, planId)
+                        .in(ExamRecord::getStatus, 2, 3) // 已完成或已超时
+                );
+                if (totalAttempts >= plan.getMaxRetake()) {
+                    throw new BusinessException("您已达到最大考试次数限制（" + plan.getMaxRetake() + "次）");
+                }
+            }
         }
         
         // 创建考试记录
