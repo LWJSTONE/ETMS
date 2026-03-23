@@ -197,7 +197,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Timer, Document, DataLine, CircleCheck, Close, Check, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
-import { getExamRecordDetail, submitExam } from '@/api/exam'
+import { getExamRecordDetail, submitExam, giveUpExam } from '@/api/exam'
 
 const route = useRoute()
 const router = useRouter()
@@ -494,6 +494,9 @@ const handleGiveUp = async () => {
       }
     )
     
+    // 调用后端API放弃考试
+    await giveUpExam(recordId.value)
+    
     // 清除计时器
     if (timer) {
       clearInterval(timer)
@@ -505,8 +508,12 @@ const handleGiveUp = async () => {
     
     ElMessage.info('已放弃考试')
     router.push('/my/exam')
-  } catch {
-    // 用户取消
+  } catch (error: any) {
+    // 用户取消或API调用失败
+    if (error !== 'cancel' && error.message) {
+      console.error('放弃考试失败:', error)
+      ElMessage.error(error.message || '放弃考试失败')
+    }
   }
 }
 
@@ -524,7 +531,7 @@ const confirmSubmit = async () => {
       recordId: recordId.value,
       answers: Object.entries(answers).map(([questionId, answer]) => ({
         questionId: Number(questionId),
-        answer: Array.isArray(answer) ? answer.join(',') : String(answer)
+        userAnswer: Array.isArray(answer) ? answer.join(',') : String(answer)
       }))
     }
     

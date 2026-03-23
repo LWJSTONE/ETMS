@@ -174,8 +174,14 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
             }
         }
         
+        // 检查父分类是否发生变化
+        boolean parentChanged = false;
+        Integer newLevel = existing.getLevel();
+        
         // 不能将分类移动到自己的子分类下
         if (category.getParentId() != null && !category.getParentId().equals(existing.getParentId())) {
+            parentChanged = true;
+            
             if (isChildCategory(category.getId(), category.getParentId())) {
                 throw new BusinessException("不能将分类移动到自己的子分类下");
             }
@@ -183,17 +189,23 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
             // 更新层级
             if (category.getParentId() <= 0) {
                 category.setParentId(0L);
-                category.setLevel(1);
+                newLevel = 1;
             } else {
                 Category parent = baseMapper.selectById(category.getParentId());
                 if (parent == null) {
                     throw new BusinessException("父分类不存在");
                 }
-                category.setLevel(parent.getLevel() + 1);
+                newLevel = parent.getLevel() + 1;
             }
+            category.setLevel(newLevel);
         }
         
         baseMapper.updateById(category);
+        
+        // 如果父分类发生变化，递归更新所有子分类的层级
+        if (parentChanged) {
+            updateChildrenLevel(category.getId(), newLevel);
+        }
     }
     
     @Override
@@ -239,6 +251,17 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     
     @Override
     public void updateStatus(Long id, Integer status) {
+        // 验证分类是否存在
+        Category existing = baseMapper.selectById(id);
+        if (existing == null) {
+            throw new BusinessException("分类不存在");
+        }
+        
+        // 验证状态值有效性（0:禁用, 1:启用）
+        if (status == null || (status != 0 && status != 1)) {
+            throw new BusinessException("状态值无效，状态只能为0(禁用)或1(启用)");
+        }
+        
         Category category = new Category();
         category.setId(id);
         category.setStatus(status);
@@ -284,5 +307,26 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         }
         
         return false;
+    }
+    
+    /**
+     * 递归更新子分类的层级
+     * @param parentId 父分类ID
+     * @param parentLevel 父分类层级
+     */
+    private void updateChildrenLevel(Long parentId, Integer parentLevel) {
+        // 查询所有直接子分类
+        List<Category> children = baseMapper.selectList(
+            new LambdaQueryWrapper<Category>().eq(Category::getParentId, parentId)
+        );
+        
+        for (Category child : children) {
+            // 更新子分类的层级
+            child.setLevel(parentLevel + 1);
+            baseMapper.updateById(child);
+            
+            // 递归更新子分类的子分类
+            updateChildrenLevel(child.getId(), child.getLevel());
+        }
     }
 }

@@ -49,6 +49,11 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
 
     @Override
     public Object getPaperDetail(Long id) {
+        return getPaperDetail(id, false);
+    }
+    
+    @Override
+    public Object getPaperDetail(Long id, boolean forExam) {
         Paper paper = baseMapper.selectById(id);
         if (paper == null) {
             return null;
@@ -96,6 +101,13 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
                     qvo.setQuestionId(question.getId());
                     qvo.setScore(scoreMap.getOrDefault(question.getId(), question.getScore()));
                     qvo.setSortOrder(sortOrderMap.get(question.getId()));
+                    
+                    // 考试场景下隐藏答案和解析
+                    if (forExam) {
+                        qvo.setAnswer(null);
+                        qvo.setAnswerAnalysis(null);
+                    }
+                    
                     questionVOList.add(qvo);
                 }
             }

@@ -80,6 +80,13 @@ public class ExamRecordController {
         return Result.success();
     }
     
+    @ApiOperation(value = "放弃考试")
+    @PostMapping("/giveup/{recordId}")
+    public Result<Void> giveUpExam(@PathVariable Long recordId) {
+        examRecordService.giveUpExam(recordId);
+        return Result.success();
+    }
+    
     @ApiOperation(value = "获取当前用户的考试记录")
     @GetMapping("/my")
     public Result<PageResult<ExamRecordVO>> pageMy(

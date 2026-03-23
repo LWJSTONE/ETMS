@@ -41,5 +41,5 @@ export function deleteCategory(id: number): Promise<ApiResponse<void>> {
 
 // 更新分类状态
 export function updateCategoryStatus(id: number, status: number): Promise<ApiResponse<void>> {
-  return request.put(`/training/categories/${id}/status`, null, { params: { status } })
+  return request.put(`/training/categories/${id}/status`, { status })
 }

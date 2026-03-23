@@ -73,6 +73,12 @@
               @click="handlePublish(row)"
             >发布</el-button>
             <el-button
+              v-if="row.status === 1 || row.status === 2"
+              type="danger"
+              link
+              @click="handleEnd(row)"
+            >结束</el-button>
+            <el-button
               v-if="row.status === 3"
               type="warning"
               link
@@ -269,7 +275,8 @@ import {
   updatePlan,
   deletePlan,
   publishPlan,
-  archivePlan
+  archivePlan,
+  endPlan
 } from '@/api/training'
 import { getCourseListAll } from '@/api/course'
 
@@ -514,6 +521,21 @@ const handlePublish = async (row: any) => {
     if (error !== 'cancel') {
       console.error(error)
       ElMessage.error(error.message || '发布失败')
+    }
+  }
+}
+
+// 结束
+const handleEnd = async (row: any) => {
+  try {
+    await ElMessageBox.confirm('确定要结束该培训计划吗？结束后将无法继续学习。', '提示', { type: 'warning' })
+    await endPlan(row.id)
+    ElMessage.success('结束成功')
+    getList()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '结束失败')
     }
   }
 }

@@ -258,29 +258,38 @@ onMounted(() => {
 })
 
 // 初始化培训进度图表
+// 注意：当前图表数据为示例数据，用于展示图表效果
+// TODO: 后续应从后端API获取各部门培训进度统计数据进行渲染
 const initProgressChart = () => {
   if (!progressChartRef.value) return
   progressChart = echarts.init(progressChartRef.value)
+  
+  // 示例数据 - 各部门培训进度统计
+  const chartData = {
+    departments: ['技术部', '市场部', '人事部', '财务部', '运营部'],
+    planCounts: [30, 25, 15, 12, 20],    // 计划培训人数
+    completeCounts: [28, 22, 13, 10, 18] // 实际完成人数
+  }
   
   const option = {
     tooltip: { trigger: 'axis' },
     legend: { data: ['计划人数', '完成人数'] },
     xAxis: {
       type: 'category',
-      data: ['技术部', '市场部', '人事部', '财务部', '运营部']
+      data: chartData.departments
     },
     yAxis: { type: 'value' },
     series: [
       {
         name: '计划人数',
         type: 'bar',
-        data: [30, 25, 15, 12, 20],
+        data: chartData.planCounts,
         itemStyle: { color: '#409eff' }
       },
       {
         name: '完成人数',
         type: 'bar',
-        data: [28, 22, 13, 10, 18],
+        data: chartData.completeCounts,
         itemStyle: { color: '#67c23a' }
       }
     ]
@@ -290,9 +299,17 @@ const initProgressChart = () => {
 }
 
 // 初始化考试通过率图表
+// 注意：当前图表数据为示例数据，用于展示图表效果
+// TODO: 后续应从后端API获取考试通过率统计数据进行渲染
 const initPassRateChart = () => {
   if (!passRateChartRef.value) return
   passRateChart = echarts.init(passRateChartRef.value)
+  
+  // 示例数据 - 考试通过率统计
+  const chartData = {
+    passCount: 85,   // 通过人次
+    failCount: 15    // 未通过人次
+  }
   
   const option = {
     tooltip: { trigger: 'item' },
@@ -313,8 +330,8 @@ const initPassRateChart = () => {
           formatter: '{b}: {d}%'
         },
         data: [
-          { value: 85, name: '通过', itemStyle: { color: '#67c23a' } },
-          { value: 15, name: '未通过', itemStyle: { color: '#f56c6c' } }
+          { value: chartData.passCount, name: '通过', itemStyle: { color: '#67c23a' } },
+          { value: chartData.failCount, name: '未通过', itemStyle: { color: '#f56c6c' } }
         ]
       }
     ]

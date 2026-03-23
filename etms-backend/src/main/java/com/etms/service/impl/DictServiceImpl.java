@@ -16,6 +16,9 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.PostConstruct;
 
 /**
  * 字典服务实现类
@@ -25,6 +28,17 @@ import java.util.List;
 public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> implements DictService {
     
     private final DictDataMapper dictDataMapper;
+    
+    /** 字典缓存，key为字典类型，value为字典数据列表 */
+    private final Map<String, List<DictData>> dictCache = new ConcurrentHashMap<>();
+    
+    /**
+     * 初始化缓存
+     */
+    @PostConstruct
+    public void initCache() {
+        refreshCache();
+    }
     
     @Override
     public Page<DictType> pageDictTypes(Page<DictType> page, String dictName, String dictType, Integer status) {
@@ -114,20 +128,45 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     
     @Override
     public List<DictData> getDictDataByType(String dictType) {
-        // 先获取字典类型
+        // 先从缓存获取
+        List<DictData> cachedData = dictCache.get(dictType);
+        if (cachedData != null) {
+            return cachedData;
+        }
+        
+        // 缓存中没有，从数据库查询
         DictType type = baseMapper.selectOne(
             new LambdaQueryWrapper<DictType>().eq(DictType::getDictType, dictType)
         );
         if (type == null) {
             return Collections.emptyList();
         }
-        return getDictDataList(type.getId());
+        List<DictData> dataList = getDictDataList(type.getId());
+        
+        // 放入缓存
+        dictCache.put(dictType, dataList);
+        return dataList;
     }
     
     @Override
     public void refreshCache() {
-        // TODO: 实现字典缓存刷新逻辑
-        // 如果使用了Redis缓存，可以在这里清除字典相关的缓存
-        // 目前为空实现，后续可根据实际缓存方案进行扩展
+        // 清空缓存
+        dictCache.clear();
+        
+        // 查询所有字典类型
+        List<DictType> dictTypes = baseMapper.selectList(
+            new LambdaQueryWrapper<DictType>().eq(DictType::getStatus, 1)
+        );
+        
+        // 遍历所有字典类型，将数据加载到缓存
+        for (DictType dictType : dictTypes) {
+            List<DictData> dataList = dictDataMapper.selectList(
+                new LambdaQueryWrapper<DictData>()
+                    .eq(DictData::getDictTypeId, dictType.getId())
+                    .eq(DictData::getStatus, 1)
+                    .orderByAsc(DictData::getDictSort)
+            );
+            dictCache.put(dictType.getDictType(), dataList);
+        }
     }
 }

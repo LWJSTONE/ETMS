@@ -34,6 +34,11 @@ public interface ExamRecordService {
     void submitExam(Long recordId, String answers);
     
     /**
+     * 放弃考试
+     */
+    void giveUpExam(Long recordId);
+    
+    /**
      * 获取当前用户的考试记录
      */
     Page<ExamRecordVO> pageMyExamRecords(Page<ExamRecord> page, Integer status);

@@ -432,12 +432,14 @@ const getPaperListData = async () => {
 const getReportData = async () => {
   loading.value = true
   try {
-    // 注意：此处使用较大size值获取全量数据进行前端统计计算
+    // 注意：此处使用较大size值获取数据进行前端统计计算
     // 性能优化建议：后端应提供专门的统计聚合接口，避免传输大量数据
     // 当前保留此方式是因为需要计算各试卷、各部门的详细统计数据
+    // 设置合理的上限为5000条，避免一次性获取过多数据
+    const MAX_RECORDS = 5000
     const params: any = {
       current: 1,
-      size: 10000
+      size: MAX_RECORDS
     }
     
     if (filterForm.dateRange && filterForm.dateRange.length === 2) {
@@ -453,6 +455,11 @@ const getReportData = async () => {
 
     const res = await getResultList(params)
     const records = res.data?.records || []
+    
+    // 如果数据量达到上限，给出提示
+    if (records.length >= MAX_RECORDS) {
+      ElMessage.warning(`数据量较大，当前仅显示最近${MAX_RECORDS}条记录。建议缩小查询范围获取更精确的统计数据。`)
+    }
     
     // 保存考试记录用于趋势计算
     allExamRecords.value = records

@@ -26,6 +26,8 @@ public class UserDTO implements Serializable {
 
     /** 密码 */
     @Size(min = 6, max = 20, message = "密码长度必须在6-20个字符之间", groups = {Add.class})
+    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{6,20}$", 
+             message = "密码必须包含数字和字母，长度6-20位", groups = {Add.class})
     private String password;
 
     /** 真实姓名 */

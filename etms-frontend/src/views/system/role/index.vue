@@ -298,9 +298,12 @@ const handleAssignPermission = async (row: any) => {
 // 提交权限分配
 const handlePermSubmit = async () => {
   if (!currentRoleId.value) return
-  const checkedNodes = permTreeRef.value?.getCheckedKeys() || []
+  // 使用 getHalfCheckedKeys() 获取半选状态的父节点，确保完整权限列表
+  const checkedKeys = permTreeRef.value?.getCheckedKeys() || []
+  const halfCheckedKeys = permTreeRef.value?.getHalfCheckedKeys() || []
+  const allPermissionIds = [...checkedKeys, ...halfCheckedKeys]
   try {
-    await assignPermissions(currentRoleId.value, checkedNodes)
+    await assignPermissions(currentRoleId.value, allPermissionIds)
     ElMessage.success('权限分配成功')
     permDialogVisible.value = false
     getList()

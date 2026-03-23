@@ -113,6 +113,11 @@ export function submitExam(data: ExamSubmitParams): Promise<ApiResponse<void>> {
   return request.post('/exam/records/submit', data)
 }
 
+// 放弃考试
+export function giveUpExam(recordId: number): Promise<ApiResponse<void>> {
+  return request.post(`/exam/records/giveup/${recordId}`)
+}
+
 // 获取考试记录详情
 export function getExamRecordDetail(id: number): Promise<ApiResponse<ExamRecord>> {
   return request.get(`/exam/records/${id}`)

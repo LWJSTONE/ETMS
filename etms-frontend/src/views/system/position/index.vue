@@ -312,7 +312,7 @@ const handleExport = async () => {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `岗位数据_${new Date().toISOString().slice(0, 10)}.xlsx`
+    link.download = `岗位数据_${new Date().toISOString().slice(0, 10)}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

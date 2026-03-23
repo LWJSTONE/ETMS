@@ -16,8 +16,18 @@ public interface PaperService extends IService<Paper> {
     
     /**
      * 获取试卷详情（含题目）
+     * @param id 试卷ID
+     * @return 试卷详情
      */
     Object getPaperDetail(Long id);
+    
+    /**
+     * 获取试卷详情（含题目）
+     * @param id 试卷ID
+     * @param forExam 是否为考试场景（考试场景下隐藏答案和解析）
+     * @return 试卷详情
+     */
+    Object getPaperDetail(Long id, boolean forExam);
     
     /**
      * 新增试卷

@@ -6,8 +6,64 @@ import { ElMessage } from 'element-plus'
 // 白名单路由（无需登录即可访问）
 const whiteList = ['/login', '/404']
 
-// 需要管理员权限的路由
+// 权限常量定义
+const PERMISSIONS = {
+  // 系统管理
+  USER_VIEW: 'system:user:view',
+  ROLE_VIEW: 'system:role:view',
+  DEPT_VIEW: 'system:dept:view',
+  POSITION_VIEW: 'system:position:view',
+  DICT_VIEW: 'system:dict:view',
+  CONFIG_VIEW: 'system:config:view',
+  LOG_VIEW: 'system:log:view',
+  // 培训管理
+  COURSE_VIEW: 'training:course:view',
+  CATEGORY_VIEW: 'training:category:view',
+  PLAN_VIEW: 'training:plan:view',
+  PROGRESS_VIEW: 'training:progress:view',
+  // 签到管理
+  ATTENDANCE_VIEW: 'attendance:record:view',
+  // 考核管理
+  QUESTION_VIEW: 'exam:question:view',
+  PAPER_VIEW: 'exam:paper:view',
+  RECORD_VIEW: 'exam:record:view',
+  RESULT_VIEW: 'exam:result:view',
+  // 报表分析
+  REPORT_VIEW: 'report:view'
+} as const
+
+// 需要管理员权限的路由前缀（用于兼容旧逻辑）
 const adminRoutes = ['/system', '/training', '/attendance', '/exam', '/report']
+
+/**
+ * 检查用户是否有指定权限
+ * @param userPermissions 用户权限列表
+ * @param requiredPermission 需要的权限
+ * @param isAdmin 是否为管理员
+ */
+const hasPermission = (
+  userPermissions: string[],
+  requiredPermission?: string,
+  isAdmin?: boolean
+): boolean => {
+  // 管理员拥有所有权限
+  if (isAdmin) return true
+  // 无权限要求
+  if (!requiredPermission) return true
+  // 检查用户是否拥有所需权限（支持通配符匹配）
+  return userPermissions.some(p => {
+    // 完全匹配
+    if (p === requiredPermission) return true
+    // 通配符匹配，如 system:* 匹配 system:user:view
+    if (p.endsWith(':*')) {
+      const prefix = p.slice(0, -1) // 移除 *
+      return requiredPermission.startsWith(prefix)
+    }
+    // 超级权限 * 匹配所有
+    if (p === '*') return true
+    return false
+  })
+}
 
 const routes: RouteRecordRaw[] = [
   {
@@ -42,43 +98,43 @@ const routes: RouteRecordRaw[] = [
         path: 'user',
         name: 'User',
         component: () => import('@/views/system/user/index.vue'),
-        meta: { title: '用户管理', icon: 'User' }
+        meta: { title: '用户管理', icon: 'User', permission: PERMISSIONS.USER_VIEW }
       },
       {
         path: 'role',
         name: 'Role',
         component: () => import('@/views/system/role/index.vue'),
-        meta: { title: '角色管理', icon: 'UserFilled' }
+        meta: { title: '角色管理', icon: 'UserFilled', permission: PERMISSIONS.ROLE_VIEW }
       },
       {
         path: 'dept',
         name: 'Dept',
         component: () => import('@/views/system/dept/index.vue'),
-        meta: { title: '部门管理', icon: 'OfficeBuilding' }
+        meta: { title: '部门管理', icon: 'OfficeBuilding', permission: PERMISSIONS.DEPT_VIEW }
       },
       {
         path: 'position',
         name: 'Position',
         component: () => import('@/views/system/position/index.vue'),
-        meta: { title: '岗位管理', icon: 'Briefcase' }
+        meta: { title: '岗位管理', icon: 'Briefcase', permission: PERMISSIONS.POSITION_VIEW }
       },
       {
         path: 'dict',
         name: 'Dict',
         component: () => import('@/views/system/dict/index.vue'),
-        meta: { title: '字典管理', icon: 'Collection' }
+        meta: { title: '字典管理', icon: 'Collection', permission: PERMISSIONS.DICT_VIEW }
       },
       {
         path: 'config',
         name: 'Config',
         component: () => import('@/views/system/config/index.vue'),
-        meta: { title: '系统配置', icon: 'Tools' }
+        meta: { title: '系统配置', icon: 'Tools', permission: PERMISSIONS.CONFIG_VIEW }
       },
       {
         path: 'log',
         name: 'Log',
         component: () => import('@/views/system/log/index.vue'),
-        meta: { title: '日志管理', icon: 'Document' }
+        meta: { title: '日志管理', icon: 'Document', permission: PERMISSIONS.LOG_VIEW }
       }
     ]
   },
@@ -94,25 +150,25 @@ const routes: RouteRecordRaw[] = [
         path: 'course',
         name: 'Course',
         component: () => import('@/views/training/course/index.vue'),
-        meta: { title: '课程管理', icon: 'Notebook' }
+        meta: { title: '课程管理', icon: 'Notebook', permission: PERMISSIONS.COURSE_VIEW }
       },
       {
         path: 'category',
         name: 'Category',
         component: () => import('@/views/training/category/index.vue'),
-        meta: { title: '课程分类', icon: 'Files' }
+        meta: { title: '课程分类', icon: 'Files', permission: PERMISSIONS.CATEGORY_VIEW }
       },
       {
         path: 'plan',
         name: 'Plan',
         component: () => import('@/views/training/plan/index.vue'),
-        meta: { title: '培训计划', icon: 'Calendar' }
+        meta: { title: '培训计划', icon: 'Calendar', permission: PERMISSIONS.PLAN_VIEW }
       },
       {
         path: 'progress',
         name: 'Progress',
         component: () => import('@/views/training/progress/index.vue'),
-        meta: { title: '学习进度', icon: 'DataLine' }
+        meta: { title: '学习进度', icon: 'DataLine', permission: PERMISSIONS.PROGRESS_VIEW }
       }
     ]
   },
@@ -128,13 +184,13 @@ const routes: RouteRecordRaw[] = [
         path: 'record',
         name: 'AttendanceRecord',
         component: () => import('@/views/attendance/record/index.vue'),
-        meta: { title: '签到记录', icon: 'List' }
+        meta: { title: '签到记录', icon: 'List', permission: PERMISSIONS.ATTENDANCE_VIEW }
       },
       {
         path: 'apply',
         name: 'AttendanceApply',
         component: () => import('@/views/attendance/apply/index.vue'),
-        meta: { title: '补签申请', icon: 'Edit' }
+        meta: { title: '补签申请', icon: 'Edit', permission: PERMISSIONS.ATTENDANCE_VIEW }
       }
     ]
   },
@@ -150,25 +206,25 @@ const routes: RouteRecordRaw[] = [
         path: 'question',
         name: 'Question',
         component: () => import('@/views/exam/question/index.vue'),
-        meta: { title: '题库管理', icon: 'Collection' }
+        meta: { title: '题库管理', icon: 'Collection', permission: PERMISSIONS.QUESTION_VIEW }
       },
       {
         path: 'paper',
         name: 'Paper',
         component: () => import('@/views/exam/paper/index.vue'),
-        meta: { title: '试卷管理', icon: 'Document' }
+        meta: { title: '试卷管理', icon: 'Document', permission: PERMISSIONS.PAPER_VIEW }
       },
       {
         path: 'record',
         name: 'ExamRecord',
         component: () => import('@/views/exam/record/index.vue'),
-        meta: { title: '考试记录', icon: 'Tickets' }
+        meta: { title: '考试记录', icon: 'Tickets', permission: PERMISSIONS.RECORD_VIEW }
       },
       {
         path: 'result',
         name: 'ExamResult',
         component: () => import('@/views/exam/result/index.vue'),
-        meta: { title: '成绩管理', icon: 'TrendCharts' }
+        meta: { title: '成绩管理', icon: 'TrendCharts', permission: PERMISSIONS.RESULT_VIEW }
       }
     ]
   },
@@ -178,19 +234,19 @@ const routes: RouteRecordRaw[] = [
     name: 'Report',
     component: () => import('@/layouts/MainLayout.vue'),
     redirect: '/report/training',
-    meta: { title: '报表分析', icon: 'DataAnalysis' },
+    meta: { title: '报表分析', icon: 'DataAnalysis', permission: PERMISSIONS.REPORT_VIEW },
     children: [
       {
         path: 'training',
         name: 'TrainingReport',
         component: () => import('@/views/report/training/index.vue'),
-        meta: { title: '培训报表', icon: 'DataBoard' }
+        meta: { title: '培训报表', icon: 'DataBoard', permission: PERMISSIONS.REPORT_VIEW }
       },
       {
         path: 'exam',
         name: 'ExamReport',
         component: () => import('@/views/report/exam/index.vue'),
-        meta: { title: '考核报表', icon: 'Histogram' }
+        meta: { title: '考核报表', icon: 'Histogram', permission: PERMISSIONS.REPORT_VIEW }
       }
     ]
   },
@@ -311,13 +367,18 @@ router.beforeEach(async (to, from, next) => {
   
   // 权限检查
   const userInfo = userStore.userInfo
-  // 修复：roleNames 是数组，需要检查是否包含 admin 角色
+  // 检查是否为管理员（admin角色拥有所有权限）
   const isAdmin = userInfo?.roleNames?.some(r => r.toLowerCase() === 'admin') ?? false
+  // 获取用户权限列表
+  const userPermissions = userInfo?.permissions || []
+  // 获取路由所需权限
+  const requiredPermission = to.meta?.permission as string | undefined
 
-  // 检查是否访问需要管理员权限的路由
-  if (!isAdmin && adminRoutes.some(route => to.path.startsWith(route))) {
+  // 细粒度权限检查
+  if (!hasPermission(userPermissions, requiredPermission, isAdmin)) {
     ElMessage.warning('您没有权限访问该页面')
-    next({ path: '/my/course' })  // 普通用户重定向到我的培训
+    // 普通用户重定向到我的培训
+    next({ path: '/my/course' })
     return
   }
   

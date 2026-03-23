@@ -73,6 +73,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getCaptcha } from '@/api/auth'
+import { resetRedirectFlag } from '@/utils/request'
 
 const router = useRouter()
 const route = useRoute()
@@ -166,6 +167,8 @@ const handleLogin = async () => {
   loading.value = true
   try {
     await userStore.loginAction(loginForm.username, loginForm.password, loginForm.captcha, captchaKey.value)
+    // 重置401重定向标志位，允许后续的401错误能够正常处理
+    resetRedirectFlag()
     ElMessage.success('登录成功')
     // 登录成功后跳转到原目标页面或首页
     const redirect = route.query.redirect as string

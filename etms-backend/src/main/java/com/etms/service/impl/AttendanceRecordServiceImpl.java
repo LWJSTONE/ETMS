@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.AttendanceRecord;
+import com.etms.entity.TrainingPlan;
 import com.etms.entity.User;
 import com.etms.entity.UserPlan;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.AttendanceRecordMapper;
+import com.etms.mapper.TrainingPlanMapper;
 import com.etms.mapper.UserMapper;
 import com.etms.mapper.UserPlanMapper;
 import com.etms.service.AttendanceRecordService;
@@ -32,6 +34,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
     
     private final UserMapper userMapper;
     private final UserPlanMapper userPlanMapper;
+    private final TrainingPlanMapper trainingPlanMapper;
     
     @Override
     public Page<AttendanceRecordVO> pageRecords(Page<AttendanceRecord> page, Long planId, Long userId, Integer status, Integer auditStatus) {
@@ -125,9 +128,12 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setSignCategory(signCategory != null ? signCategory : 1); // 默认签到
         record.setLocation(location);
         record.setSignTime(LocalDateTime.now());
-        record.setStatus(1); // 正常
         record.setCreateTime(LocalDateTime.now());
         record.setUserId(currentUserId);
+        
+        // 根据培训计划时间自动判断迟到/早退状态
+        int status = calculateAttendanceStatus(planId, signCategory);
+        record.setStatus(status);
         
         return baseMapper.insert(record) > 0;
     }
@@ -261,6 +267,9 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         // 审核通过时更新状态为正常签到
         if (auditStatus == 1) {
             record.setStatus(1); // 更新为正常状态
+        } else if (auditStatus == 2) {
+            // 审核驳回时更新状态为补签驳回(status=6)
+            record.setStatus(6);
         }
         
         return baseMapper.updateById(record) > 0;
@@ -329,8 +338,43 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             case 3: return "早退";
             case 4: return "缺勤";
             case 5: return "补签";
+            case 6: return "补签驳回";
             default: return "未知";
         }
+    }
+    
+    /**
+     * 根据培训计划时间计算考勤状态
+     * @param planId 培训计划ID
+     * @param signCategory 签到类别(1签到 2签退)
+     * @return 状态(1正常 2迟到 3早退)
+     */
+    private int calculateAttendanceStatus(Long planId, Integer signCategory) {
+        // 查询培训计划
+        TrainingPlan plan = trainingPlanMapper.selectById(planId);
+        if (plan == null) {
+            return 1; // 默认正常
+        }
+        
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 签到时判断是否迟到
+        if (signCategory == null || signCategory == 1) {
+            LocalDateTime signStartTime = plan.getSignStartTime();
+            if (signStartTime != null && now.isAfter(signStartTime)) {
+                return 2; // 迟到
+            }
+        }
+        
+        // 签退时判断是否早退
+        if (signCategory != null && signCategory == 2) {
+            LocalDateTime signEndTime = plan.getSignEndTime();
+            if (signEndTime != null && now.isBefore(signEndTime)) {
+                return 3; // 早退
+            }
+        }
+        
+        return 1; // 正常
     }
     
     /**

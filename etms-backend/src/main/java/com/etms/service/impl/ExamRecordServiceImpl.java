@@ -180,6 +180,15 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             throw new BusinessException("试卷未发布，无法开始考试");
         }
         
+        // 检查考试时间窗口
+        LocalDateTime now = LocalDateTime.now();
+        if (paper.getStartTime() != null && now.isBefore(paper.getStartTime())) {
+            throw new BusinessException("考试尚未开始");
+        }
+        if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
+            throw new BusinessException("考试已结束");
+        }
+        
         // 检查是否已有进行中的考试
         Long count = baseMapper.selectCount(
             new LambdaQueryWrapper<ExamRecord>()
@@ -274,6 +283,40 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void giveUpExam(Long recordId) {
+        ExamRecord record = baseMapper.selectById(recordId);
+        if (record == null) {
+            throw new BusinessException("考试记录不存在");
+        }
+        
+        // 验证考试状态
+        if (record.getStatus() != 1) {
+            throw new BusinessException("考试已结束，无法放弃");
+        }
+        
+        // 验证是否为当前用户的记录
+        User currentUser = userService.getCurrentUser();
+        if (!record.getUserId().equals(currentUser.getId())) {
+            throw new BusinessException("无权操作此考试");
+        }
+        
+        // 更新考试记录状态为已放弃（使用状态4表示放弃）
+        ExamRecord updateRecord = new ExamRecord();
+        updateRecord.setId(recordId);
+        updateRecord.setStatus(4); // 已放弃
+        updateRecord.setSubmitTime(LocalDateTime.now());
+        
+        // 计算实际用时（分钟）
+        if (record.getStartTime() != null) {
+            Duration duration = Duration.between(record.getStartTime(), LocalDateTime.now());
+            updateRecord.setDurationUsed((int) duration.toMinutes());
+        }
+        
+        baseMapper.updateById(updateRecord);
+    }
+    
+    @Override
     public Page<ExamRecordVO> pageMyExamRecords(Page<ExamRecord> page, Integer status) {
         User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
@@ -361,6 +404,12 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                     // 移除首尾逗号
                     userAnswer = userAnswer.replaceAll("^,|,$", "");
                     correctAnswer = correctAnswer.replaceAll("^,|,$", "");
+                    
+                    // 多选题：对答案字符排序后再比较，解决答案顺序敏感问题
+                    if (question.getQuestionType() == 2) {
+                        userAnswer = sortAnswerChars(userAnswer);
+                        correctAnswer = sortAnswerChars(correctAnswer);
+                    }
                 }
                 
                 // 判断答案是否正确
@@ -395,6 +444,20 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             return "B";
         }
         return answer;
+    }
+    
+    /**
+     * 对多选题答案字符进行排序，解决答案顺序敏感问题
+     * 例如：将 "C,B,A" 或 "CBA" 排序为 "A,B,C"
+     */
+    private String sortAnswerChars(String answer) {
+        if (answer == null || answer.isEmpty()) {
+            return answer;
+        }
+        // 将答案按逗号分割，排序后再用逗号连接
+        String[] parts = answer.split(",");
+        java.util.Arrays.sort(parts);
+        return String.join(",", parts);
     }
     
     @Override
@@ -704,6 +767,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             case 1: return "进行中";
             case 2: return "已完成";
             case 3: return "已超时";
+            case 4: return "已放弃";
             default: return "未知";
         }
     }

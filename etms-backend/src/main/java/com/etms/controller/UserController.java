@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
@@ -35,6 +36,7 @@ public class UserController {
     
     @ApiOperation(value = "分页查询用户列表")
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasPermission('system:user:list')")
     public Result<PageResult<UserVO>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
@@ -50,15 +52,33 @@ public class UserController {
     @ApiOperation(value = "获取用户详情")
     @GetMapping("/{id}")
     public Result<UserVO> get(@PathVariable Long id) {
+        // 权限校验：管理员或用户本人可查看
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Result.error("未登录");
+        }
+        
+        String currentUsername = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(auth -> "ROLE_ADMIN".equals(auth) || "admin".equals(auth));
+        
         UserVO vo = userService.getUserDetail(id);
         if (vo == null) {
             return Result.error("用户不存在");
         }
+        
+        // 非管理员只能查看自己的信息
+        if (!isAdmin && !currentUsername.equals(vo.getUsername())) {
+            return Result.error("无权限查看该用户信息");
+        }
+        
         return Result.success(vo);
     }
     
     @ApiOperation(value = "新增用户")
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> add(@Valid @RequestBody UserDTO userDTO) {
         userService.addUser(userDTO);
         return Result.success();
@@ -67,6 +87,33 @@ public class UserController {
     @ApiOperation(value = "更新用户")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody UserDTO userDTO) {
+        // 权限校验：管理员可修改所有，普通用户只能修改自己的基本信息
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Result.error("未登录");
+        }
+        
+        String currentUsername = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(auth -> "ROLE_ADMIN".equals(auth) || "admin".equals(auth));
+        
+        // 获取目标用户信息
+        User targetUser = userService.getById(id);
+        if (targetUser == null) {
+            return Result.error("用户不存在");
+        }
+        
+        // 非管理员只能修改自己的信息，且不能修改角色、状态等敏感字段
+        if (!isAdmin) {
+            if (!currentUsername.equals(targetUser.getUsername())) {
+                return Result.error("无权限修改其他用户信息");
+            }
+            // 普通用户不能修改角色和状态
+            userDTO.setRoleIds(null);
+            userDTO.setStatus(null);
+        }
+        
         userDTO.setId(id);
         userService.updateUser(userDTO);
         return Result.success();
@@ -74,6 +121,7 @@ public class UserController {
     
     @ApiOperation(value = "删除用户")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> delete(@PathVariable Long id) {
         userService.deleteUser(id);
         return Result.success();
@@ -131,7 +179,7 @@ public class UserController {
     @ApiOperation(value = "重置密码")
     @PutMapping("/{id}/reset-password")
     // 权限校验：只有管理员可以重置密码
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> resetPassword(@PathVariable Long id) {
         // 安全校验：密码不再通过API返回，而是通过邮件或短信发送给用户
         // 或者返回一个临时密码token，用户通过该token设置新密码
@@ -142,7 +190,7 @@ public class UserController {
     @ApiOperation(value = "修改状态")
     @PutMapping("/{id}/status")
     // 权限校验：只有管理员可以修改用户状态
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
         Integer status = body.get("status");
         // 参数验证
@@ -160,7 +208,7 @@ public class UserController {
     @ApiOperation(value = "分配角色")
     @PutMapping("/{id}/roles")
     // 权限校验：只有管理员可以分配角色
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> assignRoles(@PathVariable Long id, @Valid @RequestBody List<Long> roleIds) {
         userService.assignRoles(id, roleIds);
         return Result.success();
@@ -169,7 +217,7 @@ public class UserController {
     @ApiOperation(value = "导出用户")
     @GetMapping("/export")
     // 权限校验：只有管理员可以导出用户数据
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public void export(
             UserDTO userDTO,
             HttpServletResponse response) {

@@ -49,6 +49,11 @@ export function archivePlan(id: number): Promise<ApiResponse<void>> {
   return request.post(`/training/plans/${id}/archive`)
 }
 
+// 结束培训计划
+export function endPlan(id: number): Promise<ApiResponse<void>> {
+  return request.post(`/training/plans/${id}/end`)
+}
+
 /**
  * 学习进度API
  */

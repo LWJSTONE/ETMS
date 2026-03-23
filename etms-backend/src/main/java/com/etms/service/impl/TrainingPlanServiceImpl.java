@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,11 +42,34 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
                // 日期筛选：筛选开始日期在指定范围内
                .ge(StringUtils.hasText(startDate), TrainingPlan::getStartDate, LocalDate.parse(startDate))
                .le(StringUtils.hasText(endDate), TrainingPlan::getEndDate, LocalDate.parse(endDate))
-               // 部门筛选：targetDeptIds是JSON数组，使用LIKE匹配
-               .apply(deptId != null, "target_dept_ids LIKE CONCAT('%', {0}, '%')", deptId.toString())
                .orderByDesc(TrainingPlan::getCreateTime);
         
-        Page<TrainingPlan> planPage = baseMapper.selectPage(page, wrapper);
+        // 修复：部门筛选使用精确的JSON解析匹配，避免LIKE匹配导致的误匹配（如ID "1" 匹配到 "11", "21" 等）
+        Page<TrainingPlan> planPage;
+        if (deptId != null) {
+            // 查询所有符合其他条件的数据
+            List<TrainingPlan> allPlans = baseMapper.selectList(wrapper);
+            // 使用精确的JSON解析匹配进行过滤
+            List<TrainingPlan> filteredPlans = allPlans.stream()
+                    .filter(plan -> isIdInJsonArray(plan.getTargetDeptIds(), deptId))
+                    .collect(Collectors.toList());
+            
+            // 手动分页
+            long total = filteredPlans.size();
+            int current = (int) page.getCurrent();
+            int size = (int) page.getSize();
+            int fromIndex = (current - 1) * size;
+            int toIndex = Math.min(fromIndex + size, filteredPlans.size());
+            
+            List<TrainingPlan> pagedPlans = fromIndex < filteredPlans.size() 
+                    ? filteredPlans.subList(fromIndex, toIndex) 
+                    : new ArrayList<>();
+            
+            planPage = new Page<>(current, size, total);
+            planPage.setRecords(pagedPlans);
+        } else {
+            planPage = baseMapper.selectPage(page, wrapper);
+        }
         
         Page<TrainingPlanVO> voPage = new Page<>();
         BeanUtils.copyProperties(planPage, voPage, "records");
@@ -157,6 +181,11 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("开始日期不能晚于结束日期");
         }
         
+        // 验证开始日期不能早于当前日期
+        if (existingPlan.getStartDate().isBefore(LocalDate.now())) {
+            throw new BusinessException("开始日期不能早于当前日期");
+        }
+        
         // 验证必要字段：培训类型
         if (existingPlan.getPlanType() == null) {
             throw new BusinessException("请先设置培训类型");
@@ -242,5 +271,33 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             case 4: return "已归档";
             default: return "未知";
         }
+    }
+    
+    /**
+     * 检查ID是否在JSON数组字符串中
+     * @param jsonArrayStr JSON数组字符串，如 "[1, 2, 3]" 或 ["1","2","3"]
+     * @param targetId 要查找的ID
+     * @return 是否包含该ID
+     */
+    private boolean isIdInJsonArray(String jsonArrayStr, Long targetId) {
+        if (jsonArrayStr == null || jsonArrayStr.trim().isEmpty()) {
+            return false;
+        }
+        
+        String str = jsonArrayStr.trim();
+        // 处理JSON数组格式
+        if (str.startsWith("[") && str.endsWith("]")) {
+            str = str.substring(1, str.length() - 1);
+        }
+        
+        // 分割并精确匹配
+        String[] parts = str.split(",");
+        for (String part : parts) {
+            String idStr = part.trim().replace("\"", "");
+            if (idStr.equals(String.valueOf(targetId))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

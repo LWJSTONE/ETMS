@@ -57,11 +57,14 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
             throw new BusinessException("部门名称已存在");
         }
         
-        // 校验部门负责人是否存在
+        // 校验部门负责人是否存在且状态正常
         if (dept.getLeaderId() != null) {
             User leader = userMapper.selectById(dept.getLeaderId());
             if (leader == null) {
                 throw new BusinessException("部门负责人不存在");
+            }
+            if (leader.getStatus() == null || leader.getStatus() != 1) {
+                throw new BusinessException("部门负责人已被禁用或删除，请选择其他用户作为负责人");
             }
         }
         
@@ -99,11 +102,14 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
             throw new BusinessException("部门名称已存在");
         }
         
-        // 校验部门负责人是否存在
+        // 校验部门负责人是否存在且状态正常
         if (dept.getLeaderId() != null) {
             User leader = userMapper.selectById(dept.getLeaderId());
             if (leader == null) {
                 throw new BusinessException("部门负责人不存在");
+            }
+            if (leader.getStatus() == null || leader.getStatus() != 1) {
+                throw new BusinessException("部门负责人已被禁用或删除，请选择其他用户作为负责人");
             }
         }
         

@@ -5,6 +5,14 @@ import NProgress from 'nprogress'
 // 401错误处理标志位，防止并发请求时重复跳转登录页
 let isRedirecting = false
 
+/**
+ * 重置401重定向标志位
+ * 用于登录成功后重置，允许后续的401错误能够正常处理
+ */
+export const resetRedirectFlag = () => {
+  isRedirecting = false
+}
+
 // 创建axios实例
 const service: AxiosInstance = axios.create({
   baseURL: '/api',
@@ -45,7 +53,10 @@ service.interceptors.response.use(
           isRedirecting = true
           localStorage.removeItem('token')
           ElMessage.error('登录已过期，请重新登录')
-          window.location.href = '/login'
+          // 跳转登录页并传递当前路径作为重定向目标
+          const currentPath = window.location.pathname + window.location.search
+          const redirectPath = currentPath !== '/login' ? encodeURIComponent(currentPath) : ''
+          window.location.href = redirectPath ? `/login?redirect=${redirectPath}` : '/login'
         }
       }
       
@@ -64,7 +75,10 @@ service.interceptors.response.use(
             isRedirecting = true
             ElMessage.error('未授权，请重新登录')
             localStorage.removeItem('token')
-            window.location.href = '/login'
+            // 跳转登录页并传递当前路径作为重定向目标
+            const currentPath = window.location.pathname + window.location.search
+            const redirectPath = currentPath !== '/login' ? encodeURIComponent(currentPath) : ''
+            window.location.href = redirectPath ? `/login?redirect=${redirectPath}` : '/login'
           }
           break
         case 403:

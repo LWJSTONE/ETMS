@@ -43,8 +43,9 @@ public class PaperController {
     
     @ApiOperation(value = "获取试卷详情")
     @GetMapping("/{id}")
-    public Result<?> get(@PathVariable Long id) {
-        return Result.success(paperService.getPaperDetail(id));
+    public Result<?> get(@PathVariable Long id, 
+                          @RequestParam(required = false, defaultValue = "false") boolean forExam) {
+        return Result.success(paperService.getPaperDetail(id, forExam));
     }
     
     @ApiOperation(value = "新增试卷")

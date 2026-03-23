@@ -80,7 +80,7 @@
             <el-table-column prop="totalScore" label="总分" width="80" align="center" />
             <el-table-column label="是否通过" width="90" align="center">
               <template #default="{ row }">
-                <template v-if="row.status === 2">
+                <template v-if="row.status === 2 || row.status === 3">
                   <el-tag :type="row.score >= row.passScore ? 'success' : 'danger'" size="small">
                     {{ row.score >= row.passScore ? '通过' : '未通过' }}
                   </el-tag>
@@ -171,7 +171,7 @@
         <el-descriptions-item label="总分">{{ currentResult.totalScore }}分</el-descriptions-item>
         <el-descriptions-item label="及格分数">{{ currentResult.passScore }}分</el-descriptions-item>
         <el-descriptions-item label="是否通过">
-          <el-tag v-if="currentResult.status === 2" :type="currentResult.score >= currentResult.passScore ? 'success' : 'danger'">
+          <el-tag v-if="currentResult.status === 2 || currentResult.status === 3" :type="currentResult.score >= currentResult.passScore ? 'success' : 'danger'">
             {{ currentResult.score >= currentResult.passScore ? '通过' : '未通过' }}
           </el-tag>
           <span v-else>-</span>
@@ -304,7 +304,9 @@ const getRecordStatusType = (status: number) => {
   const types: Record<number, string> = {
     0: 'warning', // 未开始
     1: 'primary', // 进行中
-    2: 'success'  // 已结束
+    2: 'success', // 已完成
+    3: 'danger',  // 已超时
+    4: 'info'     // 已放弃
   }
   return types[status] || 'info'
 }
@@ -314,7 +316,9 @@ const getRecordStatusText = (status: number) => {
   const texts: Record<number, string> = {
     0: '未开始',
     1: '进行中',
-    2: '已结束'
+    2: '已完成',
+    3: '已超时',
+    4: '已放弃'
   }
   return texts[status] || '未知'
 }

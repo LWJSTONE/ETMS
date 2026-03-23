@@ -204,12 +204,22 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             throw new BusinessException("课程不存在");
         }
         
-        // 修复：审核通过(2)的课程已经是已上架状态，已下架(3)的课程可以重新上架
-        if (existingCourse.getStatus() == 2) {
-            throw new BusinessException("课程已上架，无需重复操作");
-        }
-        if (existingCourse.getStatus() != 3) {
-            throw new BusinessException("当前状态不允许上架操作，只有已下架状态的课程可以上架");
+        // 修复：完善状态检查逻辑，明确各状态下的操作限制
+        // 课程状态定义：0-草稿，1-待审核，2-已上架，3-已下架，4-审核驳回
+        switch (existingCourse.getStatus()) {
+            case 0: // 草稿
+                throw new BusinessException("草稿状态的课程请先提交审核");
+            case 1: // 待审核
+                throw new BusinessException("课程正在审核中，请等待审核完成");
+            case 2: // 已上架
+                throw new BusinessException("课程已上架，无需重复操作");
+            case 3: // 已下架
+                // 只有已下架的课程可以重新上架
+                break;
+            case 4: // 审核驳回
+                throw new BusinessException("课程审核未通过，请修改后重新提交审核");
+            default:
+                throw new BusinessException("课程状态异常，无法上架");
         }
         
         Course course = new Course();

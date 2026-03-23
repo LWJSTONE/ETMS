@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.Role;
 import com.etms.entity.RolePermission;
+import com.etms.entity.Permission;
 import com.etms.entity.UserRole;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.RoleMapper;
+import com.etms.mapper.PermissionMapper;
 import com.etms.mapper.UserRoleMapper;
 import com.etms.service.RolePermissionService;
 import com.etms.service.RoleService;
@@ -31,6 +33,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
 
     private final RolePermissionService rolePermissionService;
     private final UserRoleMapper userRoleMapper;
+    private final PermissionMapper permissionMapper;
 
     @Override
     public Page<RoleVO> pageRoles(Page<Role> page, String roleName, Integer status) {
@@ -177,8 +180,14 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
 
         // 批量插入权限记录
         if (permissionIds != null && !permissionIds.isEmpty()) {
-            List<RolePermission> rolePermissions = new ArrayList<>();
+            // 自动补充父权限
+            Set<Long> allPermissionIds = new java.util.HashSet<>(permissionIds);
             for (Long permissionId : permissionIds) {
+                addParentPermissions(permissionId, allPermissionIds);
+            }
+            
+            List<RolePermission> rolePermissions = new ArrayList<>();
+            for (Long permissionId : allPermissionIds) {
                 RolePermission rp = new RolePermission();
                 rp.setRoleId(roleId);
                 rp.setPermissionId(permissionId);
@@ -186,6 +195,24 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             }
             // 使用 MyBatis-Plus 的批量插入方法
             rolePermissionService.saveBatch(rolePermissions);
+        }
+    }
+    
+    /**
+     * 递归添加父权限
+     * @param permissionId 当前权限ID
+     * @param allPermissionIds 所有权限ID集合
+     */
+    private void addParentPermissions(Long permissionId, Set<Long> allPermissionIds) {
+        Permission permission = permissionMapper.selectById(permissionId);
+        if (permission == null || permission.getParentId() == null || permission.getParentId() == 0) {
+            return;
+        }
+        Long parentId = permission.getParentId();
+        if (!allPermissionIds.contains(parentId)) {
+            allPermissionIds.add(parentId);
+            // 递归查找父权限的父权限
+            addParentPermissions(parentId, allPermissionIds);
         }
     }
 

@@ -375,7 +375,8 @@ const handleStartLearning = (course: any) => {
     path: '/my/learning',
     query: {
       courseId: course.courseId || course.id,
-      progressId: course.id
+      progressId: course.id,
+      planId: course.planId
     }
   })
 }
