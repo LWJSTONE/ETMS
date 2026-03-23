@@ -126,16 +126,17 @@
               </el-checkbox-group>
 
               <!-- 判断题 -->
+              <!-- 修复：使用"正确"/"错误"作为答案值，与后端保持一致 -->
               <el-radio-group 
                 v-else-if="currentQuestion.questionType === 3" 
                 v-model="answers[currentQuestion.id]"
                 class="answer-options"
               >
-                <el-radio value="T" class="answer-option">
+                <el-radio value="正确" class="answer-option">
                   <span class="option-key">T.</span>
                   <span class="option-text">正确</span>
                 </el-radio>
-                <el-radio value="F" class="answer-option">
+                <el-radio value="错误" class="answer-option">
                   <span class="option-key">F.</span>
                   <span class="option-text">错误</span>
                 </el-radio>

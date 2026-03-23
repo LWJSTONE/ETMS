@@ -708,3 +708,42 @@ CREATE TABLE sys_job_log (
     KEY idx_status (status),
     KEY idx_execute_time (execute_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='定时任务日志表';
+
+-- =============================================
+-- 数据库优化修复脚本
+-- 修复业务逻辑问题：添加约束防止数据重复
+-- =============================================
+
+-- 修复1：为签到记录表添加防重复约束（防止同一天重复签到）
+-- 注意：由于已存在数据，先创建触发器或存储过程处理，这里先添加索引
+ALTER TABLE attendance_record ADD INDEX idx_user_plan_date_category (user_id, plan_id, sign_category, DATE(sign_time));
+
+-- 修复2：为补签申请表添加防重复约束
+ALTER TABLE attendance_apply ADD UNIQUE INDEX uk_user_plan_date (user_id, plan_id, sign_date);
+
+-- 修复3：为考试记录表添加复合索引优化查询性能
+ALTER TABLE exam_record ADD INDEX idx_user_paper_status (user_id, paper_id, status);
+
+-- 修复4：为试卷题目关联表添加复合索引优化排序查询
+ALTER TABLE exam_paper_question ADD INDEX idx_paper_sort (paper_id, sort_order);
+
+-- 修复5：为部门表添加负责人索引
+ALTER TABLE sys_dept ADD INDEX idx_leader_id (leader_id);
+
+-- 修复6：为岗位表添加状态索引
+ALTER TABLE sys_position ADD INDEX idx_status (status);
+
+-- 修复7：为分类表添加状态索引
+ALTER TABLE training_category ADD INDEX idx_status (status);
+
+-- 修复8：为配置表添加类型索引
+ALTER TABLE sys_config ADD INDEX idx_config_type (config_type);
+
+-- 修复9：为字典表添加状态索引
+ALTER TABLE sys_dict ADD INDEX idx_status (status);
+
+-- 修复10：扩展IP地址字段长度以支持IPv6
+ALTER TABLE sys_operation_log MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT '操作IP';
+ALTER TABLE sys_login_log MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT '登录IP';
+ALTER TABLE attendance_record MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT '签到IP地址';
+ALTER TABLE sys_user MODIFY login_ip VARCHAR(64) DEFAULT NULL COMMENT '最后登录IP';

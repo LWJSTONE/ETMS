@@ -424,8 +424,19 @@ const handleExport = async () => {
       params.endTime = searchForm.examTimeRange[1]
     }
     
-    // 调用后端导出接口
-    exportResults(params)
+    // 调用后端导出接口并正确处理Blob下载
+    const blob = await exportResults(params)
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `成绩数据_${new Date().toISOString().slice(0, 10)}.xlsx`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
     ElMessage.success('导出成功')
   } catch (error) {
     console.error(error)

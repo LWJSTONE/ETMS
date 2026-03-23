@@ -311,8 +311,9 @@ router.beforeEach(async (to, from, next) => {
   
   // 权限检查
   const userInfo = userStore.userInfo
-  const isAdmin = userInfo?.roleCode === 'admin' || userInfo?.roleCode === 'ADMIN'
-  
+  // 修复：roleNames 是数组，需要检查是否包含 admin 角色
+  const isAdmin = userInfo?.roleNames?.some(r => r.toLowerCase() === 'admin') ?? false
+
   // 检查是否访问需要管理员权限的路由
   if (!isAdmin && adminRoutes.some(route => to.path.startsWith(route))) {
     ElMessage.warning('您没有权限访问该页面')

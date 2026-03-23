@@ -62,4 +62,12 @@
         </foreach>
     </insert>
     
+    <!-- 原子性地增加登录失败计数，修复并发问题 -->
+    <update id="incrementLockCount">
+        UPDATE sys_user 
+        SET lock_count = IFNULL(lock_count, 0) + 1,
+            update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+    
 </mapper>

@@ -159,20 +159,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     /**
      * 处理登录失败
+     * 修复：使用数据库原子操作避免并发问题
      */
     private void handleLoginFail(User user) {
-        int failCount = (user.getLockCount() == null ? 0 : user.getLockCount()) + 1;
+        // 使用数据库原子操作更新失败计数，避免竞态条件
+        baseMapper.incrementLockCount(user.getId());
         
-        User updateUser = new User();
-        updateUser.setId(user.getId());
-        updateUser.setLockCount(failCount);
-        
-        // 超过最大失败次数，锁定账户
-        if (failCount >= MAX_LOGIN_FAIL_COUNT) {
-            updateUser.setLockTime(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
+        // 重新查询用户获取最新的失败计数
+        User updatedUser = baseMapper.selectById(user.getId());
+        if (updatedUser == null) {
+            return;
         }
         
-        baseMapper.updateById(updateUser);
+        // 超过最大失败次数，锁定账户
+        if (updatedUser.getLockCount() >= MAX_LOGIN_FAIL_COUNT) {
+            User lockUser = new User();
+            lockUser.setId(user.getId());
+            lockUser.setLockTime(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
+            baseMapper.updateById(lockUser);
+        }
     }
     
     /**

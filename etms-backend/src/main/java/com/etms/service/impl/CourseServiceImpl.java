@@ -71,11 +71,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         vo.setDifficultyName(getDifficultyName(course.getDifficulty()));
         vo.setStatusName(getStatusName(course.getStatus()));
         
-        // 更新浏览次数
-        Course updateCourse = new Course();
-        updateCourse.setId(id);
-        updateCourse.setViewCount(course.getViewCount() + 1);
-        baseMapper.updateById(updateCourse);
+        // 修复并发问题：使用数据库原子操作更新浏览次数
+        baseMapper.incrementViewCount(id);
         
         return vo;
     }

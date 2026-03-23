@@ -37,4 +37,12 @@ public interface UserMapper extends BaseMapper<User> {
      * 批量插入用户角色关联
      */
     int batchInsertUserRole(@Param("list") List<Map<String, Long>> list);
+    
+    /**
+     * 原子性地增加登录失败计数
+     * 修复并发问题：使用数据库原子操作
+     * @param userId 用户ID
+     * @return 影响的行数
+     */
+    int incrementLockCount(@Param("userId") Long userId);
 }

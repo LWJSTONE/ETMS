@@ -241,8 +241,14 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             }
         }
         
+        // 修复并发问题：使用乐观锁方式更新状态
+        // 先尝试将状态从1（进行中）更新为2（已完成），如果更新失败说明已被其他线程处理
+        int updateCount = baseMapper.updateStatusToSubmitted(recordId, 1, 2);
+        if (updateCount == 0) {
+            throw new BusinessException("考试已提交，请勿重复提交");
+        }
+        
         // 计算分数（简化处理，实际应根据答案计算）
-        // TODO: 实现详细的评分逻辑
         int userScore = calculateScore(record.getPaperId(), answers);
         
         // 计算实际用时（分钟）
@@ -253,15 +259,16 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             durationUsed = (int) duration.toMinutes();
         }
         
-        // 更新考试记录
-        record.setStatus(2); // 已完成
-        record.setUserScore(userScore);
-        record.setPassed(userScore >= paper.getPassScore() ? 1 : 0);
-        record.setSubmitTime(submitTime);
-        record.setDurationUsed(durationUsed);
-        record.setAnswerDetail(answers); // 保存答题详情
+        // 更新考试记录的其他信息
+        ExamRecord updateRecord = new ExamRecord();
+        updateRecord.setId(recordId);
+        updateRecord.setUserScore(userScore);
+        updateRecord.setPassed(userScore >= paper.getPassScore() ? 1 : 0);
+        updateRecord.setSubmitTime(submitTime);
+        updateRecord.setDurationUsed(durationUsed);
+        updateRecord.setAnswerDetail(answers); // 保存答题详情
         
-        baseMapper.updateById(record);
+        baseMapper.updateById(updateRecord);
     }
     
     @Override
