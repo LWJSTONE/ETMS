@@ -2,6 +2,7 @@ package com.etms.dto;
 
 import lombok.Data;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 
 /**
@@ -14,6 +15,7 @@ public class LoginDTO implements Serializable {
 
     /** 用户名 */
     @NotBlank(message = "用户名不能为空")
+    @Pattern(regexp = "^[a-zA-Z0-9_]{3,20}$", message = "用户名长度为3-20位，只能包含字母、数字和下划线")
     private String username;
 
     /** 密码 */

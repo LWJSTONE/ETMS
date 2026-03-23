@@ -2,6 +2,9 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress'
 
+// 401错误处理标志位，防止并发请求时重复跳转登录页
+let isRedirecting = false
+
 // 创建axios实例
 const service: AxiosInstance = axios.create({
   baseURL: '/api',
@@ -38,8 +41,12 @@ service.interceptors.response.use(
       
       // 401 未授权
       if (res.code === 401) {
-        localStorage.removeItem('token')
-        window.location.href = '/login'
+        if (!isRedirecting) {
+          isRedirecting = true
+          localStorage.removeItem('token')
+          ElMessage.error('登录已过期，请重新登录')
+          window.location.href = '/login'
+        }
       }
       
       return Promise.reject(new Error(res.message || '请求失败'))
@@ -53,9 +60,12 @@ service.interceptors.response.use(
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          ElMessage.error('未授权，请重新登录')
-          localStorage.removeItem('token')
-          window.location.href = '/login'
+          if (!isRedirecting) {
+            isRedirecting = true
+            ElMessage.error('未授权，请重新登录')
+            localStorage.removeItem('token')
+            window.location.href = '/login'
+          }
           break
         case 403:
           ElMessage.error('拒绝访问')

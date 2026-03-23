@@ -30,6 +30,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -51,6 +52,9 @@ import java.security.SecureRandom;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+    
+    @Value("${jwt.expiration}")
+    private Long jwtExpiration;
     
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
@@ -116,7 +120,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             // 构建返回对象
             LoginVO loginVO = new LoginVO();
             loginVO.setAccessToken(token);
-            loginVO.setExpiresIn(86400L);
+            loginVO.setExpiresIn(jwtExpiration / 1000); // 转换为秒
             loginVO.setUserId(user.getId());
             loginVO.setUsername(user.getUsername());
             loginVO.setRealName(user.getRealName());

@@ -317,6 +317,23 @@ const form = reactive({
   planObjective: ''
 })
 
+// 日期范围验证器 - 结束日期必须大于开始日期
+const validateDateRange = (rule: any, value: string[], callback: any) => {
+  if (!value || value.length === 0) {
+    callback(new Error('请选择培训日期'))
+    return
+  }
+  if (value[0] && value[1]) {
+    const startDate = new Date(value[0])
+    const endDate = new Date(value[1])
+    if (endDate <= startDate) {
+      callback(new Error('结束日期必须大于开始日期'))
+      return
+    }
+  }
+  callback()
+}
+
 // 表单验证规则
 const rules: FormRules = {
   planName: [
@@ -332,7 +349,7 @@ const rules: FormRules = {
     { required: true, message: '请选择关联课程', trigger: 'change' }
   ],
   dateRange: [
-    { required: true, message: '请选择培训日期', trigger: 'change' }
+    { required: true, validator: validateDateRange, trigger: 'change' }
   ],
   targetType: [
     { required: true, message: '请选择目标类型', trigger: 'change' }

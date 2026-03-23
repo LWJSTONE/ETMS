@@ -164,7 +164,7 @@ const rules: FormRules = {
     { pattern: /^[a-zA-Z0-9_]+$/, message: '编码只能包含字母、数字和下划线', trigger: 'blur' }
   ],
   sortOrder: [
-    { required: true, message: '请输入排序', trigger: 'blur' }
+    { required: true, message: '请输入排序', trigger: 'change' }
   ],
   status: [
     { required: true, message: '请选择状态', trigger: 'change' }

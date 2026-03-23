@@ -299,7 +299,7 @@ import {
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import { getDeptTree } from '@/api/dept'
-import { getPaperList, getResultList } from '@/api/exam'
+import { getPaperList, getResultList, getResultStats } from '@/api/exam'
 
 // Histogram 图标使用 DataLine 代替
 const Histogram = DataLine
@@ -432,6 +432,9 @@ const getPaperListData = async () => {
 const getReportData = async () => {
   loading.value = true
   try {
+    // 注意：此处使用较大size值获取全量数据进行前端统计计算
+    // 性能优化建议：后端应提供专门的统计聚合接口，避免传输大量数据
+    // 当前保留此方式是因为需要计算各试卷、各部门的详细统计数据
     const params: any = {
       current: 1,
       size: 10000

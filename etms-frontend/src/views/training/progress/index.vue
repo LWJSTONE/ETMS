@@ -191,11 +191,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, Download, View } from '@element-plus/icons-vue'
 import { getProgressList, getProgressDetail } from '@/api/training'
 import { getPlanList } from '@/api/training'
+import { useUserStore } from '@/stores/user'
 
 // 定义进度数据类型
 interface ProgressItem {
@@ -219,6 +220,20 @@ interface StudyRecord {
   duration: number
   progress: number
 }
+
+const userStore = useUserStore()
+
+// 权限检查函数
+const hasPermission = (permission: string): boolean => {
+  const permissions = userStore.userInfo?.permissions || []
+  const roles = userStore.userInfo?.roles || []
+  // 管理员角色拥有所有权限
+  if (roles.includes('admin') || roles.includes('ADMIN')) return true
+  return permissions.includes(permission)
+}
+
+// 检查是否有导出权限
+const canExport = computed(() => hasPermission('training:progress:export'))
 
 // 搜索表单
 const searchForm = reactive({
@@ -300,9 +315,13 @@ const getList = async () => {
   try {
     const params: any = {
       current: pagination.current,
-      size: pagination.size,
-      ...searchForm
+      size: pagination.size
     }
+    
+    // 过滤掉空值参数，避免传递无效参数
+    if (searchForm.userName) params.userName = searchForm.userName
+    if (searchForm.planId !== null) params.planId = searchForm.planId
+    if (searchForm.status !== null) params.status = searchForm.status
     
     // 添加排序参数
     if (sortInfo.prop && sortInfo.order) {
@@ -379,6 +398,12 @@ const handleViewDetail = async (row: ProgressItem) => {
 
 // 导出
 const handleExport = async () => {
+  // 权限检查
+  if (!canExport.value) {
+    ElMessage.warning('您没有导出学习进度的权限')
+    return
+  }
+  
   try {
     // 构建导出数据
     const exportData = tableData.value.map(item => ({
@@ -390,6 +415,11 @@ const handleExport = async () => {
       '完成状态': getStatusName(item.status),
       '最后学习时间': item.lastStudyTime || '-'
     }))
+    
+    if (exportData.length === 0) {
+      ElMessage.warning('没有可导出的数据')
+      return
+    }
     
     // 使用第三方库或原生方式导出Excel
     // 这里使用简单的CSV导出

@@ -316,6 +316,7 @@ const handleExport = async () => {
     ElMessage.success('日志导出成功')
   } catch (error) {
     console.error('导出日志失败:', error)
+    ElMessage.error('导出日志失败')
   }
 }
 

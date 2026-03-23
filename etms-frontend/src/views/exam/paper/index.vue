@@ -294,6 +294,38 @@ const form = reactive({
   description: ''
 })
 
+// 自定义验证规则：及格分不能大于总分
+const validatePassScore = (rule: any, value: number, callback: any) => {
+  if (value === undefined || value === null) {
+    callback(new Error('请输入及格分数'))
+  } else if (value > form.totalScore) {
+    callback(new Error('及格分数不能大于总分'))
+  } else if (value < 0) {
+    callback(new Error('及格分数不能为负数'))
+  } else {
+    callback()
+  }
+}
+
+// 自定义验证规则：时间范围验证
+const validateTimeRange = (rule: any, value: string[], callback: any) => {
+  if (!value || value.length === 0) {
+    callback() // 时间范围可选，不强制验证
+  } else if (value.length !== 2) {
+    callback(new Error('请选择完整的考试时间范围'))
+  } else {
+    const startTime = new Date(value[0]).getTime()
+    const endTime = new Date(value[1]).getTime()
+    if (isNaN(startTime) || isNaN(endTime)) {
+      callback(new Error('时间格式不正确'))
+    } else if (startTime >= endTime) {
+      callback(new Error('开始时间必须早于结束时间'))
+    } else {
+      callback()
+    }
+  }
+}
+
 // 表单验证规则
 const rules: FormRules = {
   paperName: [
@@ -308,10 +340,14 @@ const rules: FormRules = {
     { required: true, message: '请输入总分', trigger: 'blur' }
   ],
   passScore: [
-    { required: true, message: '请输入及格分数', trigger: 'blur' }
+    { required: true, message: '请输入及格分数', trigger: 'blur' },
+    { validator: validatePassScore, trigger: 'change' }
   ],
   duration: [
     { required: true, message: '请输入考试时长', trigger: 'blur' }
+  ],
+  timeRange: [
+    { validator: validateTimeRange, trigger: 'change' }
   ]
 }
 

@@ -106,6 +106,27 @@
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="请输入邮箱" />
         </el-form-item>
+        <el-form-item label="部门" prop="deptId">
+          <el-tree-select
+            v-model="form.deptId"
+            :data="deptTree"
+            :props="{ label: 'deptName', value: 'id', children: 'children' }"
+            placeholder="请选择部门"
+            clearable
+            check-strictly
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="职位" prop="positionId">
+          <el-select v-model="form.positionId" placeholder="请选择职位" clearable style="width: 100%">
+            <el-option
+              v-for="position in positionList"
+              :key="position.id"
+              :label="position.positionName"
+              :value="position.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
             <el-radio :value="1">正常</el-radio>
@@ -153,6 +174,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getUserList, getUserDetail, createUser, updateUser, deleteUser, resetPassword, assignRoles, exportUsers } from '@/api/user'
 import { getRoleListAll } from '@/api/role'
+import { getDeptTree } from '@/api/dept'
+import { getPositionList } from '@/api/position'
+import type { Dept } from '@/api/types'
 
 const searchForm = reactive({ username: '', realName: '', status: null as number | null })
 const tableData = ref<any[]>([])
@@ -170,6 +194,8 @@ const form = reactive({
   gender: 1,
   phone: '',
   email: '',
+  deptId: null as number | null,
+  positionId: null as number | null,
   status: 1
 })
 
@@ -178,6 +204,10 @@ const roleDialogVisible = ref(false)
 const roleList = ref<any[]>([])
 const selectedRoleIds = ref<number[]>([])
 const currentUser = reactive({ id: 0, username: '', realName: '' })
+
+// 部门和职位数据
+const deptTree = ref<Dept[]>([])
+const positionList = ref<any[]>([])
 
 // 手机号验证规则
 const phoneValidator = (rule: any, value: string, callback: any) => {
@@ -248,12 +278,30 @@ const getRoleList = async () => {
   }
 }
 
+const getDeptTreeData = async () => {
+  try {
+    const res = await getDeptTree()
+    deptTree.value = res.data || []
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const getPositionListData = async () => {
+  try {
+    const res = await getPositionList({ current: 1, size: 1000, status: 1 })
+    positionList.value = res.data?.records || []
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 const handleSearch = () => { pagination.current = 1; getList() }
 const handleReset = () => { Object.assign(searchForm, { username: '', realName: '', status: null }); handleSearch() }
 
 const handleAdd = () => { 
   isEdit.value = false
-  Object.assign(form, { id: null, username: '', password: '', realName: '', gender: 1, phone: '', email: '', status: 1 })
+  Object.assign(form, { id: null, username: '', password: '', realName: '', gender: 1, phone: '', email: '', deptId: null, positionId: null, status: 1 })
   dialogVisible.value = true
 }
 
@@ -271,6 +319,8 @@ const handleEdit = async (row: any) => {
       gender: userData.gender || 1, 
       phone: userData.phone || '', 
       email: userData.email || '', 
+      deptId: userData.deptId || null,
+      positionId: userData.positionId || null,
       status: userData.status 
     })
   } catch (error) {
@@ -284,6 +334,8 @@ const handleEdit = async (row: any) => {
       gender: row.gender || 1, 
       phone: row.phone || '', 
       email: row.email || '', 
+      deptId: row.deptId || null,
+      positionId: row.positionId || null,
       status: row.status 
     })
   }
@@ -347,6 +399,8 @@ const handleSubmit = async () => {
         gender: form.gender,
         phone: form.phone,
         email: form.email,
+        deptId: form.deptId,
+        positionId: form.positionId,
         status: form.status
       }
       await updateUser(form.id!, updateData)
@@ -360,6 +414,8 @@ const handleSubmit = async () => {
         gender: form.gender,
         phone: form.phone,
         email: form.email,
+        deptId: form.deptId,
+        positionId: form.positionId,
         status: form.status
       }
       await createUser(createData)
@@ -393,7 +449,7 @@ const handleExport = async () => {
   }
 }
 
-onMounted(() => { getList(); getRoleList() })
+onMounted(() => { getList(); getRoleList(); getDeptTreeData(); getPositionListData() })
 </script>
 
 <style lang="scss" scoped>

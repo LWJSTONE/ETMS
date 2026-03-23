@@ -33,7 +33,7 @@
               </el-menu-item>
             </el-sub-menu>
             <!-- 无子菜单 -->
-            <el-menu-item v-else :index="route.children?.[0]?.path || route.path">
+            <el-menu-item v-else :index="getFullPath(route.path, route.children?.[0]?.path)">
               <el-icon><component :is="route.meta?.icon || route.children?.[0]?.meta?.icon" /></el-icon>
               <span>{{ route.meta?.title || route.children?.[0]?.meta?.title }}</span>
             </el-menu-item>
@@ -139,6 +139,16 @@ const isCollapse = ref(false)
 
 // 当前激活菜单
 const activeMenu = computed(() => route.path)
+
+// 获取完整菜单路径（正确拼接父路径）
+const getFullPath = (parentPath: string, childPath?: string) => {
+  if (!childPath) return parentPath
+  // 处理根路径的情况，避免出现 //dashboard
+  if (parentPath === '/') {
+    return `/${childPath}`
+  }
+  return `${parentPath}/${childPath}`
+}
 
 // 面包屑
 const breadcrumbs = computed(() => {

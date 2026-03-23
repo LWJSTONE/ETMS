@@ -315,7 +315,9 @@ const handleSubmit = async () => {
   if (!valid) return
   try {
     if (isEdit.value) { 
-      await updateRole(form.id!, form)
+      // 编辑时排除id字段后再传递
+      const { id, ...updateData } = form
+      await updateRole(form.id!, updateData)
       ElMessage.success('更新成功') 
     } else { 
       await createRole(form)

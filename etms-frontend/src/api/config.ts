@@ -20,6 +20,7 @@ export interface ConfigParams {
   configValue: string
   configType: string
   status: number
+  sortOrder?: number
   remark?: string
 }
 

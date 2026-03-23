@@ -651,8 +651,8 @@ export interface CategoryUpdateParams {
 export interface LoginParams {
   username: string
   password: string
-  captcha?: string
-  captchaKey?: string
+  captcha: string
+  captchaKey: string
 }
 
 export interface LoginResult {

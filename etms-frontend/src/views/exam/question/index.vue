@@ -45,7 +45,7 @@
       <template #header>
         <div class="card-header">
           <span>题目列表</span>
-          <el-button type="primary" @click="handleAdd">
+          <el-button v-permission="['exam:question:add']" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>新增
           </el-button>
         </div>

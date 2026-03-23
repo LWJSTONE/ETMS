@@ -410,6 +410,9 @@ const getStatistics = async () => {
     allPlans.value = planRes.data?.records || []
     
     // 获取所有学习进度数据（用于统计）
+    // 注意：此处使用较大size值获取全量数据进行前端统计计算
+    // 性能优化建议：后端应提供专门的培训统计聚合接口，避免传输大量数据
+    // 当前保留此方式是因为需要计算各部门、各培训计划的详细统计数据
     const progressRes = await getProgressList({ current: 1, size: 10000 })
     allProgress.value = progressRes.data?.records || []
     
@@ -566,6 +569,9 @@ const getTableList = async () => {
     pagination.total = planRes.data?.total || 0
     
     // 获取所有学习进度用于计算统计数据
+    // 注意：此处使用较大size值获取全量数据进行前端统计计算
+    // 性能优化建议：后端应提供专门的培训统计聚合接口，避免传输大量数据
+    // 当前保留此方式是因为需要计算各部门、各培训计划的详细统计数据
     const progressRes = await getProgressList({ current: 1, size: 10000 })
     const allProgressData = progressRes.data?.records || []
     

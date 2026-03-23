@@ -170,7 +170,8 @@ const form = reactive({
 // 表单验证规则
 const rules: FormRules = {
   categoryName: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
-  categoryCode: [{ required: true, message: '请输入分类编码', trigger: 'blur' }]
+  categoryCode: [{ required: true, message: '请输入分类编码', trigger: 'blur' }],
+  categoryType: [{ required: true, message: '请选择分类类型', trigger: 'change' }]
 }
 
 // 获取分类树形数据

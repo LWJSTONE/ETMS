@@ -68,13 +68,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getCaptcha } from '@/api/auth'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const loginFormRef = ref<FormInstance>()
@@ -108,7 +109,8 @@ const loginRules: FormRules = {
     { required: true, validator: validateUsername, trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
   ],
   captcha: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
@@ -165,7 +167,9 @@ const handleLogin = async () => {
   try {
     await userStore.loginAction(loginForm.username, loginForm.password, loginForm.captcha, captchaKey.value)
     ElMessage.success('登录成功')
-    router.push('/')
+    // 登录成功后跳转到原目标页面或首页
+    const redirect = route.query.redirect as string
+    router.push(redirect || '/')
   } catch (error: any) {
     const errorMessage = getErrorMessage(error)
     ElMessage.error(errorMessage)

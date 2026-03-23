@@ -203,22 +203,25 @@
     </el-dialog>
 
     <!-- 审核驳回对话框 -->
-    <el-dialog v-model="auditDialogVisible" title="审核驳回" width="500px">
-      <el-form :model="auditForm" label-width="100px">
-        <el-form-item label="驳回原因">
+    <el-dialog v-model="auditDialogVisible" title="审核驳回" width="500px" @open="handleAuditDialogOpen">
+      <el-form ref="auditFormRef" :model="auditForm" :rules="auditRules" label-width="100px">
+        <el-form-item label="驳回原因" prop="auditRemark">
           <el-input
+            ref="auditRemarkInput"
             v-model="auditForm.auditRemark"
             type="textarea"
-            :rows="3"
-            placeholder="请输入驳回原因"
+            :rows="4"
+            placeholder="请输入驳回原因（必填，至少5个字符）"
             maxlength="200"
             show-word-limit
+            :class="{ 'is-error': auditRemarkError }"
           />
+          <div v-if="auditRemarkError" class="error-tip">{{ auditRemarkError }}</div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="auditDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmAudit" :loading="auditLoading">确定</el-button>
+        <el-button @click="handleAuditCancel">取消</el-button>
+        <el-button type="primary" @click="confirmAudit" :loading="auditLoading">确定驳回</el-button>
       </template>
     </el-dialog>
   </div>
@@ -303,11 +306,22 @@ const rules: FormRules = {
 // 审核相关
 const auditDialogVisible = ref(false)
 const auditLoading = ref(false)
+const auditFormRef = ref<FormInstance>()
+const auditRemarkInput = ref<any>(null)
+const auditRemarkError = ref('')
 const auditForm = reactive({
   id: null as number | null,
   status: null as number | null,
   auditRemark: ''
 })
+
+// 审核表单验证规则
+const auditRules: FormRules = {
+  auditRemark: [
+    { required: true, message: '请输入驳回原因', trigger: 'blur' },
+    { min: 5, message: '驳回原因至少需要5个字符', trigger: 'blur' }
+  ]
+}
 
 // 获取课程类型标签
 const getCourseTypeTag = (type: number) => {
@@ -489,6 +503,7 @@ const handleAudit = async (row: any, status: number) => {
     auditForm.id = row.id
     auditForm.status = status
     auditForm.auditRemark = ''
+    auditRemarkError.value = ''
     auditDialogVisible.value = true
   } else {
     // 审核通过
@@ -506,17 +521,45 @@ const handleAudit = async (row: any, status: number) => {
   }
 }
 
+// 审核对话框打开时的处理
+const handleAuditDialogOpen = () => {
+  // 清除之前的错误状态
+  auditRemarkError.value = ''
+  // 延迟聚焦，确保DOM已渲染
+  setTimeout(() => {
+    auditRemarkInput.value?.focus()
+  }, 100)
+}
+
+// 取消审核驳回
+const handleAuditCancel = () => {
+  auditDialogVisible.value = false
+  auditFormRef.value?.resetFields()
+  auditRemarkError.value = ''
+}
+
 // 确认审核驳回
 const confirmAudit = async () => {
-  if (!auditForm.auditRemark) {
-    ElMessage.warning('请输入驳回原因')
+  // 表单验证
+  const valid = await auditFormRef.value?.validate().catch(() => false)
+  if (!valid) {
+    auditRemarkError.value = '请输入驳回原因（至少5个字符）'
     return
   }
+  
+  // 额外验证驳回原因长度
+  if (!auditForm.auditRemark || auditForm.auditRemark.trim().length < 5) {
+    auditRemarkError.value = '驳回原因至少需要5个字符'
+    return
+  }
+  
+  auditRemarkError.value = ''
   auditLoading.value = true
   try {
     await auditCourse(auditForm.id!, { status: auditForm.status!, auditRemark: auditForm.auditRemark })
-    ElMessage.success('审核成功')
+    ElMessage.success('审核驳回成功')
     auditDialogVisible.value = false
+    auditFormRef.value?.resetFields()
     getList()
   } catch (error: any) {
     console.error('审核失败:', error)
@@ -594,6 +637,19 @@ onMounted(() => {
       margin-top: 20px;
       justify-content: flex-end;
     }
+  }
+}
+
+.error-tip {
+  color: #f56c6c;
+  font-size: 12px;
+  line-height: 1;
+  padding-top: 4px;
+}
+
+:deep(.is-error) {
+  .el-textarea__inner {
+    border-color: #f56c6c;
   }
 }
 </style>

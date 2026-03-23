@@ -372,9 +372,13 @@ const handleStartExam = async (exam: any) => {
     exam.starting = true
     const res = await startExam(exam.id)
     ElMessage.success('考试已开始，请认真作答！')
-    // 显示考试开始成功提示
-    // TODO: 实现考试答题页面后可以跳转
-    // router.push(`/my/exam/taking/${res.data?.id || res.data}`)
+    
+    // 跳转到考试答题页面
+    const examRecordId = res.data?.id || res.data
+    if (examRecordId) {
+      router.push(`/my/exam/taking/${examRecordId}`)
+    }
+    
     getHistoryRecords()
   } catch (error: any) {
     if (error !== 'cancel') {

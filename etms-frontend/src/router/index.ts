@@ -1,6 +1,13 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import NProgress from 'nprogress'
 import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
+
+// 白名单路由（无需登录即可访问）
+const whiteList = ['/login', '/404']
+
+// 需要管理员权限的路由
+const adminRoutes = ['/system', '/training', '/attendance', '/exam', '/report']
 
 const routes: RouteRecordRaw[] = [
   {
@@ -214,6 +221,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '我的考试', icon: 'Edit' }
       },
       {
+        path: 'exam/taking/:id',
+        name: 'ExamTaking',
+        component: () => import('@/views/my/exam/taking.vue'),
+        meta: { title: '考试答题', icon: 'Edit', hidden: true }
+      },
+      {
         path: 'progress',
         name: 'MyProgress',
         component: () => import('@/views/my/progress/index.vue'),
@@ -241,19 +254,63 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   NProgress.start()
   
   const userStore = useUserStore()
   const token = userStore.token
   
-  if (to.path === '/login') {
+  // 设置页面标题
+  document.title = (to.meta?.title as string) || 'ETMS'
+  
+  // 白名单路由直接放行
+  if (whiteList.some(path => to.path.startsWith(path))) {
+    // 已登录用户访问登录页，重定向到首页
+    if (to.path === '/login' && token) {
+      next({ path: '/' })
+      return
+    }
     next()
-  } else if (!token) {
-    next('/login')
-  } else {
-    next()
+    return
   }
+  
+  // 未登录，保存目标路由并重定向到登录页
+  if (!token) {
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }  // 保存原目标路由
+    })
+    return
+  }
+  
+  // 已登录但无用户信息，尝试获取
+  if (!userStore.userInfo) {
+    try {
+      await userStore.getUserInfoAction()
+    } catch (error) {
+      // 获取用户信息失败，清除token并重定向到登录页
+      userStore.token = ''
+      localStorage.removeItem('token')
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+      return
+    }
+  }
+  
+  // 权限检查
+  const userInfo = userStore.userInfo
+  const isAdmin = userInfo?.roleCode === 'admin' || userInfo?.roleCode === 'ADMIN'
+  
+  // 检查是否访问需要管理员权限的路由
+  if (!isAdmin && adminRoutes.some(route => to.path.startsWith(route))) {
+    ElMessage.warning('您没有权限访问该页面')
+    next({ path: '/my/course' })  // 普通用户重定向到我的培训
+    return
+  }
+  
+  next()
 })
 
 router.afterEach(() => {

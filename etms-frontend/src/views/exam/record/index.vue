@@ -181,7 +181,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, Check, Close } from '@element-plus/icons-vue'
-import { getExamRecordList, getExamRecordDetail } from '@/api/exam'
+import { getExamRecordList, getExamRecordDetail, exportResults } from '@/api/exam'
 
 // 定义类型
 interface Answer {
@@ -297,8 +297,9 @@ const getList = async () => {
     })
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取考试记录列表失败')
   } finally {
     loading.value = false
   }
@@ -338,19 +339,10 @@ const handleViewDetail = async (row: ExamRecord) => {
 // 导出
 const handleExport = async () => {
   try {
-    // 使用后端导出API
-    const response = await fetch('/api/exam/records/export', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
+    // 使用封装的导出API
+    const blob = await exportResults()
     
-    if (!response.ok) {
-      throw new Error('导出失败')
-    }
-    
-    const blob = await response.blob()
+    // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
