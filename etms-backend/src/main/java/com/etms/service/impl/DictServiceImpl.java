@@ -145,6 +145,19 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     
     @Override
     public void updateDictData(DictData dictData) {
+        // 修复：添加唯一性校验（同一字典类型下dictLabel不能重复，排除自身）
+        if (dictData.getDictLabel() != null && dictData.getDictTypeId() != null) {
+            Long count = dictDataMapper.selectCount(
+                new LambdaQueryWrapper<DictData>()
+                    .eq(DictData::getDictTypeId, dictData.getDictTypeId())
+                    .eq(DictData::getDictLabel, dictData.getDictLabel())
+                    .ne(dictData.getId() != null, DictData::getId, dictData.getId())
+            );
+            if (count > 0) {
+                throw new BusinessException("该字典类型下已存在相同标签的数据");
+            }
+        }
+        
         dictDataMapper.updateById(dictData);
         
         // 修复：更新缓存

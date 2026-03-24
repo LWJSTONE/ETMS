@@ -81,6 +81,10 @@ public class CategoryController {
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+        // 验证状态值合法性
+        if (status == null || (status != 0 && status != 1)) {
+            return Result.error("状态值不合法，有效值为0(禁用)或1(正常)");
+        }
         categoryService.updateStatus(id, status);
         return Result.success();
     }

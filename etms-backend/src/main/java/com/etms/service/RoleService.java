@@ -50,4 +50,9 @@ public interface RoleService extends IService<Role> {
      * 获取角色权限ID列表
      */
     List<Long> getPermissionIdsByRoleId(Long roleId);
+    
+    /**
+     * 修改角色状态
+     */
+    void updateStatus(Long id, Integer status);
 }

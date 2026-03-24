@@ -85,6 +85,7 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
     }
     
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public void deletePosition(Long id) {
         // 检查是否有用户关联此岗位
         Long userCount = userMapper.selectCount(

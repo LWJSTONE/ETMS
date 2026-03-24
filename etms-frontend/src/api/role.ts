@@ -61,3 +61,8 @@ export interface PermissionTreeNode {
 export function getPermissionTree(): Promise<ApiResponse<PermissionTreeNode[]>> {
   return request.get('/system/permissions/tree')
 }
+
+// 修改角色状态
+export function updateRoleStatus(id: number, status: number): Promise<ApiResponse<void>> {
+  return request.put(`/system/roles/${id}/status`, { status })
+}

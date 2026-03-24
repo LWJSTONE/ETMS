@@ -112,6 +112,7 @@ public class PositionController {
     
     @ApiOperation(value = "获取所有岗位列表")
     @GetMapping("/all")
+    @PreAuthorize("hasAuthority('system:position:list')")
     public Result<java.util.List<Position>> listAll() {
         java.util.List<Position> list = positionService.list(
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Position>()

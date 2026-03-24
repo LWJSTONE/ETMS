@@ -264,4 +264,32 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             .map(RolePermission::getPermissionId)
             .collect(Collectors.toList());
     }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateStatus(Long id, Integer status) {
+        // 获取角色信息
+        Role role = baseMapper.selectById(id);
+        if (role == null) {
+            throw new BusinessException("角色不存在");
+        }
+        
+        // 验证状态值合法性
+        if (status == null || (status != 0 && status != 1)) {
+            throw new BusinessException("状态值不合法，有效值为0(禁用)或1(正常)");
+        }
+        
+        // 禁止禁用系统内置角色
+        if ("ADMIN".equals(role.getRoleCode()) || "admin".equals(role.getRoleCode())) {
+            if (status == 0) {
+                throw new BusinessException("系统内置管理员角色不能禁用");
+            }
+        }
+        
+        // 更新状态
+        Role updateRole = new Role();
+        updateRole.setId(id);
+        updateRole.setStatus(status);
+        baseMapper.updateById(updateRole);
+    }
 }
