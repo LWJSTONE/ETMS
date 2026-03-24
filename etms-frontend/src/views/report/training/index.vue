@@ -405,16 +405,46 @@ const getDeptData = async () => {
 const getStatistics = async () => {
   statsLoading.value = true
   try {
-    // 获取所有培训计划数据（用于统计）
-    const planRes = await getPlanList({ current: 1, size: 1000 })
+    // 构建查询参数，支持时间范围筛选
+    const params: any = { current: 1, size: 500 }
+    if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+      params.startDate = searchForm.dateRange[0]
+      params.endDate = searchForm.dateRange[1]
+    }
+    if (searchForm.deptId !== null) {
+      params.deptId = searchForm.deptId
+    }
+    if (searchForm.planType !== null) {
+      params.planType = searchForm.planType
+    }
+    
+    // 获取培训计划数据（限制数量以提高性能）
+    const planRes = await getPlanList(params)
     allPlans.value = planRes.data?.records || []
     
-    // 获取所有学习进度数据（用于统计）
-    // 注意：此处使用较大size值获取全量数据进行前端统计计算
-    // 性能优化建议：后端应提供专门的培训统计聚合接口，避免传输大量数据
-    // 当前保留此方式是因为需要计算各部门、各培训计划的详细统计数据
-    const progressRes = await getProgressList({ current: 1, size: 10000 })
+    // 如果数据量达到上限，给出提示
+    if (allPlans.value.length >= 500) {
+      ElMessage.warning('数据量较大，当前仅显示前500条培训计划。建议缩小查询范围获取更精确的统计数据。')
+    }
+    
+    // 获取学习进度数据（限制数量以提高性能）
+    // 注意：后端应提供专门的培训统计聚合接口，避免传输大量数据
+    const progressParams: any = { current: 1, size: 2000 }
+    if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+      progressParams.startDate = searchForm.dateRange[0]
+      progressParams.endDate = searchForm.dateRange[1]
+    }
+    if (searchForm.deptId !== null) {
+      progressParams.deptId = searchForm.deptId
+    }
+    
+    const progressRes = await getProgressList(progressParams)
     allProgress.value = progressRes.data?.records || []
+    
+    // 如果数据量达到上限，给出提示
+    if (allProgress.value.length >= 2000) {
+      ElMessage.warning('学习进度数据量较大，当前仅显示前2000条记录。建议缩小查询范围获取更精确的统计数据。')
+    }
     
     // 计算统计数据
     const stats = calculateStatistics(allPlans.value, allProgress.value)
@@ -568,11 +598,31 @@ const getTableList = async () => {
     const plans = planRes.data?.records || []
     pagination.total = planRes.data?.total || 0
     
-    // 获取所有学习进度用于计算统计数据
-    // 注意：此处使用较大size值获取全量数据进行前端统计计算
-    // 性能优化建议：后端应提供专门的培训统计聚合接口，避免传输大量数据
-    // 当前保留此方式是因为需要计算各部门、各培训计划的详细统计数据
-    const progressRes = await getProgressList({ current: 1, size: 10000 })
+    // 如果当前页没有数据，不再请求学习进度
+    if (plans.length === 0) {
+      tableData.value = []
+      return
+    }
+    
+    // 获取当前页培训计划的学习进度数据
+    // 限制查询数量以提高性能
+    const planIds = plans.map((p: TrainingPlan) => p.id)
+    const progressParams: any = {
+      current: 1,
+      size: 1000, // 限制每次最多获取1000条进度记录
+      planIds: planIds.join(',')
+    }
+    
+    // 添加筛选条件
+    if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+      progressParams.startDate = searchForm.dateRange[0]
+      progressParams.endDate = searchForm.dateRange[1]
+    }
+    if (searchForm.deptId !== null) {
+      progressParams.deptId = searchForm.deptId
+    }
+    
+    const progressRes = await getProgressList(progressParams)
     const allProgressData = progressRes.data?.records || []
     
     // 为每个培训计划计算统计数据

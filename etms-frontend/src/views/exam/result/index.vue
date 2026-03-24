@@ -413,6 +413,12 @@ const handleReset = () => {
 
 // 导出成绩
 const handleExport = async () => {
+  // 检查是否有数据可导出
+  if (pagination.total === 0 || tableData.value.length === 0) {
+    ElMessage.warning('暂无数据可导出')
+    return
+  }
+  
   exportLoading.value = true
   try {
     // 构建导出参数

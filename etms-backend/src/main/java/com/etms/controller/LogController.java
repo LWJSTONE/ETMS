@@ -65,15 +65,11 @@ public class LogController {
     public Result<Void> clear(
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime) {
-        // 修复：添加时间范围参数，防止清空全部日志
-        // 必须指定时间范围才能清空，防止误操作
-        if (startTime == null || startTime.isEmpty()) {
-            return Result.error("清空日志必须指定开始时间");
-        }
-        if (endTime == null || endTime.isEmpty()) {
-            return Result.error("清空日志必须指定结束时间");
-        }
-        
+        // 修复：参数可选，当不传参数时清空全部日志
+        // 当只传startTime时，清空该日期之后的日志
+        // 当只传endTime时，清空该日期之前的日志
+        // 当两个参数都传时，清空指定时间范围内的日志
+        // 当两个参数都不传时，清空全部日志（需谨慎操作）
         logService.clearLogs(startTime, endTime);
         return Result.success();
     }

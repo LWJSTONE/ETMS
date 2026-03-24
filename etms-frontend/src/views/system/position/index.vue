@@ -68,8 +68,8 @@
         :total="pagination.total"
         :page-sizes="[10, 20, 50, 100]"
         layout="total, sizes, prev, pager, next, jumper"
-        @size-change="getList"
-        @current-change="getList"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
       />
     </el-card>
 
@@ -205,6 +205,17 @@ const handleReset = () => {
   handleSearch()
 }
 
+// 分页大小改变
+const handleSizeChange = () => {
+  pagination.current = 1
+  getList()
+}
+
+// 当前页改变
+const handleCurrentChange = () => {
+  getList()
+}
+
 // 新增
 const handleAdd = () => {
   isEdit.value = false
@@ -248,12 +259,14 @@ const handleDelete = async (row: Position) => {
 
 // 状态切换
 const handleStatusChange = async (row: Position) => {
+  // 保存旧状态值，用于失败时回滚
+  const oldStatus = row.status === 1 ? 0 : 1
   try {
     await updatePositionStatus(row.id, row.status)
     ElMessage.success(`岗位「${row.positionName}」已${row.status === 1 ? '启用' : '禁用'}`)
   } catch (error) {
     // 恢复原状态
-    row.status = row.status === 1 ? 0 : 1
+    row.status = oldStatus
     console.error('状态更新失败:', error)
     ElMessage.error('状态更新失败')
   }

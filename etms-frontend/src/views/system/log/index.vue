@@ -91,8 +91,8 @@
         :total="pagination.total"
         :page-sizes="[10, 20, 50, 100]"
         layout="total, sizes, prev, pager, next, jumper"
-        @size-change="getList"
-        @current-change="getList"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
       />
     </el-card>
 
@@ -257,6 +257,17 @@ const handleReset = () => {
   handleSearch()
 }
 
+// 分页大小改变
+const handleSizeChange = () => {
+  pagination.current = 1
+  getList()
+}
+
+// 当前页改变
+const handleCurrentChange = () => {
+  getList()
+}
+
 // 查看详情
 const handleViewDetail = async (row: LogItem) => {
   try {
@@ -273,9 +284,15 @@ const handleViewDetail = async (row: LogItem) => {
 
 // 清空日志
 const handleClear = async () => {
+  // 检查是否选择了时间范围
+  if (!searchForm.timeRange || searchForm.timeRange.length < 2) {
+    ElMessage.warning('请先选择要清空的日志时间范围')
+    return
+  }
+
   try {
     await ElMessageBox.confirm(
-      '确定要清空所有操作日志吗？此操作不可恢复！',
+      `确定要清空 ${searchForm.timeRange[0]} 至 ${searchForm.timeRange[1]} 的操作日志吗？此操作不可恢复！`,
       '警告',
       {
         type: 'warning',
@@ -284,7 +301,10 @@ const handleClear = async () => {
       }
     )
 
-    await clearLogs()
+    await clearLogs({
+      startTime: searchForm.timeRange[0],
+      endTime: searchForm.timeRange[1]
+    })
     ElMessage.success('日志已清空')
     getList()
   } catch (error: any) {

@@ -161,8 +161,12 @@ const getErrorMessage = (error: any): string => {
 }
 
 const handleLogin = async () => {
-  const valid = await loginFormRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await loginFormRef.value?.validate()
+    if (!valid) return
+  } catch {
+    return
+  }
   
   loading.value = true
   try {

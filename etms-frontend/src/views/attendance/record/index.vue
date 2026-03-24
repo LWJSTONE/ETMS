@@ -515,7 +515,10 @@ const formatDateTime = (dateTime: string) => {
 const getSignTypeName = (type: number) => {
   const types: Record<number, string> = {
     1: '二维码签到',
-    2: 'GPS定位'
+    2: 'GPS定位',
+    3: '人脸识别',
+    4: '手动签到',
+    5: '补签'
   }
   return types[type] || '未知'
 }

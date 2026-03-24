@@ -28,8 +28,8 @@
       </el-col>
     </el-row>
     
-    <!-- 数据统计卡片 -->
-    <el-row :gutter="20" class="stats-section">
+    <!-- 数据统计卡片 - 仅管理员可见 -->
+    <el-row v-if="isAdmin" :gutter="20" class="stats-section">
       <el-col :xs="12" :sm="12" :md="6">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
@@ -82,20 +82,34 @@
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
-              <span>培训进度统计</span>
+              <span>我的学习进度统计</span>
             </div>
           </template>
-          <div ref="progressChartRef" class="chart-container"></div>
+          <div v-if="chartDataLoading" class="chart-loading">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>加载中...</span>
+          </div>
+          <div v-else-if="progressChartData.length === 0" class="chart-empty">
+            <el-empty description="暂无学习进度数据" :image-size="80" />
+          </div>
+          <div v-else ref="progressChartRef" class="chart-container"></div>
         </el-card>
       </el-col>
       <el-col :xs="24" :md="12">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
-              <span>考试通过率</span>
+              <span>我的考试通过率</span>
             </div>
           </template>
-          <div ref="passRateChartRef" class="chart-container"></div>
+          <div v-if="chartDataLoading" class="chart-loading">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>加载中...</span>
+          </div>
+          <div v-else-if="passRateData.total === 0" class="chart-empty">
+            <el-empty description="暂无考试数据" :image-size="80" />
+          </div>
+          <div v-else ref="passRateChartRef" class="chart-container"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -107,10 +121,10 @@
           <template #header>
             <div class="card-header">
               <span>最近培训</span>
-              <el-button type="primary" link>查看更多</el-button>
+              <el-button type="primary" link @click="goToMyTraining">查看更多</el-button>
             </div>
           </template>
-          <el-timeline>
+          <el-timeline v-if="recentTrainings.length > 0">
             <el-timeline-item
               v-for="item in recentTrainings"
               :key="item.id"
@@ -123,6 +137,7 @@
               </el-card>
             </el-timeline-item>
           </el-timeline>
+          <el-empty v-else description="暂无培训记录" :image-size="60" />
         </el-card>
       </el-col>
       <el-col :xs="24" :md="12">
@@ -130,10 +145,10 @@
           <template #header>
             <div class="card-header">
               <span>待办事项</span>
-              <el-button type="primary" link>查看更多</el-button>
+              <el-button type="primary" link @click="goToMyExam">查看更多</el-button>
             </div>
           </template>
-          <div class="todo-list">
+          <div v-if="todos.length > 0" class="todo-list">
             <div v-for="item in todos" :key="item.id" class="todo-item">
               <el-icon :color="item.type === 'exam' ? '#f56c6c' : '#409eff'">
                 <component :is="item.type === 'exam' ? 'Edit' : 'Reading'" />
@@ -144,6 +159,7 @@
               </el-tag>
             </div>
           </div>
+          <el-empty v-else description="暂无待办事项" :image-size="60" />
         </el-card>
       </el-col>
     </el-row>
@@ -151,24 +167,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import * as echarts from 'echarts'
+import { Loading } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import { getUserList } from '@/api/user'
 import { getCourseList } from '@/api/course'
 import { getPlanList, getMyProgress } from '@/api/training'
 import { getPaperList, getMyExamRecordList } from '@/api/exam'
 
+const router = useRouter()
 const userStore = useUserStore()
 
 const currentDate = dayjs().format('YYYY年MM月DD日 dddd')
+
+// 判断是否为管理员
+const isAdmin = computed(() => {
+  const roles = userStore.userInfo?.roleNames || []
+  return roles.some(role => 
+    role === '超级管理员' || 
+    role === '系统管理员' || 
+    role === '管理员' ||
+    role === 'ADMIN' ||
+    role === '培训管理员'
+  )
+})
 
 // 统计数据
 const stats = ref({
   courseCount: 0,
   examCount: 0,
-  progress: 68
+  progress: 0
 })
 
 const overview = ref({
@@ -192,105 +223,219 @@ const passRateChartRef = ref<HTMLElement>()
 let progressChart: echarts.ECharts | null = null
 let passRateChart: echarts.ECharts | null = null
 
+// 图表数据加载状态
+const chartDataLoading = ref(false)
+
+// 学习进度图表数据
+const progressChartData = ref<any[]>([])
+
+// 考试通过率数据
+const passRateData = ref({
+  passCount: 0,
+  failCount: 0,
+  total: 0
+})
+
 // resize 事件处理函数
 const handleResize = () => {
   progressChart?.resize()
   passRateChart?.resize()
 }
 
-// 获取统计数据
-const getStatistics = async () => {
+// 跳转到我的培训页面
+const goToMyTraining = () => {
+  router.push('/training/my-progress')
+}
+
+// 跳转到我的考试页面
+const goToMyExam = () => {
+  router.push('/exam/my-exam')
+}
+
+// 获取管理员统计数据
+const getAdminStatistics = async () => {
   try {
-    // 获取用户总数 - 仅管理员可访问
+    // 获取用户总数
     const userRes = await getUserList({ current: 1, size: 1 })
     overview.value.userCount = userRes.data?.total || 0
 
-    // 获取课程总数 - 仅管理员可访问
+    // 获取课程总数
     const courseRes = await getCourseList({ current: 1, size: 1, status: 2 })
     overview.value.courseCount = courseRes.data?.total || 0
 
-    // 获取培训计划总数 - 仅管理员可访问
+    // 获取培训计划总数
     const planRes = await getPlanList({ current: 1, size: 1 })
     overview.value.planCount = planRes.data?.total || 0
 
-    // 获取我的考试记录总数 - 使用个人考试记录接口，避免权限问题
+    // 获取考试次数
     const examRes = await getMyExamRecordList({ current: 1, size: 1, status: 2 })
     overview.value.examCount = examRes.data?.total || 0
+  } catch (error) {
+    console.error('获取管理员统计数据失败:', error)
+    // 权限不足时显示提示但不中断
+  }
+}
 
-    // 获取我的待学习课程数
-    const progressRes = await getMyProgress({ current: 1, size: 100, status: 1 })
-    stats.value.courseCount = progressRes.data?.records?.filter((r: any) => r.status === 1).length || 0
+// 获取用户个人统计数据
+const getUserStatistics = async () => {
+  chartDataLoading.value = true
+  try {
+    // 获取我的待学习课程数和学习进度
+    const progressRes = await getMyProgress({ current: 1, size: 100 })
+    const progressRecords = progressRes.data?.records || []
+    
+    // 计算待学习课程数（状态为进行中）
+    stats.value.courseCount = progressRecords.filter((r: any) => r.status === 1).length
+    
+    // 计算总体学习进度
+    if (progressRecords.length > 0) {
+      const totalProgress = progressRecords.reduce((sum: number, r: any) => sum + (r.progress || 0), 0)
+      stats.value.progress = Math.round(totalProgress / progressRecords.length)
+    }
 
-    // 获取待参加考试数 - 使用个人考试记录接口
+    // 获取我的考试记录
     const myExamRes = await getMyExamRecordList({ current: 1, size: 100 })
-    stats.value.examCount = myExamRes.data?.records?.filter((r: any) => r.status === 0 || r.status === 1).length || 0
+    const examRecords = myExamRes.data?.records || []
+    
+    // 计算待参加考试数（未开始或进行中）
+    stats.value.examCount = examRecords.filter((r: any) => r.status === 0 || r.status === 1).length
 
     // 设置最近培训数据
-    if (progressRes.data?.records) {
-      recentTrainings.value = progressRes.data.records.slice(0, 5).map((item: any) => ({
+    recentTrainings.value = progressRecords
+      .sort((a: any, b: any) => {
+        const timeA = a.lastStudyTime || a.createTime || ''
+        const timeB = b.lastStudyTime || b.createTime || ''
+        return timeB.localeCompare(timeA)
+      })
+      .slice(0, 5)
+      .map((item: any) => ({
         id: item.id,
         name: item.courseName || item.planName,
         time: item.lastStudyTime || item.createTime,
         progress: item.progress || 0
       }))
-    }
 
     // 设置待办事项
-    const inProgressCourses = progressRes.data?.records?.filter((r: any) => r.status === 1) || []
-    todos.value = inProgressCourses.slice(0, 5).map((item: any) => ({
-      id: item.id,
-      title: `完成《${item.courseName}》课程学习`,
-      type: 'course',
-      deadline: '进行中',
-      urgent: item.progress > 80
+    const inProgressCourses = progressRecords.filter((r: any) => r.status === 1)
+    const pendingExams = examRecords.filter((r: any) => r.status === 0 || r.status === 1)
+    
+    todos.value = [
+      ...inProgressCourses.slice(0, 3).map((item: any) => ({
+        id: `course-${item.id}`,
+        title: `完成《${item.courseName}》课程学习`,
+        type: 'course',
+        deadline: '进行中',
+        urgent: item.progress > 80
+      })),
+      ...pendingExams.slice(0, 2).map((item: any) => ({
+        id: `exam-${item.id}`,
+        title: `参加《${item.paperName}》考试`,
+        type: 'exam',
+        deadline: '待完成',
+        urgent: true
+      }))
+    ].slice(0, 5)
+
+    // 准备图表数据 - 学习进度分布
+    progressChartData.value = progressRecords.map((item: any) => ({
+      name: item.courseName || item.planName,
+      progress: item.progress || 0
     }))
+
+    // 准备图表数据 - 考试通过率
+    const completedExams = examRecords.filter((r: any) => r.status === 2 || r.status === 3)
+    passRateData.value = {
+      passCount: completedExams.filter((r: any) => r.passed === 1).length,
+      failCount: completedExams.filter((r: any) => r.passed !== 1).length,
+      total: completedExams.length
+    }
+
   } catch (error) {
-    console.error('获取统计数据失败:', error)
+    console.error('获取用户统计数据失败:', error)
+  } finally {
+    chartDataLoading.value = false
   }
 }
 
-onMounted(() => {
-  getStatistics()
+// 获取统计数据
+const getStatistics = async () => {
+  // 获取用户个人统计数据（所有用户都可以获取）
+  await getUserStatistics()
+  
+  // 如果是管理员，额外获取管理员统计数据
+  if (isAdmin.value) {
+    await getAdminStatistics()
+  }
+}
+
+onMounted(async () => {
+  await getStatistics()
+  // 初始化图表（数据加载完成后）
   initProgressChart()
   initPassRateChart()
   // 添加 resize 事件监听
   window.addEventListener('resize', handleResize)
 })
 
-// 初始化培训进度图表
-// 注意：当前图表数据为示例数据，用于展示图表效果
-// TODO: 后续应从后端API获取各部门培训进度统计数据进行渲染
+// 初始化学习进度图表 - 使用真实数据
 const initProgressChart = () => {
-  if (!progressChartRef.value) return
+  if (!progressChartRef.value || progressChartData.value.length === 0) return
   progressChart = echarts.init(progressChartRef.value)
   
-  // 示例数据 - 各部门培训进度统计
-  const chartData = {
-    departments: ['技术部', '市场部', '人事部', '财务部', '运营部'],
-    planCounts: [30, 25, 15, 12, 20],    // 计划培训人数
-    completeCounts: [28, 22, 13, 10, 18] // 实际完成人数
-  }
+  // 取前5个课程展示进度
+  const displayData = progressChartData.value.slice(0, 5)
+  const courseNames = displayData.map(item => 
+    item.name.length > 8 ? item.name.substring(0, 8) + '...' : item.name
+  )
+  const progressValues = displayData.map(item => item.progress)
   
   const option = {
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['计划人数', '完成人数'] },
+    tooltip: { 
+      trigger: 'axis',
+      formatter: (params: any) => {
+        const data = params[0]
+        return `${displayData[data.dataIndex].name}<br/>学习进度: ${data.value}%`
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
     xAxis: {
       type: 'category',
-      data: chartData.departments
+      data: courseNames,
+      axisLabel: {
+        interval: 0,
+        rotate: 30
+      }
     },
-    yAxis: { type: 'value' },
+    yAxis: { 
+      type: 'value',
+      max: 100,
+      axisLabel: { formatter: '{value}%' }
+    },
     series: [
       {
-        name: '计划人数',
+        name: '学习进度',
         type: 'bar',
-        data: chartData.planCounts,
-        itemStyle: { color: '#409eff' }
-      },
-      {
-        name: '完成人数',
-        type: 'bar',
-        data: chartData.completeCounts,
-        itemStyle: { color: '#67c23a' }
+        data: progressValues.map(value => ({
+          value,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: value >= 80 ? '#67c23a' : value >= 60 ? '#409eff' : '#e6a23c' },
+              { offset: 1, color: value >= 80 ? '#95d475' : value >= 60 ? '#79bbff' : '#eebe77' }
+            ])
+          }
+        })),
+        barWidth: '50%',
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}%'
+        }
       }
     ]
   }
@@ -298,27 +443,29 @@ const initProgressChart = () => {
   progressChart.setOption(option)
 }
 
-// 初始化考试通过率图表
-// 注意：当前图表数据为示例数据，用于展示图表效果
-// TODO: 后续应从后端API获取考试通过率统计数据进行渲染
+// 初始化考试通过率图表 - 使用真实数据
 const initPassRateChart = () => {
-  if (!passRateChartRef.value) return
+  if (!passRateChartRef.value || passRateData.value.total === 0) return
   passRateChart = echarts.init(passRateChartRef.value)
   
-  // 示例数据 - 考试通过率统计
-  const chartData = {
-    passCount: 85,   // 通过人次
-    failCount: 15    // 未通过人次
-  }
+  const { passCount, failCount } = passRateData.value
   
   const option = {
-    tooltip: { trigger: 'item' },
-    legend: { orient: 'vertical', left: 'left' },
+    tooltip: { 
+      trigger: 'item',
+      formatter: '{b}: {c}人次 ({d}%)'
+    },
+    legend: { 
+      orient: 'vertical', 
+      left: 'left',
+      top: 'center'
+    },
     series: [
       {
-        name: '考试通过率',
+        name: '考试结果',
         type: 'pie',
         radius: ['40%', '70%'],
+        center: ['60%', '50%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
@@ -327,11 +474,39 @@ const initPassRateChart = () => {
         },
         label: {
           show: true,
-          formatter: '{b}: {d}%'
+          position: 'center',
+          formatter: () => {
+            const rate = passRateData.value.total > 0 
+              ? Math.round((passCount / passRateData.value.total) * 100) 
+              : 0
+            return `{a|通过率}\n{b|${rate}%}`
+          },
+          rich: {
+            a: {
+              fontSize: 14,
+              color: '#909399',
+              lineHeight: 24
+            },
+            b: {
+              fontSize: 28,
+              fontWeight: 'bold',
+              color: '#67c23a'
+            }
+          }
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 16,
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: false
         },
         data: [
-          { value: chartData.passCount, name: '通过', itemStyle: { color: '#67c23a' } },
-          { value: chartData.failCount, name: '未通过', itemStyle: { color: '#f56c6c' } }
+          { value: passCount, name: '通过', itemStyle: { color: '#67c23a' } },
+          { value: failCount, name: '未通过', itemStyle: { color: '#f56c6c' } }
         ]
       }
     ]
@@ -440,6 +615,27 @@ onUnmounted(() => {
     .chart-container {
       height: 300px;
     }
+    
+    .chart-loading,
+    .chart-empty {
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #909399;
+      
+      .el-icon {
+        font-size: 32px;
+        margin-bottom: 10px;
+      }
+    }
+    
+    .chart-loading {
+      .el-icon {
+        animation: rotating 1.5s linear infinite;
+      }
+    }
   }
   
   .activity-section {
@@ -469,6 +665,15 @@ onUnmounted(() => {
         }
       }
     }
+  }
+}
+
+@keyframes rotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

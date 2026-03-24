@@ -73,7 +73,7 @@
         <el-form-item label="上级部门" prop="parentId">
           <el-tree-select
             v-model="form.parentId"
-            :data="deptTreeOptions"
+            :data="filteredDeptTreeOptions"
             :props="{ value: 'id', label: 'deptName', children: 'children' }"
             value-key="id"
             placeholder="请选择上级部门"
@@ -168,6 +168,30 @@ const formRef = ref<FormInstance>()
 const deptTreeOptions = ref<Dept[]>([])
 // 用户选项（用于选择负责人）
 const userOptions = ref<User[]>([])
+
+// 过滤后的部门树选项（编辑时排除当前部门及其子部门）
+const filteredDeptTreeOptions = computed(() => {
+  if (!isEdit.value || !form.id) {
+    return deptTreeOptions.value
+  }
+  // 递归过滤掉当前部门及其子部门
+  const filterNode = (nodes: Dept[]): Dept[] => {
+    return nodes
+      .filter(node => node.id !== form.id)
+      .map(node => ({
+        ...node,
+        children: node.children ? filterNode(node.children) : undefined
+      }))
+      .filter(node => {
+        // 如果过滤后children为空数组，则设为undefined
+        if (node.children && node.children.length === 0) {
+          node.children = undefined
+        }
+        return true
+      })
+  }
+  return filterNode(deptTreeOptions.value)
+})
 
 // 表单数据
 const form = reactive({

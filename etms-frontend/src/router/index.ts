@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import NProgress from 'nprogress'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import { STORAGE_KEYS } from '@/constants/storage'
 
 // 白名单路由（无需登录即可访问）
 const whiteList = ['/login', '/404']
@@ -355,8 +356,8 @@ router.beforeEach(async (to, from, next) => {
       // 获取用户信息失败，清除token并重定向到登录页
       userStore.token = ''
       userStore.userInfo = null
-      localStorage.removeItem('token')
-      localStorage.removeItem('userInfo')
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.USER_INFO)
       next({
         path: '/login',
         query: { redirect: to.fullPath }

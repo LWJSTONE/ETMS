@@ -3,21 +3,16 @@ package com.etms.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import java.io.Serializable;
+import lombok.EqualsAndHashCode;
 import java.time.LocalDateTime;
 
 /**
  * 签到记录实体类
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("attendance_record")
-public class AttendanceRecord implements Serializable {
-    
-    private static final long serialVersionUID = 1L;
-    
-    /** 签到ID */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class AttendanceRecord extends BaseEntity {
     
     /** 用户ID */
     private Long userId;
@@ -53,9 +48,6 @@ public class AttendanceRecord implements Serializable {
     /** 早退分钟数 */
     private Integer earlyMinutes;
     
-    /** 备注 */
-    private String remark;
-    
     /** 补签原因 */
     private String reason;
     
@@ -71,10 +63,6 @@ public class AttendanceRecord implements Serializable {
     /** 审核时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime auditTime;
-    
-    /** 创建时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createTime;
     
     @TableField(exist = false)
     private String userName;

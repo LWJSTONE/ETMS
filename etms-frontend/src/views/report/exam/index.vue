@@ -432,14 +432,20 @@ const getPaperListData = async () => {
 const getReportData = async () => {
   loading.value = true
   try {
-    // 注意：此处使用较大size值获取数据进行前端统计计算
-    // 性能优化建议：后端应提供专门的统计聚合接口，避免传输大量数据
-    // 当前保留此方式是因为需要计算各试卷、各部门的详细统计数据
-    // 设置合理的上限为5000条，避免一次性获取过多数据
-    const MAX_RECORDS = 5000
+    // 性能优化：限制数据获取量，避免一次性加载过多数据
+    // 建议后端提供专门的统计聚合接口
+    const MAX_RECORDS = 2000
     const params: any = {
       current: 1,
       size: MAX_RECORDS
+    }
+    
+    // 默认只查询最近3个月的数据，用户可通过筛选条件调整
+    // 如果用户没有设置时间范围，强制设置默认范围
+    if (!filterForm.dateRange || filterForm.dateRange.length !== 2) {
+      const end = dayjs()
+      const start = end.subtract(90, 'day') // 默认最近3个月
+      filterForm.dateRange = [start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD')]
     }
     
     if (filterForm.dateRange && filterForm.dateRange.length === 2) {
@@ -458,7 +464,7 @@ const getReportData = async () => {
     
     // 如果数据量达到上限，给出提示
     if (records.length >= MAX_RECORDS) {
-      ElMessage.warning(`数据量较大，当前仅显示最近${MAX_RECORDS}条记录。建议缩小查询范围获取更精确的统计数据。`)
+      ElMessage.warning(`数据量较大，当前仅显示最近${MAX_RECORDS}条记录。建议缩小查询时间范围获取更精确的统计数据。`)
     }
     
     // 保存考试记录用于趋势计算
@@ -1060,15 +1066,10 @@ const handleResize = () => {
 }
 
 onMounted(async () => {
-  // 设置默认时间范围为最近一个月
-  const end = dayjs()
-  const start = end.subtract(30, 'day')
-  filterForm.dateRange = [start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD')]
-  
   // 获取下拉列表数据
   await Promise.all([getDeptList(), getPaperListData()])
   
-  // 获取报表数据
+  // 获取报表数据（getReportData内部会设置默认时间范围）
   await getReportData()
   
   // 监听窗口大小变化

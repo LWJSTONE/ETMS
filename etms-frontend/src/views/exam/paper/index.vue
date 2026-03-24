@@ -61,7 +61,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">查看</el-button>
             <el-button
@@ -70,6 +70,12 @@
               link
               @click="handleEdit(row)"
             >编辑</el-button>
+            <el-button
+              v-if="row.status === 0 && canEdit"
+              type="warning"
+              link
+              @click="handleCompose(row)"
+            >组卷</el-button>
             <el-button
               v-if="row.status === 0 && canPublish"
               type="success"
@@ -220,6 +226,166 @@
         </el-descriptions-item>
       </el-descriptions>
     </el-dialog>
+
+    <!-- 组卷对话框 -->
+    <el-dialog
+      v-model="composeVisible"
+      title="组卷管理"
+      width="1100px"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <div class="compose-container">
+        <!-- 左侧：题目选择区域 -->
+        <div class="question-select-area">
+          <el-tabs v-model="composeTab">
+            <!-- 手动选题标签页 -->
+            <el-tab-pane label="手动选题" name="manual">
+              <div class="search-box">
+                <el-input
+                  v-model="questionSearchForm.keyword"
+                  placeholder="搜索题目内容"
+                  clearable
+                  style="width: 200px; margin-right: 10px"
+                  @keyup.enter="searchQuestions"
+                />
+                <el-select v-model="questionSearchForm.questionType" placeholder="题目类型" clearable style="width: 120px; margin-right: 10px">
+                  <el-option label="单选题" :value="1" />
+                  <el-option label="多选题" :value="2" />
+                  <el-option label="判断题" :value="3" />
+                  <el-option label="填空题" :value="4" />
+                  <el-option label="简答题" :value="5" />
+                </el-select>
+                <el-button type="primary" @click="searchQuestions">搜索</el-button>
+              </div>
+              <el-table
+                ref="questionTableRef"
+                :data="questionList"
+                v-loading="questionLoading"
+                stripe
+                border
+                max-height="350"
+                @selection-change="handleQuestionSelectionChange"
+              >
+                <el-table-column type="selection" width="40" />
+                <el-table-column prop="questionType" label="类型" width="80" align="center">
+                  <template #default="{ row }">
+                    <el-tag :type="getQuestionTypeStyle(row.questionType)" size="small">
+                      {{ getQuestionTypeName(row.questionType) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="questionContent" label="题目内容" min-width="200" show-overflow-tooltip />
+                <el-table-column prop="score" label="默认分值" width="80" align="center" />
+                <el-table-column prop="difficulty" label="难度" width="80" align="center">
+                  <template #default="{ row }">
+                    <el-rate v-model="row.difficulty" disabled :max="3" size="small" />
+                  </template>
+                </el-table-column>
+              </el-table>
+              <div class="batch-add-btn">
+                <el-button
+                  type="primary"
+                  :disabled="selectedQuestions.length === 0"
+                  @click="batchAddQuestions"
+                >
+                  添加选中题目 ({{ selectedQuestions.length }})
+                </el-button>
+              </div>
+            </el-tab-pane>
+
+            <!-- 随机抽题标签页 -->
+            <el-tab-pane label="随机抽题" name="random">
+              <el-form :model="randomForm" label-width="100px" class="random-form">
+                <el-form-item label="题目类型">
+                  <el-select v-model="randomForm.questionType" placeholder="选择题目类型" clearable style="width: 150px">
+                    <el-option label="单选题" :value="1" />
+                    <el-option label="多选题" :value="2" />
+                    <el-option label="判断题" :value="3" />
+                    <el-option label="填空题" :value="4" />
+                    <el-option label="简答题" :value="5" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="难度级别">
+                  <el-select v-model="randomForm.difficulty" placeholder="选择难度" clearable style="width: 150px">
+                    <el-option label="简单" :value="1" />
+                    <el-option label="中等" :value="2" />
+                    <el-option label="困难" :value="3" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="抽取数量">
+                  <el-input-number v-model="randomForm.count" :min="1" :max="50" />
+                </el-form-item>
+                <el-form-item label="每题分值">
+                  <el-input-number v-model="randomForm.score" :min="1" :max="100" />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="handleRandomDraw" :loading="randomLoading">
+                    随机抽取
+                  </el-button>
+                </el-form-item>
+              </el-form>
+            </el-tab-pane>
+          </el-tabs>
+        </div>
+
+        <!-- 右侧：已选题目区域 -->
+        <div class="selected-questions-area">
+          <div class="area-header">
+            <span>已选题目 ({{ paperQuestions.length }}道)</span>
+            <el-button
+              v-if="paperQuestions.length > 0"
+              type="danger"
+              link
+              @click="clearAllQuestions"
+            >清空全部</el-button>
+          </div>
+          <div class="total-score-info">
+            <el-tag type="success" size="large">当前总分: {{ calculatedTotalScore }}分</el-tag>
+            <el-tag type="info" size="large" style="margin-left: 10px">试卷设定总分: {{ composePaper.totalScore }}分</el-tag>
+          </div>
+          <el-scrollbar max-height="400px">
+            <div v-if="paperQuestions.length > 0" class="selected-list">
+              <div
+                v-for="(item, index) in paperQuestions"
+                :key="item.questionId"
+                class="selected-item"
+              >
+                <div class="item-header">
+                  <span class="item-index">第{{ index + 1 }}题</span>
+                  <el-tag :type="getQuestionTypeStyle(item.questionType)" size="small">
+                    {{ getQuestionTypeName(item.questionType) }}
+                  </el-tag>
+                  <el-input-number
+                    v-model="item.score"
+                    :min="1"
+                    :max="100"
+                    size="small"
+                    style="width: 100px; margin-left: 10px"
+                    @change="updateQuestionScore(item)"
+                  />
+                  <span class="score-label">分</span>
+                  <el-button
+                    type="danger"
+                    link
+                    size="small"
+                    @click="removeQuestion(item)"
+                  >移除</el-button>
+                </div>
+                <div class="item-content">{{ item.questionContent }}</div>
+              </div>
+            </div>
+            <el-empty v-else description="暂未添加题目" :image-size="80" />
+          </el-scrollbar>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="composeVisible = false">关闭</el-button>
+        <el-button type="primary" @click="savePaperQuestions" :loading="saveQuestionLoading">
+          保存题目
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -235,8 +401,13 @@ import {
   updatePaper,
   deletePaper,
   publishPaper,
-  disablePaper
+  disablePaper,
+  getPaperQuestions,
+  batchAddQuestionsToPaper,
+  removeQuestionFromPaper,
+  clearPaperQuestions
 } from '@/api/exam'
+import { getQuestionList, randomQuestions } from '@/api/exam'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
@@ -282,6 +453,37 @@ const formRef = ref<FormInstance>()
 // 详情对话框
 const detailVisible = ref(false)
 const detailData = ref<any>({})
+
+// 组卷对话框
+const composeVisible = ref(false)
+const composeTab = ref('manual')
+const composePaper = ref<any>({})
+const paperQuestions = ref<any[]>([])
+const questionTableRef = ref()
+const questionList = ref<any[]>([])
+const questionLoading = ref(false)
+const selectedQuestions = ref<any[]>([])
+const randomLoading = ref(false)
+const saveQuestionLoading = ref(false)
+
+// 题目搜索表单
+const questionSearchForm = reactive({
+  keyword: '',
+  questionType: null as number | null
+})
+
+// 随机抽题表单
+const randomForm = reactive({
+  questionType: null as number | null,
+  difficulty: null as number | null,
+  count: 10,
+  score: 5
+})
+
+// 计算当前总分
+const calculatedTotalScore = computed(() => {
+  return paperQuestions.value.reduce((sum, item) => sum + (item.score || 0), 0)
+})
 
 // 表单数据
 const form = reactive({
@@ -377,6 +579,30 @@ const getStatusName = (status: number) => {
     2: '已停用'
   }
   return names[status] || '未知'
+}
+
+// 获取题目类型名称
+const getQuestionTypeName = (type: number) => {
+  const types: Record<number, string> = {
+    1: '单选题',
+    2: '多选题',
+    3: '判断题',
+    4: '填空题',
+    5: '简答题'
+  }
+  return types[type] || '未知'
+}
+
+// 获取题目类型样式
+const getQuestionTypeStyle = (type: number) => {
+  const styles: Record<number, string> = {
+    1: 'primary',
+    2: 'success',
+    3: 'warning',
+    4: 'info',
+    5: 'danger'
+  }
+  return styles[type] || 'info'
 }
 
 // 格式化日期时间
@@ -568,6 +794,201 @@ const handleSubmit = async () => {
   }
 }
 
+// ==================== 组卷功能 ====================
+
+// 打开组卷对话框
+const handleCompose = async (row: any) => {
+  composePaper.value = row
+  paperQuestions.value = []
+  selectedQuestions.value = []
+  composeTab.value = 'manual'
+  questionSearchForm.keyword = ''
+  questionSearchForm.questionType = null
+  questionList.value = []
+  
+  try {
+    // 获取试卷已有题目
+    const res = await getPaperQuestions(row.id)
+    if (res.data) {
+      paperQuestions.value = res.data.map((item: any) => ({
+        questionId: item.questionId,
+        questionType: item.question?.questionType || item.questionType,
+        questionContent: item.question?.questionContent || item.questionContent,
+        score: item.score,
+        sortOrder: item.sortOrder
+      }))
+    }
+    composeVisible.value = true
+    // 加载题目列表
+    searchQuestions()
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || '获取试卷题目失败')
+  }
+}
+
+// 搜索题目
+const searchQuestions = async () => {
+  questionLoading.value = true
+  try {
+    const params: any = {
+      current: 1,
+      size: 100,
+      status: 1 // 只查询已启用的题目
+    }
+    if (questionSearchForm.keyword) {
+      params.questionContent = questionSearchForm.keyword
+    }
+    if (questionSearchForm.questionType) {
+      params.questionType = questionSearchForm.questionType
+    }
+    const res = await getQuestionList(params)
+    questionList.value = res.data?.records || []
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || '获取题目列表失败')
+  } finally {
+    questionLoading.value = false
+  }
+}
+
+// 题目选择变化
+const handleQuestionSelectionChange = (selection: any[]) => {
+  selectedQuestions.value = selection
+}
+
+// 批量添加题目
+const batchAddQuestions = () => {
+  const existingIds = new Set(paperQuestions.value.map(q => q.questionId))
+  const newQuestions = selectedQuestions.value
+    .filter(q => !existingIds.has(q.id))
+    .map((q, index) => ({
+      questionId: q.id,
+      questionType: q.questionType,
+      questionContent: q.questionContent,
+      score: q.score,
+      sortOrder: paperQuestions.value.length + index + 1
+    }))
+  
+  if (newQuestions.length === 0) {
+    ElMessage.warning('所选题目已存在于试卷中')
+    return
+  }
+  
+  paperQuestions.value.push(...newQuestions)
+  // 清空选择
+  questionTableRef.value?.clearSelection()
+  ElMessage.success(`已添加 ${newQuestions.length} 道题目`)
+}
+
+// 随机抽题
+const handleRandomDraw = async () => {
+  if (!randomForm.count || randomForm.count < 1) {
+    ElMessage.warning('请输入有效的抽取数量')
+    return
+  }
+  
+  randomLoading.value = true
+  try {
+    const params: any = {
+      count: randomForm.count
+    }
+    if (randomForm.questionType) {
+      params.questionType = randomForm.questionType
+    }
+    if (randomForm.difficulty) {
+      params.difficulty = randomForm.difficulty
+    }
+    
+    const res = await randomQuestions(params)
+    if (res.data && res.data.length > 0) {
+      const existingIds = new Set(paperQuestions.value.map(q => q.questionId))
+      const newQuestions = res.data
+        .filter((q: any) => !existingIds.has(q.id))
+        .map((q: any, index: number) => ({
+          questionId: q.id,
+          questionType: q.questionType,
+          questionContent: q.questionContent,
+          score: randomForm.score,
+          sortOrder: paperQuestions.value.length + index + 1
+        }))
+      
+      if (newQuestions.length === 0) {
+        ElMessage.warning('随机抽取的题目已全部存在于试卷中')
+        return
+      }
+      
+      paperQuestions.value.push(...newQuestions)
+      ElMessage.success(`随机抽取了 ${newQuestions.length} 道题目`)
+    } else {
+      ElMessage.warning('未找到符合条件的题目')
+    }
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || '随机抽题失败')
+  } finally {
+    randomLoading.value = false
+  }
+}
+
+// 移除单个题目
+const removeQuestion = (item: any) => {
+  const index = paperQuestions.value.findIndex(q => q.questionId === item.questionId)
+  if (index > -1) {
+    paperQuestions.value.splice(index, 1)
+    // 重新排序
+    paperQuestions.value.forEach((q, i) => {
+      q.sortOrder = i + 1
+    })
+  }
+}
+
+// 更新题目分数
+const updateQuestionScore = (item: any) => {
+  // 触发计算属性更新
+}
+
+// 清空所有题目
+const clearAllQuestions = async () => {
+  try {
+    await ElMessageBox.confirm('确定要清空所有题目吗？', '提示', { type: 'warning' })
+    paperQuestions.value = []
+    ElMessage.success('已清空所有题目')
+  } catch {
+    // 用户取消
+  }
+}
+
+// 保存试卷题目
+const savePaperQuestions = async () => {
+  if (paperQuestions.value.length === 0) {
+    ElMessage.warning('请至少添加一道题目')
+    return
+  }
+  
+  saveQuestionLoading.value = true
+  try {
+    // 先清空原有题目，再批量添加
+    await clearPaperQuestions(composePaper.value.id)
+    
+    const questions = paperQuestions.value.map((q, index) => ({
+      questionId: q.questionId,
+      score: q.score,
+      sortOrder: index + 1
+    }))
+    
+    await batchAddQuestionsToPaper(composePaper.value.id, questions)
+    ElMessage.success('保存成功')
+    composeVisible.value = false
+    getList()
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || '保存失败')
+  } finally {
+    saveQuestionLoading.value = false
+  }
+}
+
 onMounted(() => {
   getList()
 })
@@ -594,6 +1015,96 @@ onMounted(() => {
 
   .text-gray {
     color: #909399;
+  }
+}
+
+// 组卷对话框样式
+.compose-container {
+  display: flex;
+  gap: 20px;
+  min-height: 500px;
+
+  .question-select-area {
+    flex: 1;
+    border: 1px solid #e4e7ed;
+    border-radius: 4px;
+    padding: 15px;
+
+    .search-box {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+    }
+
+    .batch-add-btn {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .random-form {
+      padding: 20px;
+    }
+  }
+
+  .selected-questions-area {
+    width: 400px;
+    border: 1px solid #e4e7ed;
+    border-radius: 4px;
+    padding: 15px;
+    background: #fafafa;
+
+    .area-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .total-score-info {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 4px;
+    }
+
+    .selected-list {
+      .selected-item {
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fff;
+        border-radius: 4px;
+        border: 1px solid #e4e7ed;
+
+        .item-header {
+          display: flex;
+          align-items: center;
+          margin-bottom: 8px;
+
+          .item-index {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #409eff;
+          }
+
+          .score-label {
+            margin-left: 5px;
+            color: #909399;
+          }
+        }
+
+        .item-content {
+          font-size: 14px;
+          color: #606266;
+          line-height: 1.5;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      }
+    }
   }
 }
 </style>

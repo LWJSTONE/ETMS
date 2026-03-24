@@ -173,3 +173,45 @@ export interface ResultStats {
   passRate: number
   avgScore: number
 }
+
+/**
+ * 试卷题目管理API
+ */
+
+// 获取试卷题目列表
+export function getPaperQuestions(paperId: number): Promise<ApiResponse<any[]>> {
+  return request.get(`/exam/papers/${paperId}/questions`)
+}
+
+// 添加题目到试卷
+export function addQuestionToPaper(paperId: number, data: {
+  questionId: number
+  score: number
+  sortOrder?: number
+}): Promise<ApiResponse<void>> {
+  return request.post(`/exam/papers/${paperId}/questions`, data)
+}
+
+// 批量添加题目到试卷
+export function batchAddQuestionsToPaper(paperId: number, questions: {
+  questionId: number
+  score: number
+  sortOrder?: number
+}[]): Promise<ApiResponse<void>> {
+  return request.post(`/exam/papers/${paperId}/questions/batch`, questions)
+}
+
+// 从试卷移除题目
+export function removeQuestionFromPaper(paperId: number, questionId: number): Promise<ApiResponse<void>> {
+  return request.delete(`/exam/papers/${paperId}/questions/${questionId}`)
+}
+
+// 更新试卷题目分数
+export function updatePaperQuestionScore(paperId: number, questionId: number, score: number): Promise<ApiResponse<void>> {
+  return request.put(`/exam/papers/${paperId}/questions/${questionId}`, { score })
+}
+
+// 清空试卷所有题目
+export function clearPaperQuestions(paperId: number): Promise<ApiResponse<void>> {
+  return request.delete(`/exam/papers/${paperId}/questions`)
+}

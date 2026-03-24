@@ -2,13 +2,11 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { login, logout, getUserInfo } from '@/api/auth'
 import type { UserInfo } from '@/api/types'
-
-// userInfo持久化相关常量
-const USER_INFO_KEY = 'userInfo'
+import { STORAGE_KEYS } from '@/constants/storage'
 
 // 从localStorage获取持久化的用户信息
 const getPersistedUserInfo = (): UserInfo | null => {
-  const stored = localStorage.getItem(USER_INFO_KEY)
+  const stored = localStorage.getItem(STORAGE_KEYS.USER_INFO)
   if (stored) {
     try {
       return JSON.parse(stored)
@@ -20,7 +18,7 @@ const getPersistedUserInfo = (): UserInfo | null => {
 }
 
 export const useUserStore = defineStore('user', () => {
-  const token = ref<string>(localStorage.getItem('token') || '')
+  const token = ref<string>(localStorage.getItem(STORAGE_KEYS.TOKEN) || '')
   const userInfo = ref<UserInfo | null>(getPersistedUserInfo())
 
   // 登录
@@ -28,7 +26,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const res = await login({ username, password, captcha, captchaKey })
       token.value = res.data.accessToken
-      localStorage.setItem('token', res.data.accessToken)
+      localStorage.setItem(STORAGE_KEYS.TOKEN, res.data.accessToken)
       
       // 登录成功后获取完整用户信息
       await getUserInfoAction()
@@ -38,8 +36,8 @@ export const useUserStore = defineStore('user', () => {
       // 登录失败时清除token，避免残留导致状态不一致
       token.value = ''
       userInfo.value = null
-      localStorage.removeItem('token')
-      localStorage.removeItem(USER_INFO_KEY)
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.USER_INFO)
       throw error
     }
   }
@@ -49,7 +47,7 @@ export const useUserStore = defineStore('user', () => {
     const res = await getUserInfo()
     userInfo.value = res.data
     // 持久化用户信息
-    localStorage.setItem(USER_INFO_KEY, JSON.stringify(res.data))
+    localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(res.data))
     return res
   }
 
@@ -64,8 +62,8 @@ export const useUserStore = defineStore('user', () => {
       // 清除本地状态
       token.value = ''
       userInfo.value = null
-      localStorage.removeItem('token')
-      localStorage.removeItem(USER_INFO_KEY)
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.USER_INFO)
     }
   }
 

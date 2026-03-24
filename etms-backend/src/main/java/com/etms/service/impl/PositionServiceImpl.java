@@ -58,6 +58,14 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
             throw new BusinessException("岗位编码已存在");
         }
         
+        // 检查岗位名称是否重复
+        Long nameCount = baseMapper.selectCount(
+            new LambdaQueryWrapper<Position>().eq(Position::getPositionName, position.getPositionName())
+        );
+        if (nameCount > 0) {
+            throw new BusinessException("岗位名称已存在");
+        }
+        
         if (position.getStatus() == null) {
             position.setStatus(1);
         }

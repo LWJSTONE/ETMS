@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress'
+import { STORAGE_KEYS } from '@/constants/storage'
 
 // 401错误处理标志位，防止并发请求时重复跳转登录页
 let isRedirecting = false
@@ -105,8 +106,8 @@ function getErrorMessage(error: AxiosError<any>): string {
 function handleUnauthorized(): void {
   if (!isRedirecting) {
     isRedirecting = true
-    localStorage.removeItem('token')
-    localStorage.removeItem('userInfo')
+    localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    localStorage.removeItem(STORAGE_KEYS.USER_INFO)
     ElMessage.error('登录已过期，请重新登录')
     
     // 跳转登录页并传递当前路径作为重定向目标
@@ -129,7 +130,7 @@ const service: AxiosInstance = axios.create({
 service.interceptors.request.use(
   (config) => {
     NProgress.start()
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -147,9 +148,9 @@ service.interceptors.response.use(
   (response: AxiosResponse) => {
     NProgress.done()
     
-    // 文件下载响应处理 - 直接返回 Blob 数据
+    // 文件下载响应处理 - 返回完整response对象以便访问headers
     if (response.config.responseType === 'blob') {
-      return response.data
+      return response
     }
     
     const res = response.data
@@ -270,6 +271,7 @@ const request = {
         params,
         responseType: 'blob'
       })
+      // 拦截器返回完整response对象，需要提取data
       return response.data
     } catch (error) {
       // 错误已在拦截器中处理

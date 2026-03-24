@@ -49,9 +49,15 @@ export function getLogDetail(id: number): Promise<ApiResponse<LogItem>> {
   return request.get(`/system/logs/${id}`)
 }
 
+// 清空日志参数
+export interface ClearLogsParams {
+  startTime: string
+  endTime: string
+}
+
 // 清空日志
-export function clearLogs(): Promise<ApiResponse<void>> {
-  return request.delete('/system/logs')
+export function clearLogs(params: ClearLogsParams): Promise<ApiResponse<void>> {
+  return request.delete('/system/logs', params)
 }
 
 // 导出日志

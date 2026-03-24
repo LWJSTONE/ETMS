@@ -28,7 +28,7 @@ public class ExamRecord extends BaseEntity {
     private Long planId;
     
     /**
-     * 考试状态：0-未开始 1-进行中 2-已完成 3-已超时
+     * 考试状态：0-未开始 1-进行中 2-已完成 3-已超时 4-已放弃
      */
     private Integer status;
     

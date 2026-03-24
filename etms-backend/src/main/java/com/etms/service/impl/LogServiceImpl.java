@@ -61,20 +61,44 @@ public class LogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog
     @Transactional(rollbackFor = Exception.class)
     public boolean clearLogs(String startTime, String endTime) {
         LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
-        
-        // 修复：改为按时间范围删除，必须提供时间参数
-        if (startTime == null || startTime.isEmpty() || endTime == null || endTime.isEmpty()) {
-            throw new BusinessException("请指定要删除的日志时间范围");
+
+        // 修复：参数可选，支持多种清空方式
+        boolean hasStartTime = StringUtils.hasText(startTime);
+        boolean hasEndTime = StringUtils.hasText(endTime);
+
+        if (hasStartTime && hasEndTime) {
+            // 两个参数都有：清空指定时间范围内的日志
+            try {
+                LocalDateTime start = LocalDateTime.parse(startTime + " 00:00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                LocalDateTime end = LocalDateTime.parse(endTime + " 23:59:59", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                wrapper.between(OperationLog::getCreateTime, start, end);
+                log.info("清空日志: 时间范围 {} 至 {}", startTime, endTime);
+            } catch (Exception e) {
+                throw new BusinessException("时间格式错误，请使用 yyyy-MM-dd 格式");
+            }
+        } else if (hasStartTime) {
+            // 只有开始时间：清空该日期之后的日志
+            try {
+                LocalDateTime start = LocalDateTime.parse(startTime + " 00:00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                wrapper.ge(OperationLog::getCreateTime, start);
+                log.info("清空日志: {} 之后的所有日志", startTime);
+            } catch (Exception e) {
+                throw new BusinessException("时间格式错误，请使用 yyyy-MM-dd 格式");
+            }
+        } else if (hasEndTime) {
+            // 只有结束时间：清空该日期之前的日志
+            try {
+                LocalDateTime end = LocalDateTime.parse(endTime + " 23:59:59", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                wrapper.le(OperationLog::getCreateTime, end);
+                log.info("清空日志: {} 之前的所有日志", endTime);
+            } catch (Exception e) {
+                throw new BusinessException("时间格式错误，请使用 yyyy-MM-dd 格式");
+            }
+        } else {
+            // 两个参数都没有：清空全部日志
+            log.warn("清空全部日志，此操作需谨慎");
         }
-        
-        try {
-            LocalDateTime start = LocalDateTime.parse(startTime + " 00:00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            LocalDateTime end = LocalDateTime.parse(endTime + " 23:59:59", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            wrapper.between(OperationLog::getCreateTime, start, end);
-        } catch (Exception e) {
-            throw new BusinessException("时间格式错误，请使用 yyyy-MM-dd 格式");
-        }
-        
+
         return baseMapper.delete(wrapper) >= 0;
     }
 

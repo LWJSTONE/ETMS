@@ -56,6 +56,7 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void addDictType(DictType dictType) {
         // 检查字典类型是否重复
         Long count = baseMapper.selectCount(

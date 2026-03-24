@@ -9,6 +9,7 @@ import com.etms.mapper.ConfigMapper;
 import com.etms.service.ConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -60,6 +61,7 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void addConfig(Config config) {
         // 检查配置键名是否重复
         Long count = baseMapper.selectCount(
