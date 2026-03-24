@@ -55,7 +55,7 @@
       <template #header>
         <div class="card-header">
           <span>学习进度列表</span>
-          <el-button type="success" @click="handleExport">
+          <el-button v-if="canExport" type="success" @click="handleExport">
             <el-icon><Download /></el-icon>导出
           </el-button>
         </div>

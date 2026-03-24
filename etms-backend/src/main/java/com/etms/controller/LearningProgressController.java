@@ -64,6 +64,17 @@ public class LearningProgressController {
     @ApiOperation(value = "更新学习进度")
     @PutMapping
     public Result<Void> updateProgress(@Valid @RequestBody Map<String, Object> params) {
+        // 参数校验
+        if (params.get("planId") == null) {
+            return Result.error(400, "planId不能为空");
+        }
+        if (params.get("courseId") == null) {
+            return Result.error(400, "courseId不能为空");
+        }
+        if (params.get("progress") == null) {
+            return Result.error(400, "progress不能为空");
+        }
+        
         Long planId = Long.valueOf(params.get("planId").toString());
         Long courseId = Long.valueOf(params.get("courseId").toString());
         Integer progress = Integer.valueOf(params.get("progress").toString());
@@ -76,6 +87,9 @@ public class LearningProgressController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
     public Result<LearningProgressVO> get(@PathVariable Long id) {
         LearningProgressVO vo = learningProgressService.getProgressDetail(id);
+        if (vo == null) {
+            return Result.error(404, "学习进度记录不存在");
+        }
         return Result.success(vo);
     }
 }

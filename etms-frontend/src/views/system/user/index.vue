@@ -366,9 +366,16 @@ const handleDelete = async (row: any) => {
 }
 
 const handleResetPassword = async (row: any) => {
-  await ElMessageBox.confirm('确定要重置该用户的密码吗？重置后的新密码将发送到用户手机或邮箱。', '提示', { type: 'warning' })
-  await resetPassword(row.id)
-  ElMessage.success('密码已重置，新密码已发送给用户')
+  try {
+    await ElMessageBox.confirm('确定要重置该用户的密码吗？重置后的新密码将发送到用户手机或邮箱。', '提示', { type: 'warning' })
+    await resetPassword(row.id)
+    ElMessage.success('密码已重置，新密码已发送给用户')
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('重置密码失败:', error)
+      ElMessage.error(error.message || '重置密码失败')
+    }
+  }
 }
 
 // 分配角色
@@ -394,8 +401,9 @@ const handleSubmitRole = async () => {
     ElMessage.success('角色分配成功')
     roleDialogVisible.value = false
     getList()
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    console.error('角色分配失败:', error)
+    ElMessage.error(error.message || '角色分配失败')
   }
 }
 

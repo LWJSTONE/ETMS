@@ -249,7 +249,8 @@ const handleCompleteLearning = async () => {
   completing.value = true
   try {
     progress.value = 100
-    await saveProgress(100)
+    // 立即保存完成进度（使用 saveProgressImmediate 而不是防抖函数）
+    await saveProgressImmediate(100)
     ElMessage.success('学习完成！')
     
     // 返回课程列表

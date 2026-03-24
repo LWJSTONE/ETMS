@@ -194,8 +194,8 @@
         :page-sizes="[8, 12, 16, 24]"
         layout="total, sizes, prev, pager, next"
         background
-        @size-change="getCourseList"
-        @current-change="getCourseList"
+        @size-change="getCourseListData"
+        @current-change="getCourseListData"
       />
     </el-card>
   </div>

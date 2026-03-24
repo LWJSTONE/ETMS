@@ -331,19 +331,21 @@ const handleDelete = async (row: Dept) => {
     return
   }
 
-  await ElMessageBox.confirm(
-    `确定要删除部门【${row.deptName}】吗？`,
-    '提示',
-    { type: 'warning' }
-  )
-
   try {
+    await ElMessageBox.confirm(
+      `确定要删除部门【${row.deptName}】吗？`,
+      '提示',
+      { type: 'warning' }
+    )
+
     await deleteDept(row.id)
     ElMessage.success('删除成功')
     getDeptTreeData()
-  } catch (error) {
-    console.error('删除部门失败:', error)
-    ElMessage.error('删除失败')
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('删除部门失败:', error)
+      ElMessage.error(error.message || '删除失败')
+    }
   }
 }
 

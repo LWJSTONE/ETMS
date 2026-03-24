@@ -51,6 +51,9 @@ public class QuestionController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<QuestionVO> get(@PathVariable Long id) {
         QuestionVO vo = questionService.getQuestionDetail(id);
+        if (vo == null) {
+            return Result.error(404, "题目不存在");
+        }
         return Result.success(vo);
     }
     

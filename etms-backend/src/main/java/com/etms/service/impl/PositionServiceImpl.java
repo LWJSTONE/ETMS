@@ -48,6 +48,7 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
     }
     
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public void addPosition(Position position) {
         // 检查岗位编码是否重复
         Long count = baseMapper.selectCount(
@@ -68,6 +69,7 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
     }
     
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public void updatePosition(Position position) {
         // 检查岗位编码是否重复（排除自身）
         Long count = baseMapper.selectCount(

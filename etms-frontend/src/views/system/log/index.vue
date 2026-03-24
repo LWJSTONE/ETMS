@@ -234,6 +234,7 @@ const getList = async () => {
     }
   } catch (error) {
     console.error('获取日志列表失败:', error)
+    ElMessage.error('获取日志列表失败')
   } finally {
     loading.value = false
   }
@@ -266,6 +267,7 @@ const handleViewDetail = async (row: LogItem) => {
     }
   } catch (error) {
     console.error('获取日志详情失败:', error)
+    ElMessage.error('获取日志详情失败')
   }
 }
 

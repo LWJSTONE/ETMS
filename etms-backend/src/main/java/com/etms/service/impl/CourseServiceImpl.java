@@ -251,11 +251,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             default:
                 throw new BusinessException("课程状态异常，无法上架");
         }
-        
-        Course course = new Course();
-        course.setId(id);
-        course.setStatus(2); // 已上架
-        return baseMapper.updateById(course) > 0;
+        // 注意：此处不需要更新状态的代码，因为上面的switch已经覆盖了所有情况
+        // 只有审核通过(status=2)的课程才能正常上架，而该操作已在auditCourse方法中处理
     }
     
     @Override

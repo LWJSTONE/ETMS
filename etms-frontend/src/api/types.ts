@@ -288,7 +288,7 @@ export interface QuestionUpdateParams {
 }
 
 export interface QuestionRandomParams {
-  categoryId?: number
+  courseId?: number  // 修复：与后端参数名一致，原来是categoryId
   questionType?: number
   difficulty?: number
   count: number

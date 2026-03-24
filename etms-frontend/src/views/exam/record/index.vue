@@ -339,8 +339,14 @@ const handleViewDetail = async (row: ExamRecord) => {
 // 导出
 const handleExport = async () => {
   try {
+    // 构建导出参数，传递当前搜索条件
+    const params: any = {}
+    if (searchForm.userName) params.userName = searchForm.userName
+    if (searchForm.paperName) params.paperName = searchForm.paperName
+    if (searchForm.status !== null) params.status = searchForm.status
+    
     // 使用封装的导出API
-    const blob = await exportResults()
+    const blob = await exportResults(params)
     
     // 创建下载链接
     const url = window.URL.createObjectURL(blob)

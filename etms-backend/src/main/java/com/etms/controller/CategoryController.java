@@ -46,6 +46,9 @@ public class CategoryController {
     @GetMapping("/{id}")
     public Result<CategoryVO> get(@PathVariable Long id) {
         CategoryVO vo = categoryService.getCategoryDetail(id);
+        if (vo == null) {
+            return Result.error(404, "分类不存在");
+        }
         return Result.success(vo);
     }
     

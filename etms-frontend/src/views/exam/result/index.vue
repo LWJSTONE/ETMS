@@ -515,7 +515,7 @@ const formatDateTime = (dateTime: string) => {
 
 // 格式化用时
 const formatDuration = (minutes: number) => {
-  if (!minutes && minutes !== 0) return '-'
+  if (minutes === null || minutes === undefined) return '-'
   if (minutes < 60) return `${minutes}分钟`
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
@@ -560,13 +560,17 @@ const getQuestionOptions = (item: any) => {
 // 判断选项是否被选中
 const isOptionSelected = (userAnswer: string, optionLabel: string) => {
   if (!userAnswer) return false
-  return userAnswer.split('').includes(optionLabel)
+  // 支持多种格式："A,B,C" 或 "ABC"
+  const answers = userAnswer.includes(',') ? userAnswer.split(',') : userAnswer.split('')
+  return answers.includes(optionLabel)
 }
 
 // 判断是否是正确选项
 const isCorrectOption = (answer: string, optionLabel: string) => {
   if (!answer) return false
-  return answer.split('').includes(optionLabel)
+  // 支持多种格式："A,B,C" 或 "ABC"
+  const correctAnswers = answer.includes(',') ? answer.split(',') : answer.split('')
+  return correctAnswers.includes(optionLabel)
 }
 
 onMounted(() => {
