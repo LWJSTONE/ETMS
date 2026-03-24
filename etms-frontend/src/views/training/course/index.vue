@@ -453,8 +453,12 @@ const handleEdit = async (row: any) => {
 
 // 提交表单
 const handleSubmit = async () => {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await formRef.value?.validate()
+    if (!valid) return
+  } catch {
+    return
+  }
 
   submitLoading.value = true
   try {

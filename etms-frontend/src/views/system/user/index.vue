@@ -210,7 +210,7 @@ const deptTree = ref<Dept[]>([])
 const positionList = ref<any[]>([])
 
 // 手机号验证规则
-const phoneValidator = (rule: any, value: string, callback: any) => {
+const phoneValidator = (_rule: any, value: string, callback: (error?: Error) => void) => {
   if (!value) {
     callback()
     return
@@ -224,7 +224,7 @@ const phoneValidator = (rule: any, value: string, callback: any) => {
 }
 
 // 邮箱验证规则
-const emailValidator = (rule: any, value: string, callback: any) => {
+const emailValidator = (_rule: any, value: string, callback: (error?: Error) => void) => {
   if (!value) {
     callback()
     return
@@ -247,7 +247,7 @@ const rules: FormRules = {
     required: true, 
     message: '请输入密码', 
     trigger: 'blur',
-    validator: (rule: any, value: string, callback: any) => {
+    validator: (_rule: any, value: string, callback: (error?: Error) => void) => {
       if (!isEdit.value && (!value || value.trim() === '')) {
         callback(new Error('请输入密码'))
       } else {
@@ -412,8 +412,12 @@ const handleSubmitRole = async () => {
 }
 
 const handleSubmit = async () => {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await formRef.value?.validate()
+    if (!valid) return
+  } catch {
+    return
+  }
   try {
     if (isEdit.value) { 
       // 编辑时只传递需要的字段

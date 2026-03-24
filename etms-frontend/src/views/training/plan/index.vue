@@ -397,7 +397,7 @@ const form = reactive({
 })
 
 // 日期范围验证器 - 结束日期必须大于开始日期
-const validateDateRange = (rule: any, value: string[], callback: any) => {
+const validateDateRange = (_rule: any, value: string[], callback: (error?: Error) => void) => {
   if (!value || value.length === 0) {
     callback(new Error('请选择培训日期'))
     return
@@ -414,7 +414,7 @@ const validateDateRange = (rule: any, value: string[], callback: any) => {
 }
 
 // 目标选择验证器
-const validateTargetSelection = (rule: any, value: any, callback: any) => {
+const validateTargetSelection = (_rule: any, value: any, callback: (error?: Error) => void) => {
   if (form.targetType === 1 && (!form.targetDeptIds || form.targetDeptIds.length === 0)) {
     callback(new Error('请选择目标部门'))
     return
@@ -722,8 +722,12 @@ const handleArchive = async (row: any) => {
 
 // 提交表单
 const handleSubmit = async () => {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await formRef.value?.validate()
+    if (!valid) return
+  } catch {
+    return
+  }
 
   submitLoading.value = true
   try {

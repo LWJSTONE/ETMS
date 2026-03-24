@@ -314,8 +314,12 @@ const handlePermSubmit = async () => {
 
 // 提交表单
 const handleSubmit = async () => {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await formRef.value?.validate()
+    if (!valid) return
+  } catch {
+    return
+  }
   try {
     if (isEdit.value) { 
       // 编辑时排除id字段后再传递

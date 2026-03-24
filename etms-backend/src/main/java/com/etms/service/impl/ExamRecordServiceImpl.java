@@ -878,10 +878,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 userMapper.selectBatchIds(userIds).stream()
                         .collect(java.util.stream.Collectors.toMap(User::getId, u -> u));
         
-        // 使用EasyExcel或Apache POI导出
-        try {
-            // 创建工作簿
-            org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+        // 使用EasyExcel或Apache POI导出（使用try-with-resources确保资源正确释放）
+        try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
             org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("考试记录");
             
             // 创建表头
@@ -913,7 +911,6 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             
             // 写入输出流
             workbook.write(outputStream);
-            workbook.close();
         } catch (Exception e) {
             throw new BusinessException("导出失败：" + e.getMessage());
         }

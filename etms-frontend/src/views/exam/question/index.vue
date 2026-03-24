@@ -356,7 +356,7 @@ watch(multiAnswer, (val) => {
 })
 
 // 自定义验证函数：验证选项C
-const validateOptionC = (rule: any, value: any, callback: any) => {
+const validateOptionC = (_rule: any, value: any, callback: (error?: Error) => void) => {
   if ((form.questionType === 1 || form.questionType === 2) && value) {
     // 如果填了C，检查A和B是否已填
     if (!form.optionA) {
@@ -372,7 +372,7 @@ const validateOptionC = (rule: any, value: any, callback: any) => {
 };
 
 // 自定义验证函数：验证选项D
-const validateOptionD = (rule: any, value: any, callback: any) => {
+const validateOptionD = (_rule: any, value: any, callback: (error?: Error) => void) => {
   if ((form.questionType === 1 || form.questionType === 2) && value) {
     // 如果填了D，检查C是否已填
     if (!form.optionC) {
@@ -559,8 +559,12 @@ const handleEdit = async (row: any) => {
 
 // 提交表单
 const handleSubmit = async () => {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await formRef.value?.validate()
+    if (!valid) return
+  } catch {
+    return
+  }
 
   submitLoading.value = true
   try {
