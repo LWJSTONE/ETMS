@@ -142,6 +142,37 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             throw new BusinessException("您今天已" + (signCategory != null && signCategory == 2 ? "签退" : "签到") + "，请勿重复操作");
         }
         
+        // 修复：签到签退顺序校验
+        // 如果是签到(signCategory=1)，检查今天是否已经签退了
+        if (signCategory == null || signCategory == 1) {
+            Long signOutCount = baseMapper.selectCount(
+                new LambdaQueryWrapper<AttendanceRecord>()
+                    .eq(AttendanceRecord::getUserId, currentUserId)
+                    .eq(AttendanceRecord::getPlanId, planId)
+                    .eq(AttendanceRecord::getSignCategory, 2) // 签退
+                    .between(AttendanceRecord::getSignTime, today, tomorrow)
+                    .notIn(AttendanceRecord::getStatus, 4, 6) // 排除缺勤和补签驳回
+            );
+            if (signOutCount > 0) {
+                throw new BusinessException("您今天已签退，无法再签到");
+            }
+        }
+        
+        // 如果是签退(signCategory=2)，检查今天是否已经签到了
+        if (signCategory != null && signCategory == 2) {
+            Long signInCount = baseMapper.selectCount(
+                new LambdaQueryWrapper<AttendanceRecord>()
+                    .eq(AttendanceRecord::getUserId, currentUserId)
+                    .eq(AttendanceRecord::getPlanId, planId)
+                    .eq(AttendanceRecord::getSignCategory, 1) // 签到
+                    .between(AttendanceRecord::getSignTime, today, tomorrow)
+                    .notIn(AttendanceRecord::getStatus, 4, 6) // 排除缺勤和补签驳回
+            );
+            if (signInCount == 0) {
+                throw new BusinessException("请先签到后再签退");
+            }
+        }
+        
         AttendanceRecord record = new AttendanceRecord();
         record.setPlanId(planId);
         record.setSignType(signType);
@@ -487,5 +518,14 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         String username = authentication.getName();
         User user = userMapper.selectByUsername(username);
         return user != null ? user.getId() : null;
+    }
+    
+    @Override
+    public boolean isOwner(Long recordId, Long userId) {
+        if (recordId == null || userId == null) {
+            return false;
+        }
+        AttendanceRecord record = baseMapper.selectById(recordId);
+        return record != null && userId.equals(record.getUserId());
     }
 }

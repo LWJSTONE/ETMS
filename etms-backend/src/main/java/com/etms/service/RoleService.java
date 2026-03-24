@@ -55,4 +55,11 @@ public interface RoleService extends IService<Role> {
      * 修改角色状态
      */
     void updateStatus(Long id, Integer status);
+    
+    /**
+     * 检查角色是否有用户关联
+     * @param roleId 角色ID
+     * @return 是否有用户关联
+     */
+    boolean hasUsers(Long roleId);
 }

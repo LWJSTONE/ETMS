@@ -3,6 +3,7 @@ package com.etms.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
+import com.etms.dto.ProgressDTO;
 import com.etms.entity.UserPlan;
 import com.etms.service.LearningProgressService;
 import com.etms.vo.LearningProgressVO;
@@ -14,7 +15,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Map;
 
 /**
  * 学习进度控制器
@@ -63,22 +63,12 @@ public class LearningProgressController {
     
     @ApiOperation(value = "更新学习进度")
     @PutMapping
-    public Result<Void> updateProgress(@Valid @RequestBody Map<String, Object> params) {
-        // 参数校验
-        if (params.get("planId") == null) {
-            return Result.error(400, "planId不能为空");
-        }
-        if (params.get("courseId") == null) {
-            return Result.error(400, "courseId不能为空");
-        }
-        if (params.get("progress") == null) {
-            return Result.error(400, "progress不能为空");
-        }
-        
-        Long planId = Long.valueOf(params.get("planId").toString());
-        Long courseId = Long.valueOf(params.get("courseId").toString());
-        Integer progress = Integer.valueOf(params.get("progress").toString());
-        learningProgressService.updateProgress(planId, courseId, progress);
+    public Result<Void> updateProgress(@Valid @RequestBody ProgressDTO progressDTO) {
+        learningProgressService.updateProgress(
+            progressDTO.getPlanId(), 
+            progressDTO.getCourseId(), 
+            progressDTO.getProgress()
+        );
         return Result.success();
     }
     

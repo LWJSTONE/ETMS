@@ -55,7 +55,9 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="questionContent" label="题目内容" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
-            <div class="question-content" v-html="row.questionContent"></div>
+            <div class="question-content">
+              <SafeHtml :html="row.questionContent" />
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="questionType" label="题目类型" width="100">
@@ -298,6 +300,7 @@ import {
   deleteQuestion
 } from '@/api/exam'
 import { getCourseListAll } from '@/api/course'
+import SafeHtml from '@/components/SafeHtml.vue'
 
 const route = useRoute()
 const pageTitle = route.meta?.title || '题库管理'

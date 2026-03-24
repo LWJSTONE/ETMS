@@ -3,6 +3,9 @@ package com.etms.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
+import com.etms.dto.SignInDTO;
+import com.etms.dto.SupplementaryDTO;
+import com.etms.dto.AttendanceAuditDTO;
 import com.etms.entity.AttendanceRecord;
 import com.etms.service.AttendanceRecordService;
 import com.etms.vo.AttendanceRecordVO;
@@ -17,7 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Map;
+import javax.validation.Valid;
 
 /**
  * 签到记录控制器
@@ -52,67 +55,49 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "签到/签退")
     @PostMapping("/sign")
-    public Result<Void> signIn(@RequestBody Map<String, Object> body, HttpServletRequest request) {
-        // 参数验证
-        if (body.get("planId") == null) {
-            return Result.error("培训计划ID不能为空");
-        }
-
-        Long planId = Long.valueOf(body.get("planId").toString());
-        Integer signType = body.get("signType") != null ? Integer.valueOf(body.get("signType").toString()) : 1;
-        Integer signCategory = body.get("signCategory") != null ? Integer.valueOf(body.get("signCategory").toString()) : 1;
-        String location = body.get("location") != null ? body.get("location").toString() : null;
-        
-        // 修复：验证签到类型值是否合法（1: 二维码, 2: GPS定位, 3: 人脸识别）
-        if (signType < 1 || signType > 3) {
-            return Result.error("签到类型不合法，有效值为1-3");
-        }
-        // 修复：验证签到类别值是否合法（1: 签到, 2: 签退）
-        if (signCategory < 1 || signCategory > 2) {
-            return Result.error("签到类别不合法，有效值为1-2");
-        }
-        
+    public Result<Void> signIn(@Valid @RequestBody SignInDTO signInDTO, HttpServletRequest request) {
         // 修复问题5：获取客户端IP和设备信息
         String ipAddress = getClientIp(request);
         String deviceInfo = request.getHeader("User-Agent");
         
-        attendanceRecordService.signIn(planId, signType, signCategory, location, ipAddress, deviceInfo);
+        attendanceRecordService.signIn(
+            signInDTO.getPlanId(), 
+            signInDTO.getSignType(), 
+            signInDTO.getSignCategory(), 
+            signInDTO.getLocation(), 
+            ipAddress, 
+            deviceInfo
+        );
         return Result.success();
     }
     
     @ApiOperation(value = "补签申请")
     @PostMapping("/supplementary")
-    public Result<Void> applySupplementary(@RequestBody Map<String, Object> body) {
-        // 参数验证
-        if (body.get("planId") == null) {
-            return Result.error("培训计划ID不能为空");
-        }
-        if (body.get("signTime") == null) {
-            return Result.error("签到时间不能为空");
-        }
-
-        Long planId = Long.valueOf(body.get("planId").toString());
-        Integer signType = body.get("signType") != null ? Integer.valueOf(body.get("signType").toString()) : 1;
-        Integer signCategory = body.get("signCategory") != null ? Integer.valueOf(body.get("signCategory").toString()) : 1;
-        String signTime = body.get("signTime").toString();
-        String reason = body.get("reason") != null ? body.get("reason").toString() : null;
-        
-        // 修复：验证签到类型值是否合法（1: 二维码, 2: GPS定位, 3: 人脸识别）
-        if (signType < 1 || signType > 3) {
-            return Result.error("签到类型不合法，有效值为1-3");
-        }
-        // 修复：验证签到类别值是否合法（1: 签到, 2: 签退）
-        if (signCategory < 1 || signCategory > 2) {
-            return Result.error("签到类别不合法，有效值为1-2");
-        }
-        
-        attendanceRecordService.applySupplementary(planId, signType, signCategory, signTime, reason);
+    public Result<Void> applySupplementary(@Valid @RequestBody SupplementaryDTO supplementaryDTO) {
+        attendanceRecordService.applySupplementary(
+            supplementaryDTO.getPlanId(), 
+            supplementaryDTO.getSignType(), 
+            supplementaryDTO.getSignCategory(), 
+            supplementaryDTO.getSignTime(), 
+            supplementaryDTO.getReason()
+        );
         return Result.success();
     }
     
     @ApiOperation(value = "撤销补签申请")
     @DeleteMapping("/supplementary/{id}")
     public Result<Void> cancelSupplementary(@PathVariable Long id) {
+        // 修复：添加权限验证，确保用户只能撤销自己的补签申请
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            return Result.error("用户未登录");
+        }
+        
+        // 验证补签记录是否属于当前用户
+        if (!attendanceRecordService.isOwner(id, currentUser.getId())) {
+            return Result.error("无权撤销他人的补签申请");
+        }
+        
         attendanceRecordService.cancelSupplementary(id);
         return Result.success();
     }
@@ -120,20 +105,8 @@ public class AttendanceRecordController {
     @ApiOperation(value = "补签审核")
     @PostMapping("/{id}/audit")
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
-    public Result<Void> audit(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        // 参数验证
-        if (body.get("auditStatus") == null) {
-            return Result.error("审核状态不能为空");
-        }
-
-        Integer auditStatus = Integer.valueOf(body.get("auditStatus").toString());
-        // 验证审核状态值是否合法（1: 通过, 2: 驳回）
-        if (auditStatus != 1 && auditStatus != 2) {
-            return Result.error("审核状态值不合法");
-        }
-
-        String auditRemark = body.get("auditRemark") != null ? body.get("auditRemark").toString() : null;
-        attendanceRecordService.auditSupplement(id, auditStatus, auditRemark);
+    public Result<Void> audit(@PathVariable Long id, @Valid @RequestBody AttendanceAuditDTO auditDTO) {
+        attendanceRecordService.auditSupplement(id, auditDTO.getAuditStatus(), auditDTO.getAuditRemark());
         return Result.success();
     }
     

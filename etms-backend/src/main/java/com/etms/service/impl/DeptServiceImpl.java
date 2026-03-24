@@ -245,4 +245,15 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
         }
         return false;
     }
+    
+    @Override
+    public boolean hasUsers(Long deptId) {
+        if (deptId == null) {
+            return false;
+        }
+        Long userCount = userMapper.selectCount(
+            new LambdaQueryWrapper<User>().eq(User::getDeptId, deptId)
+        );
+        return userCount != null && userCount > 0;
+    }
 }

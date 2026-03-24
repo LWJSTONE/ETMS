@@ -3,6 +3,7 @@ package com.etms.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
+import com.etms.dto.PasswordDTO;
 import com.etms.dto.UserDTO;
 import com.etms.entity.User;
 import com.etms.service.UserService;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -150,22 +150,7 @@ public class UserController {
     @PutMapping("/{id}/password")
     public Result<Void> updatePassword(
             @PathVariable Long id,
-            @RequestBody java.util.Map<String, String> passwordMap) {
-        // 从请求体中获取密码，避免敏感信息暴露在URL中
-        String oldPassword = passwordMap.get("oldPassword");
-        String newPassword = passwordMap.get("newPassword");
-        
-        // 参数校验
-        if (oldPassword == null || oldPassword.isEmpty()) {
-            return Result.error("原密码不能为空");
-        }
-        if (newPassword == null || newPassword.isEmpty()) {
-            return Result.error("新密码不能为空");
-        }
-        if (newPassword.length() < 6 || newPassword.length() > 20) {
-            return Result.error("新密码长度必须在6-20个字符之间");
-        }
-        
+            @Valid @RequestBody PasswordDTO passwordDTO) {
         // 权限校验：只能修改自己的密码，或需要管理员权限
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -191,7 +176,7 @@ public class UserController {
             return Result.error("无权限修改他人密码");
         }
         
-        userService.updatePassword(id, oldPassword, newPassword);
+        userService.updatePassword(id, passwordDTO.getOldPassword(), passwordDTO.getNewPassword());
         return Result.success();
     }
     
@@ -199,11 +184,11 @@ public class UserController {
     @PutMapping("/{id}/reset-password")
     // 权限校验：只有管理员可以重置密码
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<Void> resetPassword(@PathVariable Long id) {
-        // 安全校验：密码不再通过API返回，而是通过邮件或短信发送给用户
-        // 或者返回一个临时密码token，用户通过该token设置新密码
-        userService.resetPassword(id);
-        return Result.success();
+    public Result<String> resetPassword(@PathVariable Long id) {
+        // 重置密码并返回新密码
+        // 管理员可以将新密码通过安全渠道告知用户
+        String newPassword = userService.resetPassword(id);
+        return Result.success(newPassword);
     }
     
     @ApiOperation(value = "修改状态")
@@ -220,6 +205,20 @@ public class UserController {
         if (status != 0 && status != 1) {
             return Result.error("状态值不合法");
         }
+        
+        // 修复：防止管理员禁用自己
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            String currentUsername = authentication.getName();
+            User targetUser = userService.getById(id);
+            if (targetUser != null && currentUsername.equals(targetUser.getUsername())) {
+                // 管理员不能禁用自己
+                if (status == 0) {
+                    return Result.error("不能禁用自己的账户");
+                }
+            }
+        }
+        
         userService.updateStatus(id, status);
         return Result.success();
     }

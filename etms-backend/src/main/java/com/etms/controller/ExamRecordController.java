@@ -3,6 +3,7 @@ package com.etms.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
+import com.etms.dto.SubmitExamDTO;
 import com.etms.entity.ExamRecord;
 import com.etms.exception.BusinessException;
 import com.etms.service.ExamRecordService;
@@ -15,9 +16,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 /**
  * 考试记录控制器
@@ -63,24 +64,21 @@ public class ExamRecordController {
     public Result<ExamRecord> startExam(
             @PathVariable Long paperId,
             @RequestParam(required = false) Long planId) {
+        // 修复：添加考试资格校验
+        // 如果是通过培训计划参加考试，需要验证用户是否有该培训计划的参与资格
+        if (planId != null) {
+            if (!examRecordService.checkExamEligibility(paperId, planId)) {
+                return Result.error("您没有该考试的资格，请确认是否已报名参加相关培训计划");
+            }
+        }
         ExamRecord record = examRecordService.startExam(paperId, planId);
         return Result.success(record);
     }
     
     @ApiOperation(value = "提交试卷")
     @PostMapping("/submit")
-    public Result<Void> submitExam(@RequestBody Map<String, Object> params) {
-        // 参数验证
-        if (params.get("recordId") == null) {
-            return Result.error("考试记录ID不能为空");
-        }
-        if (params.get("answers") == null) {
-            return Result.error("答案不能为空");
-        }
-
-        Long recordId = Long.valueOf(params.get("recordId").toString());
-        String answers = params.get("answers").toString();
-        examRecordService.submitExam(recordId, answers);
+    public Result<Void> submitExam(@Valid @RequestBody SubmitExamDTO submitExamDTO) {
+        examRecordService.submitExam(submitExamDTO.getRecordId(), submitExamDTO.getAnswers());
         return Result.success();
     }
     

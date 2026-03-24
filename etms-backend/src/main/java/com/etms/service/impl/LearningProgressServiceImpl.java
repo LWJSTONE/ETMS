@@ -439,6 +439,10 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             }
             baseMapper.insert(userPlan);
         } else {
+            // 修复：当进度已达到100%时，不应再允许更新
+            if (userPlan.getProgress() != null && userPlan.getProgress() >= 100) {
+                throw new BusinessException("学习进度已完成，无需继续更新");
+            }
             // 防止进度倒退
             if (userPlan.getProgress() != null && progress < userPlan.getProgress()) {
                 throw new BusinessException("学习进度不能倒退");

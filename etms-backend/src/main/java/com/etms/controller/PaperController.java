@@ -89,6 +89,10 @@ public class PaperController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> delete(@PathVariable Long id) {
+        // 修复：删除试卷前检查是否有关联的考试记录
+        if (paperService.hasExamRecords(id)) {
+            return Result.error("该试卷存在关联的考试记录，无法删除");
+        }
         paperService.deletePaper(id);
         return Result.success();
     }

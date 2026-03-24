@@ -162,50 +162,7 @@ export function exportResults(params?: {
   startTime?: string
   endTime?: string
 }): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    // 获取token
-    const token = localStorage.getItem('token')
-    
-    // 构建查询参数
-    const queryParts: string[] = []
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          queryParts.push(`${key}=${encodeURIComponent(value as string)}`)
-        }
-      })
-    }
-    const queryStr = queryParts.length > 0 ? `?${queryParts.join('&')}` : ''
-    
-    // 使用fetch API处理文件下载，支持blob响应
-    fetch(`/api/exam/results/export${queryStr}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          // 尝试解析错误信息
-          let errorMessage = '导出失败'
-          try {
-            const errorData = await response.json()
-            errorMessage = errorData.message || errorMessage
-          } catch {
-            // 如果无法解析JSON，使用状态文本
-            errorMessage = response.statusText || errorMessage
-          }
-          throw new Error(errorMessage)
-        }
-        return response.blob()
-      })
-      .then((blob) => {
-        resolve(blob)
-      })
-      .catch((error) => {
-        reject(error)
-      })
-  })
+  return request.getBlob('/exam/results/export', params)
 }
 
 // 成绩统计类型

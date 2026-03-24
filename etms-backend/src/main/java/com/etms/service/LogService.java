@@ -34,9 +34,11 @@ public interface LogService extends IService<OperationLog> {
 
     /**
      * 清空日志
+     * @param startTime 开始时间（可选，格式：yyyy-MM-dd）
+     * @param endTime 结束时间（可选，格式：yyyy-MM-dd）
      * @return 是否成功
      */
-    boolean clearLogs();
+    boolean clearLogs(String startTime, String endTime);
 
     /**
      * 导出日志

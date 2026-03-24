@@ -86,4 +86,12 @@ public interface ExamRecordService {
      * @return 用户得分
      */
     int calculateScore(Long paperId, String answers);
+    
+    /**
+     * 检查考试资格
+     * @param userId 用户ID
+     * @param paperId 试卷ID
+     * @param planId 培训计划ID
+     */
+    void checkExamEligibility(Long userId, Long paperId, Long planId);
 }

@@ -66,4 +66,11 @@ public interface DictService extends IService<DictType> {
      * 刷新字典缓存
      */
     void refreshCache();
+    
+    /**
+     * 检查字典类型是否有字典数据
+     * @param dictTypeId 字典类型ID
+     * @return 是否有字典数据
+     */
+    boolean hasDictData(Long dictTypeId);
 }

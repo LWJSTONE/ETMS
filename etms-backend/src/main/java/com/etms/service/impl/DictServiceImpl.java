@@ -252,4 +252,15 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
         // 更新缓存
         dictCache.put(dictType.getDictType(), dataList);
     }
+    
+    @Override
+    public boolean hasDictData(Long dictTypeId) {
+        if (dictTypeId == null) {
+            return false;
+        }
+        Long dataCount = dictDataMapper.selectCount(
+            new LambdaQueryWrapper<DictData>().eq(DictData::getDictTypeId, dictTypeId)
+        );
+        return dataCount != null && dataCount > 0;
+    }
 }

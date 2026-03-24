@@ -60,4 +60,11 @@ public interface CourseService extends IService<Course> {
      * 获取课程列表(不分页)
      */
     List<CourseVO> listCourses(Long categoryId);
+    
+    /**
+     * 检查课程是否有培训计划
+     * @param courseId 课程ID
+     * @return 是否有培训计划
+     */
+    boolean hasTrainingPlans(Long courseId);
 }

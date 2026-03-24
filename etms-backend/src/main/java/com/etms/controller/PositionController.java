@@ -3,6 +3,7 @@ package com.etms.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
+import com.etms.dto.StatusDTO;
 import com.etms.entity.Position;
 import com.etms.service.PositionService;
 import io.swagger.annotations.Api;
@@ -13,7 +14,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.util.Map;
 
 /**
  * 岗位管理控制器
@@ -83,18 +83,10 @@ public class PositionController {
     @ApiOperation(value = "修改状态")
     @PreAuthorize("hasAuthority('system:position:edit')")
     @PutMapping("/{id}/status")
-    public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String, Integer> params) {
-        Integer status = params.get("status");
-        if (status == null) {
-            return Result.error("状态参数不能为空");
-        }
-        // 验证状态值是否合法
-        if (status != 0 && status != 1) {
-            return Result.error("状态值不合法，有效值为0(禁用)或1(正常)");
-        }
+    public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusDTO statusDTO) {
         Position updatePosition = new Position();
         updatePosition.setId(id);
-        updatePosition.setStatus(status);
+        updatePosition.setStatus(statusDTO.getStatus());
         positionService.updateById(updatePosition);
         return Result.success();
     }

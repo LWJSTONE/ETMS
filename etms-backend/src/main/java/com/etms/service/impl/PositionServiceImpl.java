@@ -128,12 +128,12 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
         sb.append("岗位名称,岗位编码,排序,状态,备注,创建时间\n");
         
         for (Position position : positions) {
-            sb.append(position.getPositionName() != null ? position.getPositionName() : "").append(",")
-              .append(position.getPositionCode() != null ? position.getPositionCode() : "").append(",")
+            sb.append(escapeCsvField(position.getPositionName())).append(",")
+              .append(escapeCsvField(position.getPositionCode())).append(",")
               .append(position.getSortOrder() != null ? position.getSortOrder() : 0).append(",")
-              .append(position.getStatus() != null && position.getStatus() == 1 ? "正常" : "禁用").append(",")
-              .append(position.getRemark() != null ? position.getRemark() : "").append(",")
-              .append(position.getCreateTime() != null ? position.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "").append("\n");
+              .append(escapeCsvField(position.getStatus() != null && position.getStatus() == 1 ? "正常" : "禁用")).append(",")
+              .append(escapeCsvField(position.getRemark())).append(",")
+              .append(escapeCsvField(position.getCreateTime() != null ? position.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "")).append("\n");
         }
         
         try {
@@ -141,5 +141,23 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
         } catch (IOException e) {
             throw new BusinessException("导出岗位数据失败：" + e.getMessage());
         }
+    }
+    
+    /**
+     * CSV字段转义处理
+     * 防止CSV注入攻击，对包含逗号、换行符或双引号的字段进行转义
+     * @param field 原始字段值
+     * @return 转义后的字段值
+     */
+    private String escapeCsvField(String field) {
+        if (field == null) {
+            return "";
+        }
+        // 如果字段包含逗号、换行符或双引号，需要用双引号包围
+        if (field.contains(",") || field.contains("\n") || field.contains("\r") || field.contains("\"")) {
+            // 字段中的双引号需要转义为两个双引号
+            return "\"" + field.replace("\"", "\"\"") + "\"";
+        }
+        return field;
     }
 }

@@ -59,9 +59,23 @@ public class LogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean clearLogs() {
-        // 清空所有日志
-        return baseMapper.delete(new LambdaQueryWrapper<>()) >= 0;
+    public boolean clearLogs(String startTime, String endTime) {
+        LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
+        
+        // 修复：改为按时间范围删除，必须提供时间参数
+        if (startTime == null || startTime.isEmpty() || endTime == null || endTime.isEmpty()) {
+            throw new BusinessException("请指定要删除的日志时间范围");
+        }
+        
+        try {
+            LocalDateTime start = LocalDateTime.parse(startTime + " 00:00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            LocalDateTime end = LocalDateTime.parse(endTime + " 23:59:59", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            wrapper.between(OperationLog::getCreateTime, start, end);
+        } catch (Exception e) {
+            throw new BusinessException("时间格式错误，请使用 yyyy-MM-dd 格式");
+        }
+        
+        return baseMapper.delete(wrapper) >= 0;
     }
 
     @Override

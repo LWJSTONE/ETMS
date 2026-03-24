@@ -393,6 +393,8 @@ export interface ExamRecord {
   status: number
   duration?: number  // 考试时长(分钟)
   durationUsed?: number  // 实际用时(分钟)
+  correctCount?: number  // 正确题数
+  totalCount?: number  // 总题数
   answers?: ExamAnswer[]
   questions?: any[]  // 题目列表
   paperQuestions?: any[]  // 试卷题目列表
@@ -597,14 +599,18 @@ export interface ExamResult {
   userId: number
   userName?: string
   realName?: string
+  deptId?: number  // 部门ID
   deptName?: string
   totalScore: number
   userScore: number
   passScore: number
   passed: number
   submitTime: string
-  examDuration?: number
   startTime?: string
+  examDuration?: number
+  durationUsed?: number  // 实际用时(分钟)
+  objectiveScore?: number  // 客观题得分
+  subjectiveScore?: number  // 主观题得分
   answerDetail?: string  // 答题详情JSON
   answers?: any[]  // 答题详情数组
   retakeCount?: number  // 补考次数

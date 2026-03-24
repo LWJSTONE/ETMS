@@ -11,6 +11,7 @@ import com.etms.mapper.QuestionMapper;
 import com.etms.service.QuestionService;
 import com.etms.vo.QuestionVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 /**
  * 题库服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> implements QuestionService {
@@ -82,6 +84,21 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         if (question.getQuestionType() == 1 || question.getQuestionType() == 2 || question.getQuestionType() == 3) {
             if (question.getAnswer() == null || question.getAnswer().trim().isEmpty()) {
                 throw new BusinessException("选择题和判断题必须设置答案");
+            }
+        }
+        
+        // 修复：填空题(类型4)必须有答案
+        if (question.getQuestionType() == 4) {
+            if (question.getAnswer() == null || question.getAnswer().trim().isEmpty()) {
+                throw new BusinessException("填空题必须设置答案");
+            }
+        }
+        
+        // 修复：简答题(类型5)建议设置参考答案（可选，但给出提示）
+        if (question.getQuestionType() == 5) {
+            if (question.getAnswer() == null || question.getAnswer().trim().isEmpty()) {
+                // 简答题可以不设置答案，但记录日志提示
+                log.info("简答题未设置参考答案，后续需要人工评分");
             }
         }
         

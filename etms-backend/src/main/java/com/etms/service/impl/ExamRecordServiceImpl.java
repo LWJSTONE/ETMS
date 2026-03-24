@@ -272,13 +272,14 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         if (planId != null) {
             TrainingPlan plan = trainingPlanMapper.selectById(planId);
             if (plan != null && plan.getMaxRetake() != null && plan.getMaxRetake() > 0) {
-                // 统计用户已完成的考试次数（不包括进行中和已放弃的）
+                // 修复：统计用户已完成的考试次数，包括已完成(2)、已超时(3)、已放弃(4)状态
+                // 放弃状态也应计入考试次数，防止用户通过放弃来绕过次数限制
                 Long totalAttempts = baseMapper.selectCount(
                     new LambdaQueryWrapper<ExamRecord>()
                         .eq(ExamRecord::getUserId, currentUser.getId())
                         .eq(ExamRecord::getPaperId, paperId)
                         .eq(ExamRecord::getPlanId, planId)
-                        .in(ExamRecord::getStatus, 2, 3) // 已完成或已超时
+                        .in(ExamRecord::getStatus, 2, 3, 4) // 已完成、已超时、已放弃
                 );
                 if (totalAttempts >= plan.getMaxRetake()) {
                     throw new BusinessException("您已达到最大考试次数限制（" + plan.getMaxRetake() + "次）");
@@ -530,8 +531,10 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 // 简答题(类型5)：标记为待人工评分，此处暂不自动评分
                 // 实际应用中可通过关键词匹配或人工评分
                 if (question.getQuestionType() == 5) {
-                    // 简答题需要人工评分，此处不计分
-                    // 可以将用户答案保存，后续由管理员手动评分
+                    // 简答题需要人工评分，默认给0分，记录日志提示管理员进行人工评分
+                    log.info("简答题[ID:{}]需要人工评分，用户答案: {}", questionId, userAnswer);
+                    // 简答题默认给0分，后续由管理员手动评分
+                    // 可以在此处添加逻辑：将简答题ID和用户答案保存到待评分队列
                     continue;
                 }
                 
@@ -817,12 +820,40 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     
     @Override
     public void exportRecords(Long paperId, Long userId, Integer status, String userName, String paperName, OutputStream outputStream) {
-        // 获取所有符合条件的记录
+        // 修复：将过滤条件在SQL查询阶段完成，避免内存过滤
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(paperId != null, ExamRecord::getPaperId, paperId)
                .eq(userId != null, ExamRecord::getUserId, userId)
                .eq(status != null, ExamRecord::getStatus, status)
                .orderByDesc(ExamRecord::getCreateTime);
+        
+        // 修复：在SQL层面过滤用户名
+        if (userName != null && !userName.isEmpty()) {
+            List<Long> matchedUserIds = userMapper.selectList(
+                new LambdaQueryWrapper<User>()
+                    .like(User::getRealName, userName)
+                    .or()
+                    .like(User::getUsername, userName)
+            ).stream().map(User::getId).collect(Collectors.toList());
+            
+            if (matchedUserIds.isEmpty()) {
+                throw new BusinessException("没有可导出的数据");
+            }
+            wrapper.in(ExamRecord::getUserId, matchedUserIds);
+        }
+        
+        // 修复：在SQL层面过滤试卷名
+        if (paperName != null && !paperName.isEmpty()) {
+            List<Long> matchedPaperIds = paperMapper.selectList(
+                new LambdaQueryWrapper<Paper>()
+                    .like(Paper::getPaperName, paperName)
+            ).stream().map(Paper::getId).collect(Collectors.toList());
+            
+            if (matchedPaperIds.isEmpty()) {
+                throw new BusinessException("没有可导出的数据");
+            }
+            wrapper.in(ExamRecord::getPaperId, matchedPaperIds);
+        }
         
         List<ExamRecord> records = baseMapper.selectList(wrapper);
         
@@ -860,28 +891,11 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 headerRow.createCell(i).setCellValue(headers[i]);
             }
             
-            // 填充数据
+            // 填充数据（过滤条件已在SQL层面处理，无需内存过滤）
             int rowNum = 1;
-            // 修复问题：SimpleDateFormat非线程安全，改用DateTimeFormatter
             DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             
             for (ExamRecord record : records) {
-                // 过滤
-                if (userName != null && !userName.isEmpty()) {
-                    User user = userMap.get(record.getUserId());
-                    if (user == null || 
-                        (user.getRealName() == null || !user.getRealName().contains(userName)) &&
-                        (user.getUsername() == null || !user.getUsername().contains(userName))) {
-                        continue;
-                    }
-                }
-                if (paperName != null && !paperName.isEmpty()) {
-                    Paper paper = paperMap.get(record.getPaperId());
-                    if (paper == null || paper.getPaperName() == null || !paper.getPaperName().contains(paperName)) {
-                        continue;
-                    }
-                }
-                
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowNum++);
                 
                 User user = userMap.get(record.getUserId());
@@ -1026,6 +1040,64 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             workbook.close();
         } catch (Exception e) {
             throw new BusinessException("导出失败：" + e.getMessage());
+        }
+    }
+    
+    @Override
+    public void checkExamEligibility(Long userId, Long paperId, Long planId) {
+        if (userId == null) {
+            throw new BusinessException("用户ID不能为空");
+        }
+        if (paperId == null) {
+            throw new BusinessException("试卷ID不能为空");
+        }
+        
+        // 检查试卷是否存在
+        Paper paper = paperMapper.selectById(paperId);
+        if (paper == null) {
+            throw new BusinessException("试卷不存在");
+        }
+        
+        // 检查试卷状态
+        if (paper.getStatus() != 1) {
+            throw new BusinessException("试卷未发布，无法参加考试");
+        }
+        
+        // 检查考试时间窗口
+        LocalDateTime now = LocalDateTime.now();
+        if (paper.getStartTime() != null && now.isBefore(paper.getStartTime())) {
+            throw new BusinessException("考试尚未开始");
+        }
+        if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
+            throw new BusinessException("考试已结束");
+        }
+        
+        // 检查是否已有进行中的考试
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<ExamRecord>()
+                .eq(ExamRecord::getUserId, userId)
+                .eq(ExamRecord::getPaperId, paperId)
+                .eq(ExamRecord::getStatus, 1)
+        );
+        if (count > 0) {
+            throw new BusinessException("您已有进行中的考试，请先完成");
+        }
+        
+        // 检查考试次数限制
+        if (planId != null) {
+            TrainingPlan plan = trainingPlanMapper.selectById(planId);
+            if (plan != null && plan.getMaxRetake() != null && plan.getMaxRetake() > 0) {
+                Long totalAttempts = baseMapper.selectCount(
+                    new LambdaQueryWrapper<ExamRecord>()
+                        .eq(ExamRecord::getUserId, userId)
+                        .eq(ExamRecord::getPaperId, paperId)
+                        .eq(ExamRecord::getPlanId, planId)
+                        .in(ExamRecord::getStatus, 2, 3, 4)
+                );
+                if (totalAttempts >= plan.getMaxRetake()) {
+                    throw new BusinessException("您已达到最大考试次数限制（" + plan.getMaxRetake() + "次）");
+                }
+            }
         }
     }
 }

@@ -41,4 +41,12 @@ public interface AttendanceRecordService extends IService<AttendanceRecord> {
      * 获取个人签到统计
      */
     AttendanceStatsVO getPersonalStats(Long userId);
+    
+    /**
+     * 检查补签记录是否属于指定用户
+     * @param recordId 签到记录ID
+     * @param userId 用户ID
+     * @return 是否属于该用户
+     */
+    boolean isOwner(Long recordId, Long userId);
 }

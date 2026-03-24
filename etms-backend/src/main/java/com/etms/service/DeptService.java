@@ -34,4 +34,11 @@ public interface DeptService extends IService<Dept> {
      * 删除部门
      */
     void deleteDept(Long id);
+    
+    /**
+     * 检查部门是否有用户
+     * @param deptId 部门ID
+     * @return 是否有用户
+     */
+    boolean hasUsers(Long deptId);
 }

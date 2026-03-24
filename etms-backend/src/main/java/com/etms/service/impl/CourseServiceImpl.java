@@ -7,12 +7,14 @@ import com.etms.entity.Course;
 import com.etms.entity.Paper;
 import com.etms.entity.Question;
 import com.etms.entity.PlanCourse;
+import com.etms.entity.TrainingPlan;
 import com.etms.entity.User;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.CourseMapper;
 import com.etms.mapper.PaperMapper;
 import com.etms.mapper.QuestionMapper;
 import com.etms.mapper.PlanCourseMapper;
+import com.etms.mapper.TrainingPlanMapper;
 import com.etms.mapper.UserMapper;
 import com.etms.service.CourseService;
 import com.etms.vo.CourseVO;
@@ -37,6 +39,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     private final PlanCourseMapper planCourseMapper;
     private final PaperMapper paperMapper;
     private final QuestionMapper questionMapper;
+    private final TrainingPlanMapper trainingPlanMapper;
     private final UserMapper userMapper;
     
     @Override
@@ -234,7 +237,6 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             throw new BusinessException("课程不存在");
         }
         
-        // 修复：完善状态检查逻辑，明确各状态下的操作限制
         // 课程状态定义：0-草稿，1-待审核，2-已上架，3-已下架，4-审核驳回
         switch (existingCourse.getStatus()) {
             case 0: // 草稿
@@ -243,16 +245,22 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                 throw new BusinessException("课程正在审核中，请等待审核完成");
             case 2: // 已上架
                 throw new BusinessException("课程已上架，无需重复操作");
-            case 3: // 已下架
-                // 修复安全问题：已下架的课程需要重新提交审核后才能上架
-                throw new BusinessException("已下架的课程需要重新提交审核后才能上架");
+            case 3: // 已下架 - 允许重新上架（前提是之前已审核通过）
+                // 检查课程是否有审核通过记录（通过审核时间判断）
+                if (existingCourse.getAuditTime() != null) {
+                    Course course = new Course();
+                    course.setId(id);
+                    course.setStatus(2); // 已上架
+                    course.setUpdateTime(LocalDateTime.now());
+                    return baseMapper.updateById(course) > 0;
+                } else {
+                    throw new BusinessException("课程未审核通过，请先提交审核");
+                }
             case 4: // 审核驳回
                 throw new BusinessException("课程审核未通过，请修改后重新提交审核");
             default:
                 throw new BusinessException("课程状态异常，无法上架");
         }
-        // 注意：此处不需要更新状态的代码，因为上面的switch已经覆盖了所有情况
-        // 只有审核通过(status=2)的课程才能正常上架，而该操作已在auditCourse方法中处理
     }
     
     @Override
@@ -269,9 +277,28 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             throw new BusinessException("当前状态不允许下架操作，只有已上架状态可以下架");
         }
         
+        // 修复：下架前检查是否有关联的进行中培训计划
+        // 1. 查询关联该课程的培训计划ID列表
+        List<Long> planIds = planCourseMapper.selectList(
+            new LambdaQueryWrapper<PlanCourse>().eq(PlanCourse::getCourseId, id)
+        ).stream().map(PlanCourse::getPlanId).collect(Collectors.toList());
+        
+        // 2. 检查是否有进行中的培训计划（状态1-已发布或2-进行中）
+        if (!planIds.isEmpty()) {
+            Long activePlanCount = trainingPlanMapper.selectCount(
+                new LambdaQueryWrapper<TrainingPlan>()
+                    .in(TrainingPlan::getId, planIds)
+                    .in(TrainingPlan::getStatus, 1, 2) // 已发布或进行中
+            );
+            if (activePlanCount > 0) {
+                throw new BusinessException("该课程已关联进行中的培训计划，无法下架。请先结束相关培训计划。");
+            }
+        }
+        
         Course course = new Course();
         course.setId(id);
         course.setStatus(3); // 已下架
+        course.setUpdateTime(LocalDateTime.now());
         return baseMapper.updateById(course) > 0;
     }
     
@@ -344,5 +371,16 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         // 通过用户名查询用户ID
         User user = userMapper.selectByUsername(username);
         return user != null ? user.getId() : null;
+    }
+    
+    @Override
+    public boolean hasTrainingPlans(Long courseId) {
+        if (courseId == null) {
+            return false;
+        }
+        Long planCount = planCourseMapper.selectCount(
+            new LambdaQueryWrapper<PlanCourse>().eq(PlanCourse::getCourseId, courseId)
+        );
+        return planCount != null && planCount > 0;
     }
 }

@@ -83,6 +83,10 @@ public class RoleController {
     @PreAuthorize("hasAuthority('system:role:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        // 修复：删除角色前检查是否有用户关联
+        if (roleService.hasUsers(id)) {
+            return Result.error("该角色已分配给用户，无法删除");
+        }
         roleService.deleteRole(id);
         return Result.success();
     }

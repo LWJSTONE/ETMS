@@ -77,6 +77,10 @@ public class DictController {
     @PreAuthorize("hasAuthority('system:dict:delete')")
     @DeleteMapping("/system/dict/types/{id}")
     public Result<Void> deleteDictType(@PathVariable Long id) {
+        // 修复：删除字典类型前检查是否有关联的字典数据
+        if (dictService.hasDictData(id)) {
+            return Result.error("该字典类型下存在字典数据，无法删除");
+        }
         dictService.deleteDictType(id);
         return Result.success();
     }

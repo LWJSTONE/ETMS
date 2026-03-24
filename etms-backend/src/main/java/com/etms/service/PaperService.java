@@ -62,4 +62,11 @@ public interface PaperService extends IService<Paper> {
      * 停用试卷
      */
     void disablePaper(Long id);
+    
+    /**
+     * 检查试卷是否有考试记录
+     * @param paperId 试卷ID
+     * @return 是否有考试记录
+     */
+    boolean hasExamRecords(Long paperId);
 }

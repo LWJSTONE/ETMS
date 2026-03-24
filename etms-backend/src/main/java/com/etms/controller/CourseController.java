@@ -80,6 +80,10 @@ public class CourseController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> delete(@PathVariable Long id) {
+        // 修复：删除课程前检查是否有关联的培训计划
+        if (courseService.hasTrainingPlans(id)) {
+            return Result.error("该课程存在关联的培训计划，无法删除");
+        }
         courseService.deleteCourse(id);
         return Result.success();
     }

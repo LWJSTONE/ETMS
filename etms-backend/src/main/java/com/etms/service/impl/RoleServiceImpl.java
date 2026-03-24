@@ -292,4 +292,15 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         updateRole.setStatus(status);
         baseMapper.updateById(updateRole);
     }
+    
+    @Override
+    public boolean hasUsers(Long roleId) {
+        if (roleId == null) {
+            return false;
+        }
+        Long userCount = userRoleMapper.selectCount(
+            new LambdaQueryWrapper<UserRole>().eq(UserRole::getRoleId, roleId)
+        );
+        return userCount != null && userCount > 0;
+    }
 }

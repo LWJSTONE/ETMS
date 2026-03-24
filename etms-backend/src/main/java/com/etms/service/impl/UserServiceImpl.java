@@ -363,6 +363,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException("用户名已存在");
         }
         
+        // 修复：校验手机号格式
+        if (userDTO.getPhone() != null && !userDTO.getPhone().trim().isEmpty()) {
+            if (!isValidPhone(userDTO.getPhone())) {
+                throw new BusinessException("手机号格式不正确");
+            }
+        }
+        
+        // 修复：校验邮箱格式
+        if (userDTO.getEmail() != null && !userDTO.getEmail().trim().isEmpty()) {
+            if (!isValidEmail(userDTO.getEmail())) {
+                throw new BusinessException("邮箱格式不正确");
+            }
+        }
+        
         User user = new User();
         BeanUtils.copyProperties(userDTO, user);
         // 如果前端传了密码则使用前端密码，否则使用默认密码
@@ -505,7 +519,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void resetPassword(Long userId) {
+    public String resetPassword(Long userId) {
         User user = baseMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
@@ -520,8 +534,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         baseMapper.updateById(updateUser);
         
-        // 安全性修复：不再打印新密码到日志，实际生产环境应通过邮件或短信发送新密码给用户
-        log.info("用户 {} 的密码已重置，请通过安全渠道通知用户", user.getUsername());
+        // 返回新密码，调用方应通过安全渠道通知用户
+        log.info("用户 {} 的密码已重置", user.getUsername());
+        return newPassword;
     }
     
     /**
@@ -665,14 +680,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         final Map<Long, String> finalDeptNameMap = deptNameMap;
         for (User user : users) {
-            sb.append(user.getUsername()).append(",")
-              .append(user.getRealName() != null ? user.getRealName() : "").append(",")
-              .append(getGenderName(user.getGender())).append(",")
-              .append(user.getPhone() != null ? user.getPhone() : "").append(",")
-              .append(user.getEmail() != null ? user.getEmail() : "").append(",")
-              .append(user.getDeptId() != null ? finalDeptNameMap.getOrDefault(user.getDeptId(), "") : "").append(",")
-              .append(getStatusName(user.getStatus())).append(",")
-              .append(user.getCreateTime() != null ? user.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "").append("\n");
+            sb.append(escapeCsvField(user.getUsername())).append(",")
+              .append(escapeCsvField(user.getRealName())).append(",")
+              .append(escapeCsvField(getGenderName(user.getGender()))).append(",")
+              .append(escapeCsvField(user.getPhone())).append(",")
+              .append(escapeCsvField(user.getEmail())).append(",")
+              .append(escapeCsvField(user.getDeptId() != null ? finalDeptNameMap.getOrDefault(user.getDeptId(), "") : "")).append(",")
+              .append(escapeCsvField(getStatusName(user.getStatus()))).append(",")
+              .append(escapeCsvField(user.getCreateTime() != null ? user.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "")).append("\n");
         }
         
         try {
@@ -680,5 +695,48 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         } catch (IOException e) {
             throw new BusinessException("导出用户数据失败：" + e.getMessage());
         }
+    }
+    
+    /**
+     * CSV字段转义处理
+     * 防止CSV注入攻击，对包含逗号、换行符或双引号的字段进行转义
+     * @param field 原始字段值
+     * @return 转义后的字段值
+     */
+    private String escapeCsvField(String field) {
+        if (field == null) {
+            return "";
+        }
+        // 如果字段包含逗号、换行符或双引号，需要用双引号包围
+        if (field.contains(",") || field.contains("\n") || field.contains("\r") || field.contains("\"")) {
+            // 字段中的双引号需要转义为两个双引号
+            return "\"" + field.replace("\"", "\"\"") + "\"";
+        }
+        return field;
+    }
+    
+    /**
+     * 校验手机号格式
+     * 支持11位中国大陆手机号
+     */
+    private boolean isValidPhone(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return true; // 空值由其他校验处理
+        }
+        // 中国大陆手机号正则：11位数字，以1开头
+        String phoneRegex = "^1[3-9]\\d{9}$";
+        return phone.trim().matches(phoneRegex);
+    }
+    
+    /**
+     * 校验邮箱格式
+     */
+    private boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return true; // 空值由其他校验处理
+        }
+        // 邮箱正则
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+        return email.trim().matches(emailRegex);
     }
 }

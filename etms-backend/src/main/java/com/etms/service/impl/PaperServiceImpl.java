@@ -446,4 +446,15 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             throw new BusinessException("停用失败，试卷状态已被修改，请刷新后重试");
         }
     }
+    
+    @Override
+    public boolean hasExamRecords(Long paperId) {
+        if (paperId == null) {
+            return false;
+        }
+        Long recordCount = examRecordMapper.selectCount(
+            new LambdaQueryWrapper<ExamRecord>().eq(ExamRecord::getPaperId, paperId)
+        );
+        return recordCount != null && recordCount > 0;
+    }
 }

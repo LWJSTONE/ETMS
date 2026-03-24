@@ -62,8 +62,19 @@ public class LogController {
     @ApiOperation(value = "清空日志")
     @PreAuthorize("hasAuthority('system:log:clear')")
     @DeleteMapping
-    public Result<Void> clear() {
-        logService.clearLogs();
+    public Result<Void> clear(
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime) {
+        // 修复：添加时间范围参数，防止清空全部日志
+        // 必须指定时间范围才能清空，防止误操作
+        if (startTime == null || startTime.isEmpty()) {
+            return Result.error("清空日志必须指定开始时间");
+        }
+        if (endTime == null || endTime.isEmpty()) {
+            return Result.error("清空日志必须指定结束时间");
+        }
+        
+        logService.clearLogs(startTime, endTime);
         return Result.success();
     }
 
