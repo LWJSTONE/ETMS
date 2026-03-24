@@ -342,7 +342,7 @@ CREATE TABLE learning_progress (
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_user_plan (user_id, plan_id),
+    UNIQUE KEY uk_user_plan_course (user_id, plan_id, course_id),
     KEY idx_user_id (user_id),
     KEY idx_plan_id (plan_id),
     KEY idx_course_id (course_id),
