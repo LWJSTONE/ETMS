@@ -200,9 +200,38 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("请先设置培训类型");
         }
         
-        // 验证必要字段：目标部门（至少选择一个部门）
-        if (existingPlan.getTargetDeptIds() == null || existingPlan.getTargetDeptIds().trim().isEmpty()) {
-            throw new BusinessException("请先设置目标部门");
+        // 验证必要字段：目标类型
+        if (existingPlan.getTargetType() == null) {
+            throw new BusinessException("请先设置目标类型");
+        }
+        
+        // 根据目标类型验证不同的目标字段
+        Integer targetType = existingPlan.getTargetType();
+        if (targetType == 1) {
+            // 按部门：验证目标部门
+            if (existingPlan.getTargetDeptIds() == null || existingPlan.getTargetDeptIds().trim().isEmpty()) {
+                throw new BusinessException("请先设置目标部门");
+            }
+            // 验证JSON数组不为空
+            if (isJsonArrayEmpty(existingPlan.getTargetDeptIds())) {
+                throw new BusinessException("请至少选择一个目标部门");
+            }
+        } else if (targetType == 2) {
+            // 按岗位：验证目标岗位
+            if (existingPlan.getTargetPositionIds() == null || existingPlan.getTargetPositionIds().trim().isEmpty()) {
+                throw new BusinessException("请先设置目标岗位");
+            }
+            if (isJsonArrayEmpty(existingPlan.getTargetPositionIds())) {
+                throw new BusinessException("请至少选择一个目标岗位");
+            }
+        } else if (targetType == 3) {
+            // 按人员：验证目标人员
+            if (existingPlan.getTargetUserIds() == null || existingPlan.getTargetUserIds().trim().isEmpty()) {
+                throw new BusinessException("请先设置目标人员");
+            }
+            if (isJsonArrayEmpty(existingPlan.getTargetUserIds())) {
+                throw new BusinessException("请至少选择一个目标人员");
+            }
         }
         
         // 验证必要字段：关联课程
@@ -319,6 +348,33 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
                 return true;
             }
         }
+        return false;
+    }
+    
+    /**
+     * 检查JSON数组字符串是否为空
+     * @param jsonArrayStr JSON数组字符串，如 "[1, 2, 3]" 或 "[]"
+     * @return 是否为空数组
+     */
+    private boolean isJsonArrayEmpty(String jsonArrayStr) {
+        if (jsonArrayStr == null || jsonArrayStr.trim().isEmpty()) {
+            return true;
+        }
+        
+        String str = jsonArrayStr.trim();
+        // 处理JSON数组格式
+        if (str.equals("[]")) {
+            return true;
+        }
+        
+        if (str.startsWith("[") && str.endsWith("]")) {
+            str = str.substring(1, str.length() - 1).trim();
+            // 移除所有空白后检查是否为空
+            if (str.isEmpty()) {
+                return true;
+            }
+        }
+        
         return false;
     }
 }

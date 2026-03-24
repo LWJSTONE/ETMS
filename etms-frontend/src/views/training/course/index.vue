@@ -235,6 +235,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import {
   getCourseList,
+  getCourseDetail,
   createCourse,
   updateCourse,
   deleteCourse,
@@ -430,19 +431,28 @@ const handleAdd = () => {
 // 编辑
 const handleEdit = async (row: any) => {
   isEdit.value = true
-  Object.assign(form, {
-    id: row.id,
-    courseName: row.courseName,
-    courseCode: row.courseCode,
-    categoryId: row.categoryId,
-    courseType: row.courseType,
-    coverImage: row.coverImage,
-    courseDesc: row.courseDesc || row.description,  // 修复：兼容两种字段名
-    difficulty: row.difficulty,
-    duration: row.duration,
-    credit: row.credit
-  })
-  dialogVisible.value = true
+  try {
+    // 修复：调用详情接口获取最新数据，而非直接使用列表数据
+    const res = await getCourseDetail(row.id)
+    const data = res.data
+    resetForm()
+    Object.assign(form, {
+      id: data.id,
+      courseName: data.courseName,
+      courseCode: data.courseCode,
+      categoryId: data.categoryId,
+      courseType: data.courseType,
+      coverImage: data.coverImage,
+      courseDesc: data.courseDesc,
+      difficulty: data.difficulty,
+      duration: data.duration || 0,
+      credit: data.credit || 0
+    })
+    dialogVisible.value = true
+  } catch (error: any) {
+    console.error('获取课程详情失败:', error)
+    ElMessage.error(error.message || '获取课程详情失败')
+  }
 }
 
 // 提交表单

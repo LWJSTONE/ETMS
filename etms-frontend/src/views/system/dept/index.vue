@@ -233,10 +233,12 @@ const filterTree = (tree: Dept[], params: { deptName: string; status: number | n
 // 获取用户列表（用于负责人选择）
 const getUserOptions = async () => {
   try {
-    const res = await getUserList({ current: 1, size: 1000, status: 1 })
+    // 使用较大的分页值，后续可考虑改用不分页的用户列表接口
+    const res = await getUserList({ current: 1, size: 10000, status: 1 })
     userOptions.value = res.data?.records || []
   } catch (error) {
     console.error('获取用户列表失败:', error)
+    ElMessage.error('获取用户列表失败')
   }
 }
 
@@ -254,9 +256,12 @@ const handleReset = () => {
 // 展开/折叠所有
 const toggleExpandAll = () => {
   isExpandAll.value = !isExpandAll.value
-  // 刷新表格以应用展开状态
+  // 通过重新设置表格数据来触发展开/折叠状态变化
+  // 这是一个性能优化的权衡：虽然需要重新渲染，但避免了额外的API请求
+  const currentData = [...tableData.value]
+  tableData.value = []
   nextTick(() => {
-    getDeptTreeData()
+    tableData.value = currentData
   })
 }
 

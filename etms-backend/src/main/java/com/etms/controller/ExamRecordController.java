@@ -64,13 +64,11 @@ public class ExamRecordController {
     public Result<ExamRecord> startExam(
             @PathVariable Long paperId,
             @RequestParam(required = false) Long planId) {
-        // 修复：添加考试资格校验
-        // 如果是通过培训计划参加考试，需要验证用户是否有该培训计划的参与资格
-        if (planId != null) {
-            if (!examRecordService.checkExamEligibility(paperId, planId)) {
-                return Result.error("您没有该考试的资格，请确认是否已报名参加相关培训计划");
-            }
-        }
+        // 资格校验已在 startExam 方法内部完成，包括：
+        // - 试卷存在性和状态校验
+        // - 考试时间窗口校验
+        // - 是否有进行中的考试校验
+        // - 考试次数限制校验
         ExamRecord record = examRecordService.startExam(paperId, planId);
         return Result.success(record);
     }

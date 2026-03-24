@@ -92,14 +92,14 @@ const loginForm = reactive({
   captcha: ''
 })
 
-// 用户名验证规则：长度3-20位，只允许字母、数字、下划线
+// 用户名验证规则：长度3-20位，必须以字母开头，只允许字母、数字、下划线
 const validateUsername = (_rule: any, value: string, callback: (error?: Error) => void) => {
   if (!value) {
     callback(new Error('请输入用户名'))
   } else if (value.length < 3 || value.length > 20) {
     callback(new Error('用户名长度为3-20位'))
-  } else if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-    callback(new Error('用户名只能包含字母、数字和下划线'))
+  } else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(value)) {
+    callback(new Error('用户名必须以字母开头，只能包含字母、数字和下划线'))
   } else {
     callback()
   }

@@ -23,10 +23,10 @@ public class SupplementaryDTO implements Serializable {
     @NotNull(message = "培训计划ID不能为空")
     private Long planId;
 
-    @ApiModelProperty(value = "签到类型：1-二维码，2-GPS定位，3-人脸识别", example = "1")
-    @Min(value = 1, message = "签到类型不合法，有效值为1-3")
-    @Max(value = 3, message = "签到类型不合法，有效值为1-3")
-    private Integer signType = 1;
+    @ApiModelProperty(value = "签到类型：0-补签，1-二维码，2-GPS定位，3-人脸识别", example = "1")
+    @Min(value = 0, message = "签到类型不合法，有效值为0-3")
+    @Max(value = 3, message = "签到类型不合法，有效值为0-3")
+    private Integer signType = 0;
 
     @ApiModelProperty(value = "签到类别：1-签到，2-签退", example = "1")
     @Min(value = 1, message = "签到类别不合法，有效值为1-2")
