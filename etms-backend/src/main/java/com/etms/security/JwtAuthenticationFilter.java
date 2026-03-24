@@ -127,8 +127,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return true;
         } catch (Exception e) {
             log.error("检查用户状态异常: {}", e.getMessage());
-            // 出现异常时允许请求通过，由后续处理决定
-            return true;
+            // 修复安全问题：异常时拒绝访问，避免被禁用用户在数据库故障时绕过验证
+            return false;
         }
     }
     

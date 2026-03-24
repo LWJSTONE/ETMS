@@ -286,8 +286,13 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         if (record.getStartTime() != null && paper.getExamDuration() != null) {
             long minutesUsed = Duration.between(record.getStartTime(), LocalDateTime.now()).toMinutes();
             if (minutesUsed > paper.getExamDuration()) {
-                // 标记为超时并自动提交
+                // 修复问题：超时提交时需要保存答案和计算分数，避免数据丢失
+                int userScore = calculateScore(record.getPaperId(), answers);
+                // 标记为超时并保存完整数据
                 record.setStatus(3); // 已超时
+                record.setUserScore(userScore);
+                record.setPassed(userScore >= paper.getPassScore() ? 1 : 0);
+                record.setAnswerDetail(answers); // 保存答题详情
                 record.setSubmitTime(LocalDateTime.now());
                 record.setDurationUsed((int) minutesUsed);
                 baseMapper.updateById(record);
@@ -345,9 +350,15 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         }
         
         // 更新考试记录状态为已放弃（使用状态4表示放弃）
+        // 修复并发问题：使用乐观锁方式更新状态
+        int updateCount = baseMapper.updateStatusToSubmitted(recordId, 1, 4);
+        if (updateCount == 0) {
+            throw new BusinessException("考试状态已变更，无法放弃");
+        }
+        
+        // 更新其他信息
         ExamRecord updateRecord = new ExamRecord();
         updateRecord.setId(recordId);
-        updateRecord.setStatus(4); // 已放弃
         updateRecord.setSubmitTime(LocalDateTime.now());
         
         // 计算实际用时（分钟）
@@ -454,6 +465,31 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                         userAnswer = sortAnswerChars(userAnswer);
                         correctAnswer = sortAnswerChars(correctAnswer);
                     }
+                }
+                
+                // 填空题(类型4)：支持多个正确答案（用|分隔），忽略大小写
+                if (question.getQuestionType() == 4) {
+                    String[] correctAnswers = correctAnswer.split("\\|");
+                    boolean matched = false;
+                    for (String ca : correctAnswers) {
+                        if (userAnswer.equalsIgnoreCase(ca.trim())) {
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (matched) {
+                        Integer score = scoreMap.get(questionId);
+                        totalScore += score != null ? score : 0;
+                    }
+                    continue; // 填空题已处理，跳过后续判断
+                }
+                
+                // 简答题(类型5)：标记为待人工评分，此处暂不自动评分
+                // 实际应用中可通过关键词匹配或人工评分
+                if (question.getQuestionType() == 5) {
+                    // 简答题需要人工评分，此处不计分
+                    // 可以将用户答案保存，后续由管理员手动评分
+                    continue;
                 }
                 
                 // 判断答案是否正确

@@ -7,15 +7,19 @@ import com.etms.entity.Course;
 import com.etms.entity.Paper;
 import com.etms.entity.Question;
 import com.etms.entity.PlanCourse;
+import com.etms.entity.User;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.CourseMapper;
 import com.etms.mapper.PaperMapper;
 import com.etms.mapper.QuestionMapper;
 import com.etms.mapper.PlanCourseMapper;
+import com.etms.mapper.UserMapper;
 import com.etms.service.CourseService;
 import com.etms.vo.CourseVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -33,6 +37,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     private final PlanCourseMapper planCourseMapper;
     private final PaperMapper paperMapper;
     private final QuestionMapper questionMapper;
+    private final UserMapper userMapper;
     
     @Override
     public Page<CourseVO> pageCourses(Page<Course> page, String courseName, String courseCode, Long categoryId, Integer courseType, Integer status, Integer difficulty) {
@@ -212,8 +217,11 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         course.setStatus(status);
         course.setAuditRemark(auditRemark);
         course.setAuditTime(LocalDateTime.now());
-        // 记录审核人（需要从SecurityContext获取当前用户）
-        // course.setAuditBy(getCurrentUserId());
+        // 修复：记录审核人ID
+        Long auditBy = getCurrentUserId();
+        if (auditBy != null) {
+            course.setAuditBy(auditBy);
+        }
         return baseMapper.updateById(course) > 0;
     }
     
@@ -236,8 +244,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             case 2: // 已上架
                 throw new BusinessException("课程已上架，无需重复操作");
             case 3: // 已下架
-                // 只有已下架的课程可以重新上架
-                break;
+                // 修复安全问题：已下架的课程需要重新提交审核后才能上架
+                throw new BusinessException("已下架的课程需要重新提交审核后才能上架");
             case 4: // 审核驳回
                 throw new BusinessException("课程审核未通过，请修改后重新提交审核");
             default:
@@ -320,5 +328,24 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             case 4: return "审核驳回";
             default: return "未知";
         }
+    }
+    
+    /**
+     * 获取当前登录用户ID
+     * @return 用户ID，未登录返回null
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        // 从认证信息中获取用户名，再查询用户ID
+        String username = authentication.getName();
+        if (username == null || "anonymousUser".equals(username)) {
+            return null;
+        }
+        // 通过用户名查询用户ID
+        User user = userMapper.selectByUsername(username);
+        return user != null ? user.getId() : null;
     }
 }

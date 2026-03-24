@@ -241,10 +241,12 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("当前状态不允许归档，只有已结束状态可以归档");
         }
         
-        TrainingPlan plan = new TrainingPlan();
-        plan.setId(id);
-        plan.setStatus(4); // 已归档
-        return baseMapper.updateById(plan) > 0;
+        // 修复：使用乐观锁防止并发重复归档
+        int updateCount = baseMapper.updateStatusWithOptimisticLock(id, 3, 4);
+        if (updateCount == 0) {
+            throw new BusinessException("归档失败，培训计划状态已被修改，请刷新后重试");
+        }
+        return true;
     }
     
     @Override
@@ -261,10 +263,18 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("当前状态不允许结束，只有已发布或进行中状态可以结束");
         }
         
-        TrainingPlan plan = new TrainingPlan();
-        plan.setId(id);
-        plan.setStatus(3); // 已结束
-        return baseMapper.updateById(plan) > 0;
+        // 修复：使用乐观锁防止并发重复结束
+        // 已发布(1)或进行中(2)状态可以结束
+        int updateCount = 0;
+        if (existingPlan.getStatus() == 1) {
+            updateCount = baseMapper.updateStatusWithOptimisticLock(id, 1, 3);
+        } else if (existingPlan.getStatus() == 2) {
+            updateCount = baseMapper.updateStatusWithOptimisticLock(id, 2, 3);
+        }
+        if (updateCount == 0) {
+            throw new BusinessException("结束失败，培训计划状态已被修改，请刷新后重试");
+        }
+        return true;
     }
     
     private String getPlanTypeName(Integer planType) {

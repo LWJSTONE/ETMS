@@ -21,8 +21,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -134,7 +136,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
                 .eq(AttendanceRecord::getPlanId, planId)
                 .eq(signCategory != null, AttendanceRecord::getSignCategory, signCategory)
                 .between(AttendanceRecord::getSignTime, today, tomorrow)
-                .ne(AttendanceRecord::getStatus, 4) // 排除缺勤状态
+                .notIn(AttendanceRecord::getStatus, 4, 6) // 修复：排除缺勤(4)和补签驳回(6)状态
         );
         if (count > 0) {
             throw new BusinessException("您今天已" + (signCategory != null && signCategory == 2 ? "签退" : "签到") + "，请勿重复操作");
@@ -244,7 +246,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
                 .eq(AttendanceRecord::getPlanId, planId)
                 .eq(signCategory != null, AttendanceRecord::getSignCategory, signCategory)
                 .between(AttendanceRecord::getSignTime, dayStart, dayEnd)
-                .ne(AttendanceRecord::getStatus, 4) // 排除缺勤状态
+                .notIn(AttendanceRecord::getStatus, 4, 6) // 修复：排除缺勤(4)和补签驳回(6)状态
         );
         if (existCount > 0) {
             throw new BusinessException("该时间段已有签到记录，无法重复补签");
@@ -303,6 +305,11 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             throw new BusinessException("记录不存在");
         }
         
+        // 修复安全问题：审核人不能审核自己的补签申请
+        if (existingRecord.getUserId().equals(currentUserId)) {
+            throw new BusinessException("不能审核自己的补签申请");
+        }
+        
         // 验证是否为补签记录
         if (existingRecord.getStatus() != 5) {
             throw new BusinessException("只能审核补签记录");
@@ -320,9 +327,44 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         record.setAuditBy(currentUserId);
         record.setAuditTime(LocalDateTime.now());
         
-        // 审核通过时更新状态为正常签到
+        // 审核通过时根据补签时间重新计算状态
         if (auditStatus == 1) {
-            record.setStatus(1); // 更新为正常状态
+            // 修复问题：根据补签时间判断是否迟到或早退
+            LocalDateTime signTime = existingRecord.getSignTime();
+            TrainingPlan plan = trainingPlanMapper.selectById(existingRecord.getPlanId());
+            int newStatus = 1; // 默认正常
+            
+            if (plan != null && signTime != null) {
+                // 添加宽限时间配置（默认5分钟）
+                int graceMinutes = 5;
+                
+                if (existingRecord.getSignCategory() == null || existingRecord.getSignCategory() == 1) {
+                    // 签到时判断迟到
+                    LocalDateTime signStartTime = plan.getSignStartTime();
+                    if (signStartTime != null) {
+                        // 宽限时间内不算迟到
+                        LocalDateTime deadline = signStartTime.plusMinutes(graceMinutes);
+                        if (signTime.isAfter(deadline)) {
+                            newStatus = 2; // 迟到
+                            long lateMins = java.time.Duration.between(signStartTime, signTime).toMinutes();
+                            record.setLateMinutes((int) lateMins);
+                        }
+                    }
+                } else if (existingRecord.getSignCategory() == 2) {
+                    // 签退时判断早退
+                    LocalDateTime signEndTime = plan.getSignEndTime();
+                    if (signEndTime != null) {
+                        // 宽限时间内不算早退
+                        LocalDateTime deadline = signEndTime.minusMinutes(graceMinutes);
+                        if (signTime.isBefore(deadline)) {
+                            newStatus = 3; // 早退
+                            long earlyMins = java.time.Duration.between(signTime, signEndTime).toMinutes();
+                            record.setEarlyMinutes((int) earlyMins);
+                        }
+                    }
+                }
+            }
+            record.setStatus(newStatus);
         } else if (auditStatus == 2) {
             // 审核驳回时更新状态为补签驳回(status=6)
             record.setStatus(6);
