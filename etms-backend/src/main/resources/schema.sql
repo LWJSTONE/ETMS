@@ -33,10 +33,13 @@ CREATE TABLE sys_dept (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_dept_code (dept_code),
     KEY idx_parent_id (parent_id),
-    KEY idx_level (level)
+    KEY idx_level (level),
+    KEY idx_leader_id (leader_id),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='部门表';
 
 -- 2. 岗位表
@@ -55,9 +58,12 @@ CREATE TABLE sys_position (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_position_code (position_code),
-    KEY idx_dept_id (dept_id)
+    KEY idx_dept_id (dept_id),
+    KEY idx_status (status),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='岗位表';
 
 -- 3. 用户表
@@ -74,7 +80,7 @@ CREATE TABLE sys_user (
     dept_id BIGINT(20) DEFAULT NULL COMMENT '部门ID',
     position_id BIGINT(20) DEFAULT NULL COMMENT '岗位ID',
     status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1正常 2离职 3休假)',
-    login_ip VARCHAR(50) DEFAULT NULL COMMENT '最后登录IP',
+    login_ip VARCHAR(64) DEFAULT NULL COMMENT '最后登录IP(支持IPv6)',
     login_time DATETIME DEFAULT NULL COMMENT '最后登录时间',
     pwd_expire_time DATETIME DEFAULT NULL COMMENT '密码过期时间',
     lock_time DATETIME DEFAULT NULL COMMENT '锁定时间',
@@ -84,12 +90,14 @@ CREATE TABLE sys_user (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_username (username),
     UNIQUE KEY uk_email (email),
     UNIQUE KEY uk_phone (phone),
     KEY idx_dept_id (dept_id),
-    KEY idx_status (status)
+    KEY idx_status (status),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 4. 角色表
@@ -107,8 +115,10 @@ CREATE TABLE sys_role (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_role_code (role_code)
+    UNIQUE KEY uk_role_code (role_code),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
 
 -- 5. 权限表
@@ -127,10 +137,12 @@ CREATE TABLE sys_permission (
     status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1正常)',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_perm_code (perm_code),
     KEY idx_parent_id (parent_id),
-    KEY idx_perm_type (perm_type)
+    KEY idx_perm_type (perm_type),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='权限表';
 
 -- 6. 用户角色关联表
@@ -180,10 +192,13 @@ CREATE TABLE training_category (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_category_code (category_code),
     KEY idx_parent_id (parent_id),
-    KEY idx_category_type (category_type)
+    KEY idx_category_type (category_type),
+    KEY idx_status (status),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程分类表';
 
 -- 9. 课程表
@@ -219,11 +234,13 @@ CREATE TABLE training_course (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_course_code (course_code),
     KEY idx_category_id (category_id),
     KEY idx_status (status),
-    KEY idx_difficulty (difficulty)
+    KEY idx_difficulty (difficulty),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程表';
 
 -- 10. 课程资源表
@@ -295,12 +312,14 @@ CREATE TABLE training_plan (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_plan_code (plan_code),
     KEY idx_course_id (course_id),
     KEY idx_status (status),
     KEY idx_start_date (start_date),
-    KEY idx_end_date (end_date)
+    KEY idx_end_date (end_date),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='培训计划表';
 
 -- 12.1 培训计划课程关联表
@@ -360,10 +379,11 @@ CREATE TABLE attendance_record (
     user_id BIGINT(20) NOT NULL COMMENT '用户ID',
     plan_id BIGINT(20) NOT NULL COMMENT '计划ID',
     sign_time DATETIME NOT NULL COMMENT '签到时间',
+    sign_date DATE GENERATED ALWAYS AS (DATE(sign_time)) STORED COMMENT '签到日期(虚拟列)',
     sign_type TINYINT(1) NOT NULL COMMENT '签到类型(1二维码 2GPS定位 3人脸识别)',
     sign_category TINYINT(1) DEFAULT 1 COMMENT '签到类别(1签到 2签退)',
     location VARCHAR(100) DEFAULT NULL COMMENT '签到位置',
-    ip_address VARCHAR(50) DEFAULT NULL COMMENT '签到IP地址',
+    ip_address VARCHAR(64) DEFAULT NULL COMMENT '签到IP地址(支持IPv6)',
     device_info VARCHAR(100) DEFAULT NULL COMMENT '设备信息',
     status TINYINT(1) DEFAULT 1 COMMENT '状态(1正常 2迟到 3早退 4缺勤 5补签)',
     late_minutes INT(11) DEFAULT 0 COMMENT '迟到分钟数',
@@ -376,10 +396,12 @@ CREATE TABLE attendance_record (
     audit_time DATETIME DEFAULT NULL COMMENT '审核时间',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     PRIMARY KEY (id),
+    UNIQUE KEY uk_user_plan_category_date (user_id, plan_id, sign_category, sign_date),
     KEY idx_user_id (user_id),
     KEY idx_plan_id (plan_id),
     KEY idx_sign_time (sign_time),
-    KEY idx_status (status)
+    KEY idx_status (status),
+    KEY idx_user_plan_date_category (user_id, plan_id, sign_category, sign_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='签到记录表';
 
 -- 15. 补签申请表
@@ -398,6 +420,7 @@ CREATE TABLE attendance_apply (
     audit_time DATETIME DEFAULT NULL COMMENT '审核时间',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     PRIMARY KEY (id),
+    UNIQUE KEY uk_user_plan_date (user_id, plan_id, sign_date),
     KEY idx_user_id (user_id),
     KEY idx_plan_id (plan_id),
     KEY idx_audit_status (audit_status)
@@ -428,12 +451,14 @@ CREATE TABLE exam_question (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_question_code (question_code),
     KEY idx_question_type (question_type),
     KEY idx_difficulty (difficulty),
     KEY idx_category_id (category_id),
-    KEY idx_course_id (course_id)
+    KEY idx_course_id (course_id),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='题库表';
 
 -- 17. 试卷表
@@ -462,11 +487,13 @@ CREATE TABLE exam_paper (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_paper_code (paper_code),
     KEY idx_plan_id (plan_id),
     KEY idx_course_id (course_id),
-    KEY idx_status (status)
+    KEY idx_status (status),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='试卷表';
 
 -- 18. 试卷题目关联表
@@ -480,7 +507,8 @@ CREATE TABLE exam_paper_question (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     PRIMARY KEY (id),
     KEY idx_paper_id (paper_id),
-    KEY idx_question_id (question_id)
+    KEY idx_question_id (question_id),
+    KEY idx_paper_sort (paper_id, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='试卷题目关联表';
 
 -- 19. 考试记录表
@@ -513,7 +541,8 @@ CREATE TABLE exam_record (
     KEY idx_plan_id (plan_id),
     KEY idx_paper_id (paper_id),
     KEY idx_status (status),
-    KEY idx_passed (passed)
+    KEY idx_passed (passed),
+    KEY idx_user_paper_status (user_id, paper_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='考试记录表';
 
 -- 20. 考核成绩表
@@ -578,7 +607,7 @@ CREATE TABLE sys_operation_log (
     request_method VARCHAR(10) DEFAULT NULL COMMENT '请求方法',
     request_url VARCHAR(200) DEFAULT NULL COMMENT '请求URL',
     request_params TEXT DEFAULT NULL COMMENT '请求参数',
-    ip_address VARCHAR(50) DEFAULT NULL COMMENT '操作IP',
+    ip_address VARCHAR(64) DEFAULT NULL COMMENT '操作IP(支持IPv6)',
     ip_location VARCHAR(100) DEFAULT NULL COMMENT 'IP归属地',
     browser VARCHAR(100) DEFAULT NULL COMMENT '浏览器信息',
     os VARCHAR(50) DEFAULT NULL COMMENT '操作系统',
@@ -601,7 +630,7 @@ CREATE TABLE sys_login_log (
     username VARCHAR(50) DEFAULT NULL COMMENT '用户名',
     login_type TINYINT(1) DEFAULT 1 COMMENT '登录类型(1账号密码 2短信 3邮箱)',
     status TINYINT(1) NOT NULL COMMENT '登录状态(0失败 1成功)',
-    ip_address VARCHAR(50) DEFAULT NULL COMMENT '登录IP',
+    ip_address VARCHAR(64) DEFAULT NULL COMMENT '登录IP(支持IPv6)',
     ip_location VARCHAR(100) DEFAULT NULL COMMENT 'IP归属地',
     browser VARCHAR(100) DEFAULT NULL COMMENT '浏览器信息',
     os VARCHAR(50) DEFAULT NULL COMMENT '操作系统',
@@ -630,8 +659,11 @@ CREATE TABLE sys_config (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_config_key (config_key)
+    UNIQUE KEY uk_config_key (config_key),
+    KEY idx_config_type (config_type),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
 
 -- 25. 字典类型表
@@ -646,8 +678,11 @@ CREATE TABLE sys_dict_type (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_dict_type (dict_type)
+    UNIQUE KEY uk_dict_type (dict_type),
+    KEY idx_status (status),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典类型表';
 
 -- 26. 字典数据表
@@ -664,8 +699,11 @@ CREATE TABLE sys_dict_data (
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
-    KEY idx_dict_type_id (dict_type_id)
+    KEY idx_dict_type_id (dict_type_id),
+    KEY idx_status (status),
+    KEY idx_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典数据表';
 
 -- 27. 通知公告表
@@ -691,7 +729,7 @@ CREATE TABLE sys_notice (
     KEY idx_publish_time (publish_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知公告表';
 
--- 27. 通知记录表
+-- 28. 通知记录表
 DROP TABLE IF EXISTS sys_notice_record;
 CREATE TABLE sys_notice_record (
     id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '记录ID',
@@ -706,7 +744,7 @@ CREATE TABLE sys_notice_record (
     KEY idx_is_read (is_read)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知记录表';
 
--- 28. 文件管理表
+-- 29. 文件管理表
 DROP TABLE IF EXISTS sys_file;
 CREATE TABLE sys_file (
     id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '文件ID',
@@ -727,7 +765,7 @@ CREATE TABLE sys_file (
     KEY idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件管理表';
 
--- 29. 定时任务表
+-- 30. 定时任务表
 DROP TABLE IF EXISTS sys_job;
 CREATE TABLE sys_job (
     id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '任务ID',
@@ -750,7 +788,7 @@ CREATE TABLE sys_job (
     KEY idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='定时任务表';
 
--- 30. 定时任务日志表
+-- 31. 定时任务日志表
 DROP TABLE IF EXISTS sys_job_log;
 CREATE TABLE sys_job_log (
     id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '日志ID',
@@ -767,126 +805,3 @@ CREATE TABLE sys_job_log (
     KEY idx_status (status),
     KEY idx_execute_time (execute_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='定时任务日志表';
-
--- =============================================
--- 数据库优化修复脚本
--- 修复业务逻辑问题：添加约束防止数据重复
--- =============================================
-
--- 修复1：为签到记录表添加防重复约束（防止同一天重复签到）
--- 注意：修复索引中使用函数的问题，使用虚拟列替代
--- 先添加虚拟列（MySQL 5.7+支持）
-ALTER TABLE attendance_record ADD COLUMN sign_date DATE GENERATED ALWAYS AS (DATE(sign_time)) STORED COMMENT '签到日期（虚拟列）';
--- 在虚拟列上创建索引
-ALTER TABLE attendance_record ADD INDEX idx_user_plan_date_category (user_id, plan_id, sign_category, sign_date);
--- 添加唯一约束防止重复签到
-ALTER TABLE attendance_record ADD UNIQUE INDEX uk_user_plan_category_date (user_id, plan_id, sign_category, sign_date);
-
--- 修复2：为补签申请表添加防重复约束
-ALTER TABLE attendance_apply ADD UNIQUE INDEX uk_user_plan_date (user_id, plan_id, sign_date);
-
--- 修复3：为考试记录表添加复合索引优化查询性能
-ALTER TABLE exam_record ADD INDEX idx_user_paper_status (user_id, paper_id, status);
-
--- 修复4：为试卷题目关联表添加复合索引优化排序查询
-ALTER TABLE exam_paper_question ADD INDEX idx_paper_sort (paper_id, sort_order);
-
--- 修复5：为部门表添加负责人索引
-ALTER TABLE sys_dept ADD INDEX idx_leader_id (leader_id);
-
--- 修复6：为岗位表添加状态索引
-ALTER TABLE sys_position ADD INDEX idx_status (status);
-
--- 修复7：为分类表添加状态索引
-ALTER TABLE training_category ADD INDEX idx_status (status);
-
--- 修复8：为配置表添加类型索引
-ALTER TABLE sys_config ADD INDEX idx_config_type (config_type);
-
--- 修复9：为字典表添加状态索引
-ALTER TABLE sys_dict_type ADD INDEX idx_status (status);
-ALTER TABLE sys_dict_data ADD INDEX idx_status (status);
-
--- 修复10：扩展IP地址字段长度以支持IPv6
-ALTER TABLE sys_operation_log MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT '操作IP';
-ALTER TABLE sys_login_log MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT '登录IP';
-ALTER TABLE attendance_record MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT '签到IP地址';
-ALTER TABLE sys_user MODIFY login_ip VARCHAR(64) DEFAULT NULL COMMENT '最后登录IP';
-
--- =============================================
--- 修复11：为核心业务表添加逻辑删除字段
--- 注意：MyBatis-Plus配置了逻辑删除字段deleted
--- =============================================
-
--- 为用户表添加逻辑删除字段
-ALTER TABLE sys_user ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE sys_user ADD INDEX idx_deleted (deleted);
-
--- 为部门表添加逻辑删除字段
-ALTER TABLE sys_dept ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE sys_dept ADD INDEX idx_deleted (deleted);
-
--- 为岗位表添加逻辑删除字段
-ALTER TABLE sys_position ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE sys_position ADD INDEX idx_deleted (deleted);
-
--- 为角色表添加逻辑删除字段
-ALTER TABLE sys_role ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE sys_role ADD INDEX idx_deleted (deleted);
-
--- 为权限表添加逻辑删除字段
-ALTER TABLE sys_permission ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE sys_permission ADD INDEX idx_deleted (deleted);
-
--- 为课程表添加逻辑删除字段
-ALTER TABLE training_course ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE training_course ADD INDEX idx_deleted (deleted);
-
--- 为培训计划表添加逻辑删除字段
-ALTER TABLE training_plan ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE training_plan ADD INDEX idx_deleted (deleted);
-
--- 为分类表添加逻辑删除字段
-ALTER TABLE training_category ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE training_category ADD INDEX idx_deleted (deleted);
-
--- 为题目表添加逻辑删除字段
-ALTER TABLE exam_question ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE exam_question ADD INDEX idx_deleted (deleted);
-
--- 为试卷表添加逻辑删除字段
-ALTER TABLE exam_paper ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE exam_paper ADD INDEX idx_deleted (deleted);
-
--- =============================================
--- 修复12：修复exam_record表结构与实体类不匹配的问题
--- =============================================
-
--- 添加缺失的字段
-ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS total_score INT(11) DEFAULT NULL COMMENT '总分';
-ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS user_score INT(11) DEFAULT NULL COMMENT '得分';
-ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS passed TINYINT(1) DEFAULT 0 COMMENT '是否通过(0否 1是)';
-ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS start_time DATETIME DEFAULT NULL COMMENT '开始时间';
-ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS objective_score INT(11) DEFAULT NULL COMMENT '客观题得分';
-ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS subjective_score INT(11) DEFAULT NULL COMMENT '主观题得分';
-ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS answer_detail TEXT DEFAULT NULL COMMENT '答题详情(JSON)';
-ALTER TABLE exam_record ADD COLUMN IF NOT EXISTS retake_count INT(11) DEFAULT 0 COMMENT '补考次数';
-
--- 迁移数据：将exam_start_time数据迁移到start_time
-UPDATE exam_record SET start_time = exam_start_time WHERE start_time IS NULL AND exam_start_time IS NOT NULL;
-
--- 添加索引
-ALTER TABLE exam_record ADD INDEX IF NOT EXISTS idx_passed (passed);
-ALTER TABLE exam_record ADD INDEX IF NOT EXISTS idx_start_time (start_time);
-
--- 为字典类型表添加逻辑删除字段
-ALTER TABLE sys_dict_type ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE sys_dict_type ADD INDEX idx_deleted (deleted);
-
--- 为字典数据表添加逻辑删除字段
-ALTER TABLE sys_dict_data ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE sys_dict_data ADD INDEX idx_deleted (deleted);
-
--- 为系统配置表添加逻辑删除字段
-ALTER TABLE sys_config ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE sys_config ADD INDEX idx_deleted (deleted);
