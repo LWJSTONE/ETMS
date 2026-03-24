@@ -4,6 +4,8 @@ import com.etms.common.Result;
 import com.etms.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -32,6 +34,26 @@ public class GlobalExceptionHandler {
     public Result<Void> handleBusinessException(BusinessException e) {
         log.warn("业务异常: {}", e.getMessage());
         return Result.error(e.getCode(), e.getMessage());
+    }
+    
+    /**
+     * 处理权限拒绝异常
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Result<Void> handleAccessDeniedException(AccessDeniedException e) {
+        log.warn("权限拒绝: {}", e.getMessage());
+        return Result.error(403, "您没有权限执行此操作");
+    }
+    
+    /**
+     * 处理认证异常
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Result<Void> handleAuthenticationException(AuthenticationException e) {
+        log.warn("认证失败: {}", e.getMessage());
+        return Result.error(401, "认证失败，请重新登录");
     }
     
     /**

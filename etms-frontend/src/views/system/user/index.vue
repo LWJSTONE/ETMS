@@ -388,12 +388,20 @@ const handleAssignRole = async (row: any) => {
   currentUser.username = row.username
   currentUser.realName = row.realName
   
-  // 获取用户当前的角色
-  selectedRoleIds.value = row.roles?.map((r: any) => r.id) || []
-  
   // 获取角色列表
   if (roleList.value.length === 0) {
     await getRoleList()
+  }
+  
+  // 调用API获取用户详情（包含角色信息）
+  try {
+    const res = await getUserDetail(row.id)
+    // 从用户详情中获取角色ID列表
+    selectedRoleIds.value = res.data.roles?.map((r: any) => r.id) || []
+  } catch (error) {
+    console.error('获取用户详情失败:', error)
+    // 如果获取失败，使用列表中的角色信息作为降级方案
+    selectedRoleIds.value = row.roles?.map((r: any) => r.id) || []
   }
   
   roleDialogVisible.value = true

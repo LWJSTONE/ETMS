@@ -345,6 +345,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         List<String> roles = baseMapper.selectRolesByUserId(id);
         vo.setRoleNames(roles);
         
+        // 查询并设置角色详情列表（包含id等信息）
+        List<Role> roleEntities = baseMapper.selectRoleDetailsByUserId(id);
+        if (roleEntities != null && !roleEntities.isEmpty()) {
+            List<RoleVO> roleVOList = roleEntities.stream().map(role -> {
+                RoleVO roleVO = new RoleVO();
+                BeanUtils.copyProperties(role, roleVO);
+                return roleVO;
+            }).collect(Collectors.toList());
+            vo.setRoles(roleVOList);
+        }
+        
         // 查询并设置权限列表
         List<String> permissions = baseMapper.selectPermissionsByUserId(id);
         vo.setPermissions(permissions);

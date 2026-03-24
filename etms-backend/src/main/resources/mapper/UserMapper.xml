@@ -43,6 +43,13 @@
         WHERE ur.user_id = #{userId}
     </select>
     
+    <select id="selectRoleDetailsByUserId" resultType="com.etms.entity.Role">
+        SELECT r.id, r.role_code, r.role_name, r.role_desc, r.data_scope, r.sort_order, r.status
+        FROM sys_role r
+        INNER JOIN sys_user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+    </select>
+    
     <select id="selectPermissionsByUserId" resultType="java.lang.String">
         SELECT DISTINCT p.perm_code
         FROM sys_permission p

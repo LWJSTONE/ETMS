@@ -2,6 +2,7 @@ package com.etms.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.etms.entity.User;
+import com.etms.entity.Role;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
@@ -19,9 +20,14 @@ public interface UserMapper extends BaseMapper<User> {
     User selectByUsername(@Param("username") String username);
     
     /**
-     * 根据用户ID查询用户角色
+     * 根据用户ID查询用户角色名称列表
      */
     List<String> selectRolesByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 根据用户ID查询用户角色详情列表（包含id等信息）
+     */
+    List<Role> selectRoleDetailsByUserId(@Param("userId") Long userId);
     
     /**
      * 根据用户ID查询用户权限

@@ -56,7 +56,7 @@
               :key="q.id"
               class="nav-item"
               :class="{ 
-                'answered': answers[q.id] !== undefined && answers[q.id] !== null && answers[q.id] !== '',
+                'answered': isAnswered(q.id),
                 'current': currentIndex === index
               }"
               @click="goToQuestion(index)"
@@ -320,6 +320,14 @@ const getOptions = (question: any) => {
   })
   
   return options
+}
+
+// 判断题目是否已作答（处理多选题数组类型）
+const isAnswered = (questionId: number) => {
+  const answer = answers[questionId]
+  if (answer === undefined || answer === null) return false
+  if (Array.isArray(answer)) return answer.length > 0
+  return answer !== ''
 }
 
 // 上一题
