@@ -266,8 +266,9 @@ const getList = async () => {
     const res = await getUserList({ current: pagination.current, size: pagination.size, ...searchForm })
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    console.error('获取用户列表失败:', error)
+    ElMessage.error(error.message || '获取用户列表失败')
   } finally {
     loading.value = false
   }
@@ -277,8 +278,9 @@ const getRoleList = async () => {
   try {
     const res = await getRoleListAll()
     roleList.value = res.data || []
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    console.error('获取角色列表失败:', error)
+    ElMessage.error(error.message || '获取角色列表失败')
   }
 }
 
@@ -286,8 +288,9 @@ const getDeptTreeData = async () => {
   try {
     const res = await getDeptTree()
     deptTree.value = res.data || []
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    console.error('获取部门树失败:', error)
+    ElMessage.error(error.message || '获取部门树失败')
   }
 }
 
@@ -295,8 +298,9 @@ const getPositionListData = async () => {
   try {
     const res = await getPositionList({ current: 1, size: 1000, status: 1 })
     positionList.value = res.data?.records || []
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    console.error('获取职位列表失败:', error)
+    ElMessage.error(error.message || '获取职位列表失败')
   }
 }
 

@@ -229,7 +229,6 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -245,9 +244,6 @@ import {
   unpublishCourse
 } from '@/api/course'
 import { getCategoryTree, type Category } from '@/api/category'
-
-const route = useRoute()
-const pageTitle = route.meta?.title || '课程管理'
 
 // 搜索表单
 const searchForm = reactive({

@@ -890,9 +890,12 @@ const initTypeChart = (data: any[]) => {
   typeChart.setOption(option)
 }
 
-// 监听图表类型变化
+// 监听图表类型变化 - 只需要重新渲染图表，不需要重新获取数据
 watch(planChartType, () => {
-  getStatistics()
+  // 计算统计数据
+  const stats = calculateStatistics(allPlans.value, allProgress.value)
+  // 只更新计划完成情况图表
+  initPlanChart(stats.planStatus)
 })
 
 // 获取状态类型

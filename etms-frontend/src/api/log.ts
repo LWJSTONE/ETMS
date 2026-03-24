@@ -56,5 +56,5 @@ export function clearLogs(): Promise<ApiResponse<void>> {
 
 // 导出日志
 export function exportLogs(params: LogSearchParams): Promise<Blob> {
-  return request.get('/system/logs/export', params, { responseType: 'blob' })
+  return request.getBlob('/system/logs/export', params)
 }

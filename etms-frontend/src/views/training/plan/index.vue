@@ -340,7 +340,7 @@ import {
 } from '@/api/training'
 import { getCourseListAll } from '@/api/course'
 import { getDeptTree } from '@/api/dept'
-import { getPositionList } from '@/api/position'
+import { getPositionListAll } from '@/api/position'
 import { getUserList } from '@/api/user'
 
 // 搜索表单
@@ -774,10 +774,10 @@ const getDeptList = async () => {
 }
 
 // 获取岗位列表
-const getPositionListAll = async () => {
+const getPositionListData = async () => {
   try {
-    const res = await getPositionList({ current: 1, size: 1000, status: 1 })
-    positionList.value = res.data?.records || []
+    const res = await getPositionListAll()
+    positionList.value = res.data || []
   } catch (error: any) {
     console.error(error)
   }
@@ -810,7 +810,7 @@ onMounted(() => {
   getList()
   getCourseList()
   getDeptList()
-  getPositionListAll()
+  getPositionListData()
   getUserListAll()
 })
 </script>

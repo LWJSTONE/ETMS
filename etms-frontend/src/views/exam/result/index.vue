@@ -285,7 +285,8 @@ import {
   View,
   List
 } from '@element-plus/icons-vue'
-import { getResultList, getResultDetail, getResultStats, exportResults, type ResultStats } from '@/api/exam'
+import { getResultList, getResultDetail, getResultStats, exportResults } from '@/api/exam'
+import type { ResultStats } from '@/api/exam'
 
 // 统计数据
 const stats = reactive({
@@ -438,9 +439,9 @@ const handleExport = async () => {
     window.URL.revokeObjectURL(url)
     
     ElMessage.success('导出成功')
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
-    ElMessage.error('导出失败')
+    ElMessage.error(error.message || '导出失败')
   } finally {
     exportLoading.value = false
   }

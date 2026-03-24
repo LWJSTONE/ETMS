@@ -147,9 +147,9 @@ service.interceptors.response.use(
   (response: AxiosResponse) => {
     NProgress.done()
     
-    // 文件下载响应处理
+    // 文件下载响应处理 - 直接返回 Blob 数据
     if (response.config.responseType === 'blob') {
-      return response
+      return response.data
     }
     
     const res = response.data

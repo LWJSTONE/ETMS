@@ -109,6 +109,7 @@
       :title="dialogTitle"
       width="700px"
       :close-on-click-modal="false"
+      destroy-on-close
     >
       <el-form
         ref="formRef"
@@ -223,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -292,6 +293,13 @@ const form = reactive({
   duration: 60,
   timeRange: [] as string[],
   description: ''
+})
+
+// 监听总分变化，自动调整及格分数
+watch(() => form.totalScore, (newTotal) => {
+  if (form.passScore > newTotal) {
+    form.passScore = newTotal
+  }
 })
 
 // 自定义验证规则：及格分不能大于总分且必须大于0

@@ -4,18 +4,26 @@ import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import com.etms.entity.User;
+import com.etms.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.time.LocalDateTime;
 
 /**
  * MyBatis-Plus配置类
  */
 @Configuration
+@RequiredArgsConstructor
 public class MyBatisPlusConfig implements MetaObjectHandler {
+    
+    private final UserMapper userMapper;
     
     /**
      * 分页插件
@@ -49,12 +57,31 @@ public class MyBatisPlusConfig implements MetaObjectHandler {
     
     /**
      * 获取当前登录用户ID
+     * 修复问题：之前的方法始终返回1L，现在正确获取真实用户ID
      */
     private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            // 这里需要根据实际情况获取用户ID
-            return 1L;
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                Object principal = authentication.getPrincipal();
+                String username = null;
+                
+                if (principal instanceof UserDetails) {
+                    username = ((UserDetails) principal).getUsername();
+                } else if (principal instanceof String) {
+                    username = (String) principal;
+                }
+                
+                if (username != null && !username.isEmpty() && !"anonymousUser".equals(username)) {
+                    // 通过用户名查询用户ID
+                    User user = userMapper.selectByUsername(username);
+                    if (user != null) {
+                        return user.getId();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 安全上下文获取失败时返回null，由调用方处理
         }
         return null;
     }

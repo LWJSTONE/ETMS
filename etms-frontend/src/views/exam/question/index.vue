@@ -86,8 +86,8 @@
         <el-table-column prop="createTime" label="创建时间" width="160" />
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="['exam:question:edit']" type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="['exam:question:delete']" type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -289,7 +289,6 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
@@ -301,9 +300,6 @@ import {
 } from '@/api/exam'
 import { getCourseListAll } from '@/api/course'
 import SafeHtml from '@/components/SafeHtml.vue'
-
-const route = useRoute()
-const pageTitle = route.meta?.title || '题库管理'
 
 // 搜索表单
 const searchForm = reactive({
@@ -355,7 +351,7 @@ const form = reactive({
 // 监听多选题答案变化
 watch(multiAnswer, (val) => {
   if (form.questionType === 2) {
-    form.answer = val.sort().join(',')
+    form.answer = val.length > 0 ? val.sort().join(',') : ''
   }
 })
 
