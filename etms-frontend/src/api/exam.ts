@@ -190,3 +190,51 @@ export interface ResultStats {
   passRate: number
   avgScore: number
 }
+
+/**
+ * 组卷管理API
+ */
+
+// 试卷题目关联类型
+export interface PaperQuestionItem {
+  questionId: number
+  score: number
+  sortOrder: number
+}
+
+// 试卷题目详情类型
+export interface PaperQuestionDetail {
+  questionId: number
+  questionType: number
+  questionContent: string
+  optionA?: string
+  optionB?: string
+  optionC?: string
+  optionD?: string
+  optionE?: string
+  answer?: string
+  answerAnalysis?: string
+  difficulty?: number
+  score: number
+  sortOrder: number
+}
+
+// 获取试卷题目列表
+export function getPaperQuestions(paperId: number): Promise<ApiResponse<PaperQuestionDetail[]>> {
+  return request.get(`/exam/papers/${paperId}/questions`)
+}
+
+// 批量添加题目到试卷
+export function batchAddQuestionsToPaper(paperId: number, questions: PaperQuestionItem[]): Promise<ApiResponse<void>> {
+  return request.post(`/exam/papers/${paperId}/questions`, questions)
+}
+
+// 从试卷移除单个题目
+export function removeQuestionFromPaper(paperId: number, questionId: number): Promise<ApiResponse<void>> {
+  return request.delete(`/exam/papers/${paperId}/questions/${questionId}`)
+}
+
+// 清空试卷所有题目
+export function clearPaperQuestions(paperId: number): Promise<ApiResponse<void>> {
+  return request.delete(`/exam/papers/${paperId}/questions`)
+}

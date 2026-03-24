@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.Paper;
+import com.etms.entity.PaperQuestion;
 import com.etms.service.PaperService;
+import com.etms.vo.PaperQuestionVO;
 import com.etms.vo.PaperVO;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
@@ -13,6 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 试卷管理控制器
@@ -115,6 +119,40 @@ public class PaperController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> disable(@PathVariable Long id) {
         paperService.disablePaper(id);
+        return Result.success();
+    }
+    
+    // ==================== 组卷管理接口 ====================
+    
+    @ApiOperation(value = "获取试卷题目列表")
+    @GetMapping("/{id}/questions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    public Result<List<PaperQuestionVO>> getQuestions(@PathVariable Long id) {
+        List<PaperQuestionVO> questions = paperService.getPaperQuestions(id);
+        return Result.success(questions);
+    }
+    
+    @ApiOperation(value = "批量添加题目到试卷")
+    @PostMapping("/{id}/questions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    public Result<Void> addQuestions(@PathVariable Long id, @RequestBody List<Map<String, Object>> questions) {
+        paperService.batchAddQuestions(id, questions);
+        return Result.success();
+    }
+    
+    @ApiOperation(value = "从试卷移除单个题目")
+    @DeleteMapping("/{id}/questions/{questionId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    public Result<Void> removeQuestion(@PathVariable Long id, @PathVariable Long questionId) {
+        paperService.removeQuestionFromPaper(id, questionId);
+        return Result.success();
+    }
+    
+    @ApiOperation(value = "清空试卷所有题目")
+    @DeleteMapping("/{id}/questions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    public Result<Void> clearQuestions(@PathVariable Long id) {
+        paperService.clearPaperQuestions(id);
         return Result.success();
     }
 }

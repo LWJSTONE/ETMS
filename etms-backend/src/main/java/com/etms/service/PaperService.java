@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.etms.entity.Paper;
 import com.etms.vo.PaperVO;
+import com.etms.vo.PaperQuestionVO;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 试卷服务接口
@@ -70,4 +73,33 @@ public interface PaperService extends IService<Paper> {
      * @return 是否有考试记录
      */
     boolean hasExamRecords(Long paperId);
+    
+    // ==================== 组卷管理方法 ====================
+    
+    /**
+     * 获取试卷题目列表
+     * @param paperId 试卷ID
+     * @return 题目列表
+     */
+    List<PaperQuestionVO> getPaperQuestions(Long paperId);
+    
+    /**
+     * 批量添加题目到试卷
+     * @param paperId 试卷ID
+     * @param questions 题目列表（包含questionId, score, sortOrder）
+     */
+    void batchAddQuestions(Long paperId, List<Map<String, Object>> questions);
+    
+    /**
+     * 从试卷移除单个题目
+     * @param paperId 试卷ID
+     * @param questionId 题目ID
+     */
+    void removeQuestionFromPaper(Long paperId, Long questionId);
+    
+    /**
+     * 清空试卷所有题目
+     * @param paperId 试卷ID
+     */
+    void clearPaperQuestions(Long paperId);
 }

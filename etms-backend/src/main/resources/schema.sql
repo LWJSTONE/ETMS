@@ -804,7 +804,8 @@ ALTER TABLE training_category ADD INDEX idx_status (status);
 ALTER TABLE sys_config ADD INDEX idx_config_type (config_type);
 
 -- 修复9：为字典表添加状态索引
-ALTER TABLE sys_dict ADD INDEX idx_status (status);
+ALTER TABLE sys_dict_type ADD INDEX idx_status (status);
+ALTER TABLE sys_dict_data ADD INDEX idx_status (status);
 
 -- 修复10：扩展IP地址字段长度以支持IPv6
 ALTER TABLE sys_operation_log MODIFY ip_address VARCHAR(64) DEFAULT NULL COMMENT '操作IP';

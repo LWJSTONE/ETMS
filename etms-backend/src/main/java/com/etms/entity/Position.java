@@ -18,6 +18,18 @@ public class Position extends BaseEntity {
     /** 岗位编码 */
     private String positionCode;
     
+    /** 职级 */
+    private String positionLevel;
+    
+    /** 岗位职责描述 */
+    private String positionDesc;
+    
+    /** 任职要求 */
+    private String requirement;
+    
+    /** 所属部门ID */
+    private Long deptId;
+    
     /** 排序 */
     private Integer sortOrder;
     

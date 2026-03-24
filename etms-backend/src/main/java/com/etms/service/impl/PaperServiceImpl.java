@@ -457,4 +457,174 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         );
         return recordCount != null && recordCount > 0;
     }
+    
+    // ==================== 组卷管理方法实现 ====================
+    
+    @Override
+    public List<PaperQuestionVO> getPaperQuestions(Long paperId) {
+        // 查询试卷关联的题目
+        List<PaperQuestion> paperQuestions = paperQuestionMapper.selectList(
+            new LambdaQueryWrapper<PaperQuestion>()
+                .eq(PaperQuestion::getPaperId, paperId)
+                .orderByAsc(PaperQuestion::getSortOrder)
+        );
+        
+        if (paperQuestions.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 获取所有题目ID
+        List<Long> questionIds = paperQuestions.stream()
+            .map(PaperQuestion::getQuestionId)
+            .collect(Collectors.toList());
+        
+        // 批量查询题目详情
+        List<Question> questions = questionMapper.selectBatchIds(questionIds);
+        Map<Long, Question> questionMap = questions.stream()
+            .collect(Collectors.toMap(Question::getId, q -> q));
+        
+        // 构建题目分数映射
+        Map<Long, Integer> scoreMap = paperQuestions.stream()
+            .collect(Collectors.toMap(PaperQuestion::getQuestionId, PaperQuestion::getScore));
+        
+        // 构建题目排序映射
+        Map<Long, Integer> sortOrderMap = paperQuestions.stream()
+            .collect(Collectors.toMap(PaperQuestion::getQuestionId, PaperQuestion::getSortOrder));
+        
+        // 转换为VO列表
+        List<PaperQuestionVO> questionVOList = new ArrayList<>();
+        for (PaperQuestion pq : paperQuestions) {
+            Question question = questionMap.get(pq.getQuestionId());
+            if (question != null) {
+                PaperQuestionVO qvo = new PaperQuestionVO();
+                BeanUtils.copyProperties(question, qvo);
+                qvo.setQuestionId(question.getId());
+                qvo.setScore(scoreMap.getOrDefault(question.getId(), question.getScore()));
+                qvo.setSortOrder(sortOrderMap.get(question.getId()));
+                questionVOList.add(qvo);
+            }
+        }
+        
+        return questionVOList;
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchAddQuestions(Long paperId, List<Map<String, Object>> questions) {
+        // 验证试卷是否存在
+        Paper paper = baseMapper.selectById(paperId);
+        if (paper == null) {
+            throw new BusinessException("试卷不存在");
+        }
+        
+        // 验证试卷状态（只有草稿状态的试卷可以添加题目）
+        if (paper.getStatus() != 0) {
+            throw new BusinessException("只有草稿状态的试卷可以添加题目");
+        }
+        
+        if (questions == null || questions.isEmpty()) {
+            throw new BusinessException("题目列表不能为空");
+        }
+        
+        // 获取当前最大排序号
+        Integer maxSortOrder = paperQuestionMapper.selectMaxSortOrderByPaperId(paperId);
+        int nextSortOrder = (maxSortOrder != null ? maxSortOrder : 0) + 1;
+        
+        // 批量添加题目
+        for (Map<String, Object> item : questions) {
+            Long questionId = Long.valueOf(item.get("questionId").toString());
+            Integer score = item.get("score") != null ? Integer.valueOf(item.get("score").toString()) : 1;
+            Integer sortOrder = item.get("sortOrder") != null ? Integer.valueOf(item.get("sortOrder").toString()) : nextSortOrder;
+            
+            // 验证题目是否存在
+            Question question = questionMapper.selectById(questionId);
+            if (question == null) {
+                throw new BusinessException("题目ID " + questionId + " 不存在");
+            }
+            
+            // 检查题目是否已存在于试卷中
+            Long existCount = paperQuestionMapper.selectCount(
+                new LambdaQueryWrapper<PaperQuestion>()
+                    .eq(PaperQuestion::getPaperId, paperId)
+                    .eq(PaperQuestion::getQuestionId, questionId)
+            );
+            if (existCount > 0) {
+                continue; // 已存在则跳过
+            }
+            
+            // 添加题目到试卷
+            PaperQuestion paperQuestion = new PaperQuestion();
+            paperQuestion.setPaperId(paperId);
+            paperQuestion.setQuestionId(questionId);
+            paperQuestion.setScore(score);
+            paperQuestion.setSortOrder(sortOrder);
+            paperQuestionMapper.insert(paperQuestion);
+            
+            nextSortOrder++;
+        }
+        
+        // 更新试卷题目数量
+        Long questionCount = paperQuestionMapper.selectCount(
+            new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getPaperId, paperId)
+        );
+        paper.setQuestionCount(questionCount.intValue());
+        baseMapper.updateById(paper);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void removeQuestionFromPaper(Long paperId, Long questionId) {
+        // 验证试卷是否存在
+        Paper paper = baseMapper.selectById(paperId);
+        if (paper == null) {
+            throw new BusinessException("试卷不存在");
+        }
+        
+        // 验证试卷状态
+        if (paper.getStatus() != 0) {
+            throw new BusinessException("只有草稿状态的试卷可以移除题目");
+        }
+        
+        // 删除题目
+        int deleted = paperQuestionMapper.delete(
+            new LambdaQueryWrapper<PaperQuestion>()
+                .eq(PaperQuestion::getPaperId, paperId)
+                .eq(PaperQuestion::getQuestionId, questionId)
+        );
+        
+        if (deleted == 0) {
+            throw new BusinessException("题目不存在于试卷中");
+        }
+        
+        // 更新试卷题目数量
+        Long questionCount = paperQuestionMapper.selectCount(
+            new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getPaperId, paperId)
+        );
+        paper.setQuestionCount(questionCount.intValue());
+        baseMapper.updateById(paper);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void clearPaperQuestions(Long paperId) {
+        // 验证试卷是否存在
+        Paper paper = baseMapper.selectById(paperId);
+        if (paper == null) {
+            throw new BusinessException("试卷不存在");
+        }
+        
+        // 验证试卷状态
+        if (paper.getStatus() != 0) {
+            throw new BusinessException("只有草稿状态的试卷可以清空题目");
+        }
+        
+        // 清空题目
+        paperQuestionMapper.delete(
+            new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getPaperId, paperId)
+        );
+        
+        // 更新试卷题目数量为0
+        paper.setQuestionCount(0);
+        baseMapper.updateById(paper);
+    }
 }
