@@ -52,6 +52,15 @@ public class TrainingPlanVO implements Serializable {
     /** 目标类型 */
     private Integer targetType;
     
+    /** 目标部门ID集合(JSON) */
+    private String targetDeptIds;
+    
+    /** 目标岗位ID集合(JSON) */
+    private String targetPositionIds;
+    
+    /** 目标用户ID集合(JSON) */
+    private String targetUserIds;
+    
     /** 最低学习时长(分钟) */
     private Integer minStudyTime;
     

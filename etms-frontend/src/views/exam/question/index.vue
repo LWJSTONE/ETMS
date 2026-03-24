@@ -226,8 +226,8 @@
           <el-divider content-position="left">选项</el-divider>
           <el-form-item label="正确答案" prop="answer">
             <el-radio-group v-model="form.answer">
-              <el-radio value="正确">正确</el-radio>
-              <el-radio value="错误">错误</el-radio>
+              <el-radio value="A">正确</el-radio>
+              <el-radio value="B">错误</el-radio>
             </el-radio-group>
           </el-form-item>
         </template>

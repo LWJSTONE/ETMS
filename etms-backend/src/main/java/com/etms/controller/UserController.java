@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.dto.PasswordDTO;
+import com.etms.dto.StatusDTO;
 import com.etms.dto.UserDTO;
 import com.etms.entity.User;
 import com.etms.service.UserService;
@@ -142,6 +143,11 @@ public class UserController {
             return Result.error("不能删除当前登录用户");
         }
         
+        // 安全检查：禁止删除admin账户
+        if ("admin".equals(targetUser.getUsername())) {
+            return Result.error("admin账户不能删除");
+        }
+        
         userService.deleteUser(id);
         return Result.success();
     }
@@ -195,16 +201,8 @@ public class UserController {
     @PutMapping("/{id}/status")
     // 权限校验：只有管理员可以修改用户状态
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
-        Integer status = body.get("status");
-        // 参数验证
-        if (status == null) {
-            return Result.error("状态不能为空");
-        }
-        // 验证状态值是否合法（0: 禁用, 1: 启用）
-        if (status != 0 && status != 1) {
-            return Result.error("状态值不合法");
-        }
+    public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusDTO statusDTO) {
+        Integer status = statusDTO.getStatus();
         
         // 修复：防止管理员禁用自己
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

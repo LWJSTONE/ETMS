@@ -527,7 +527,8 @@ const getStatusName = (status: number) => {
     2: '迟到',
     3: '早退',
     4: '缺勤',
-    5: '补签'
+    5: '补签',
+    6: '补签驳回'  // 添加补签驳回状态
   }
   return statuses[status] || '未知'
 }
@@ -539,7 +540,8 @@ const getStatusType = (status: number) => {
     2: 'warning',
     3: 'warning',
     4: 'danger',
-    5: 'info'
+    5: 'info',
+    6: 'danger'  // 添加补签驳回状态类型
   }
   return types[status] || 'info'
 }

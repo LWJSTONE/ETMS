@@ -82,6 +82,13 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             BeanUtils.copyProperties(plan, vo);
             vo.setPlanTypeName(getPlanTypeName(plan.getPlanType()));
             vo.setStatusName(getStatusName(plan.getStatus()));
+            // 设置课程名称
+            if (plan.getCourseId() != null) {
+                Course course = courseMapper.selectById(plan.getCourseId());
+                if (course != null) {
+                    vo.setCourseName(course.getCourseName());
+                }
+            }
             return vo;
         }).collect(Collectors.toList());
         
@@ -100,6 +107,14 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         BeanUtils.copyProperties(plan, vo);
         vo.setPlanTypeName(getPlanTypeName(plan.getPlanType()));
         vo.setStatusName(getStatusName(plan.getStatus()));
+        
+        // 设置课程名称
+        if (plan.getCourseId() != null) {
+            Course course = courseMapper.selectById(plan.getCourseId());
+            if (course != null) {
+                vo.setCourseName(course.getCourseName());
+            }
+        }
         
         return vo;
     }
@@ -145,6 +160,17 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deletePlan(Long id) {
+        // 获取培训计划
+        TrainingPlan existingPlan = baseMapper.selectById(id);
+        if (existingPlan == null) {
+            throw new BusinessException("培训计划不存在");
+        }
+        
+        // 只有草稿状态才能删除
+        if (existingPlan.getStatus() != 0) {
+            throw new BusinessException("只有草稿状态的培训计划才能删除");
+        }
+        
         // 检查培训计划是否有学习记录
         Long count = userPlanMapper.selectCount(
             new LambdaQueryWrapper<UserPlan>().eq(UserPlan::getPlanId, id)
@@ -153,7 +179,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("培训计划存在学习记录，无法删除");
         }
         
-        // 修复：删除培训计划时清理PlanCourse关联数据
+        // 删除培训计划时清理PlanCourse关联数据
         planCourseMapper.delete(
             new LambdaQueryWrapper<PlanCourse>().eq(PlanCourse::getPlanId, id)
         );

@@ -382,8 +382,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 如果前端传了密码则使用前端密码，否则使用默认密码
         String password = userDTO.getPassword();
         if (password == null || password.trim().isEmpty()) {
-            password = "123456"; // 默认密码
+            password = "Abc123456"; // 默认密码，符合密码强度要求
         }
+        // 校验密码强度
+        validatePasswordStrength(password);
+        
         user.setPassword(passwordEncoder.encode(password));
         user.setStatus(1);
         
@@ -541,17 +544,42 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     /**
      * 生成随机密码
+     * 安全改进：包含大小写字母、数字和特殊字符
      * @param length 密码长度
      * @return 随机密码
      */
     private String generateRandomPassword(int length) {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        // 确保每种字符类型至少出现一次
+        String upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lowerChars = "abcdefghijklmnopqrstuvwxyz";
+        String digitChars = "0123456789";
+        String specialChars = "!@#$%^&*";
+        String allChars = upperChars + lowerChars + digitChars + specialChars;
+        
         SecureRandom random = new SecureRandom();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
+        
+        // 确保每种类型至少一个
+        sb.append(upperChars.charAt(random.nextInt(upperChars.length())));
+        sb.append(lowerChars.charAt(random.nextInt(lowerChars.length())));
+        sb.append(digitChars.charAt(random.nextInt(digitChars.length())));
+        sb.append(specialChars.charAt(random.nextInt(specialChars.length())));
+        
+        // 填充剩余长度
+        for (int i = 4; i < length; i++) {
+            sb.append(allChars.charAt(random.nextInt(allChars.length())));
         }
-        return sb.toString();
+        
+        // 随机打乱顺序
+        char[] password = sb.toString().toCharArray();
+        for (int i = password.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = password[i];
+            password[i] = password[j];
+            password[j] = temp;
+        }
+        
+        return new String(password);
     }
     
     @Override
