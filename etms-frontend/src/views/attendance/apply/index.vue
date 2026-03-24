@@ -539,9 +539,11 @@ const handleApply = () => {
   applyDialogVisible.value = true
 }
 
-// 禁用未来日期
+// 禁用未来日期和过早日期能补签最近30天）
 const disabledDate = (time: Date) => {
-  return time.getTime() > Date.now()
+  const now = Date.now()
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
+  return time.getTime() > now || time.getTime() < thirtyDaysAgo
 }
 
 // 提交补签申请

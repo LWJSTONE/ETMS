@@ -299,6 +299,9 @@ const rules: FormRules = {
     { required: true, message: '请输入课程编码', trigger: 'blur' },
     { max: 50, message: '课程编码不能超过50个字符', trigger: 'blur' }
   ],
+  categoryId: [
+    { required: true, message: '请选择课程分类', trigger: 'change' }
+  ],
   courseType: [{ required: true, message: '请选择课程类型', trigger: 'change' }],
   difficulty: [{ required: true, message: '请选择难度', trigger: 'change' }]
 }

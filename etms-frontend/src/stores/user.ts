@@ -25,14 +25,23 @@ export const useUserStore = defineStore('user', () => {
 
   // 登录
   const loginAction = async (username: string, password: string, captcha: string, captchaKey: string) => {
-    const res = await login({ username, password, captcha, captchaKey })
-    token.value = res.data.accessToken
-    localStorage.setItem('token', res.data.accessToken)
-    
-    // 登录成功后获取完整用户信息
-    await getUserInfoAction()
-    
-    return res
+    try {
+      const res = await login({ username, password, captcha, captchaKey })
+      token.value = res.data.accessToken
+      localStorage.setItem('token', res.data.accessToken)
+      
+      // 登录成功后获取完整用户信息
+      await getUserInfoAction()
+      
+      return res
+    } catch (error) {
+      // 登录失败时清除token，避免残留导致状态不一致
+      token.value = ''
+      userInfo.value = null
+      localStorage.removeItem('token')
+      localStorage.removeItem(USER_INFO_KEY)
+      throw error
+    }
   }
 
   // 获取用户信息

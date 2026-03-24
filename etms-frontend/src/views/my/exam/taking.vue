@@ -364,7 +364,25 @@ const restoreAnswersFromLocal = () => {
       // 恢复答案
       if (data.answers) {
         Object.keys(data.answers).forEach(key => {
-          answers[Number(key)] = data.answers[key]
+          const questionId = Number(key)
+          const savedAnswer = data.answers[key]
+          // 查找对应的题目类型
+          const question = questions.value.find(q => q.id === questionId)
+          if (question) {
+            // 多选题需要确保答案是数组格式
+            if (question.questionType === 2) {
+              if (Array.isArray(savedAnswer)) {
+                answers[questionId] = savedAnswer
+              } else if (savedAnswer !== null && savedAnswer !== undefined && savedAnswer !== '') {
+                // 如果保存的是字符串，转换为数组
+                answers[questionId] = String(savedAnswer).split(',').filter(s => s.trim())
+              } else {
+                answers[questionId] = []
+              }
+            } else {
+              answers[questionId] = savedAnswer
+            }
+          }
         })
       }
       // 恢复当前题目索引
@@ -486,7 +504,8 @@ const startTimer = () => {
       clearInterval(timer!)
       timer = null
       ElMessage.warning('考试时间到，系统将自动提交试卷！')
-      confirmSubmit()
+      // 自动提交时使用特殊标记，失败时保留本地存储
+      confirmSubmit(true)
     }
   }, 1000)
 }
@@ -533,7 +552,11 @@ const handleSubmit = () => {
 }
 
 // 确认提交
-const confirmSubmit = async () => {
+const confirmSubmit = async (isAutoSubmit = false) => {
+  // 防止重复提交
+  if (submitting.value) {
+    return
+  }
   submitting.value = true
   try {
     // 构建提交数据
@@ -563,8 +586,17 @@ const confirmSubmit = async () => {
     router.push('/my/result')
   } catch (error: any) {
     console.error('提交试卷失败:', error)
-    ElMessage.error(error.message || '提交试卷失败，答案已保存，请重试提交')
-    // 提交失败时保留本地存储，用户可以重试
+    
+    if (isAutoSubmit) {
+      // 自动提交失败时，保留本地存储并提示用户手动重试
+      ElMessage.error('自动提交失败，您的答案已保存，请手动点击提交按钮重试！')
+      // 重新启动计时器（给用户一些时间重试）
+      remainingTime.value = 60 // 给予1分钟缓冲时间
+      startTimer()
+    } else {
+      ElMessage.error(error.message || '提交试卷失败，答案已保存，请重试提交')
+      // 提交失败时保留本地存储，用户可以重试
+    }
   } finally {
     submitting.value = false
   }

@@ -118,15 +118,15 @@ public class GlobalExceptionHandler {
     
     /**
      * 处理运行时异常
+     * 注意：为防止敏感信息泄露，RuntimeException统一返回通用错误信息
+     * 详细错误信息只记录在日志中供开发人员排查
      */
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleRuntimeException(RuntimeException e) {
         log.error("运行时异常", e);
-        // 如果是已知的运行时异常，返回具体信息；否则返回通用错误信息
-        if (e.getMessage() != null && !e.getMessage().isEmpty()) {
-            return Result.error(500, e.getMessage());
-        }
+        // 统一返回通用错误信息，避免敏感信息泄露
+        // 具体的业务异常应该使用BusinessException抛出
         return Result.error(500, "系统内部错误，请联系管理员");
     }
     

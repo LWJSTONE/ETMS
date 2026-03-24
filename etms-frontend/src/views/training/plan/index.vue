@@ -324,7 +324,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -792,6 +792,19 @@ const getUserListAll = async () => {
     console.error(error)
   }
 }
+
+// 监听目标类型变化，清空其他类型的目标选择
+watch(() => form.targetType, (newType, oldType) => {
+  // 仅在类型实际变化时清空（排除初始化和编辑加载的情况）
+  if (oldType !== undefined && newType !== oldType && dialogVisible.value) {
+    // 清空所有目标选择
+    form.targetDeptIds = []
+    form.targetPositionIds = []
+    form.targetUserIds = []
+    // 清除目标选择的验证错误
+    formRef.value?.clearValidate('targetSelection')
+  }
+})
 
 onMounted(() => {
   getList()
