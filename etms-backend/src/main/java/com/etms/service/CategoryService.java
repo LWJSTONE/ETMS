@@ -41,6 +41,20 @@ public interface CategoryService {
     void deleteCategory(Long id);
     
     /**
+     * 检查分类是否有子分类
+     * @param categoryId 分类ID
+     * @return 是否有子分类
+     */
+    boolean hasChildren(Long categoryId);
+    
+    /**
+     * 检查分类是否有关联课程
+     * @param categoryId 分类ID
+     * @return 是否有关联课程
+     */
+    boolean hasCourses(Long categoryId);
+    
+    /**
      * 更新分类状态
      */
     void updateStatus(Long id, Integer status);

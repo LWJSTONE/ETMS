@@ -328,9 +328,9 @@ const handleViewDetail = async (row: ExamRecord) => {
   try {
     const res = await getExamRecordDetail(row.id)
     detailData.value = res.data || row
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
-    ElMessage.error('获取详情失败')
+    ElMessage.error(error.message || '获取详情失败')
   } finally {
     detailLoading.value = false
   }

@@ -250,6 +250,32 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     }
     
     @Override
+    public boolean hasChildren(Long categoryId) {
+        Long childCount = baseMapper.selectCount(
+            new LambdaQueryWrapper<Category>().eq(Category::getParentId, categoryId)
+        );
+        return childCount > 0;
+    }
+    
+    @Override
+    public boolean hasCourses(Long categoryId) {
+        // 检查课程关联
+        Long courseCount = courseMapper.selectCount(
+            new LambdaQueryWrapper<com.etms.entity.Course>()
+                .eq(com.etms.entity.Course::getCategoryId, categoryId)
+        );
+        if (courseCount > 0) {
+            return true;
+        }
+        // 检查题目关联
+        Long questionCount = questionMapper.selectCount(
+            new LambdaQueryWrapper<com.etms.entity.Question>()
+                .eq(com.etms.entity.Question::getCategoryId, categoryId)
+        );
+        return questionCount > 0;
+    }
+    
+    @Override
     public void updateStatus(Long id, Integer status) {
         // 验证分类是否存在
         Category existing = baseMapper.selectById(id);

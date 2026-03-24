@@ -1,5 +1,13 @@
 import request from '@/utils/request'
-import type { ApiResponse, PageResult, PageParams } from './types'
+import type { 
+  ApiResponse, 
+  PageResult, 
+  PageParams,
+  DictTypeCreateParams,
+  DictTypeUpdateParams,
+  DictDataCreateParams,
+  DictDataUpdateParams
+} from './types'
 
 // 字典类型定义
 export interface DictType {
@@ -34,12 +42,12 @@ export function getDictTypeDetail(id: number): Promise<ApiResponse<DictType>> {
 }
 
 // 新增字典类型
-export function createDictType(data: DictType): Promise<ApiResponse<void>> {
+export function createDictType(data: DictTypeCreateParams): Promise<ApiResponse<void>> {
   return request.post('/system/dict/types', data)
 }
 
 // 更新字典类型
-export function updateDictType(id: number, data: DictType): Promise<ApiResponse<void>> {
+export function updateDictType(id: number, data: DictTypeUpdateParams): Promise<ApiResponse<void>> {
   return request.put(`/system/dict/types/${id}`, data)
 }
 
@@ -59,12 +67,12 @@ export function getDictDataByType(dictType: string): Promise<ApiResponse<DictDat
 }
 
 // 新增字典数据
-export function createDictData(data: DictData): Promise<ApiResponse<void>> {
+export function createDictData(data: DictDataCreateParams): Promise<ApiResponse<void>> {
   return request.post('/system/dict/data', data)
 }
 
 // 更新字典数据
-export function updateDictData(id: number, data: DictData): Promise<ApiResponse<void>> {
+export function updateDictData(id: number, data: DictDataUpdateParams): Promise<ApiResponse<void>> {
   return request.put(`/system/dict/data/${id}`, data)
 }
 

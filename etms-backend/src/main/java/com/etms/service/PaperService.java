@@ -3,6 +3,7 @@ package com.etms.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.etms.entity.Paper;
+import com.etms.vo.PaperVO;
 
 /**
  * 试卷服务接口
@@ -19,7 +20,7 @@ public interface PaperService extends IService<Paper> {
      * @param id 试卷ID
      * @return 试卷详情
      */
-    Object getPaperDetail(Long id);
+    PaperVO getPaperDetail(Long id);
     
     /**
      * 获取试卷详情（含题目）
@@ -27,7 +28,7 @@ public interface PaperService extends IService<Paper> {
      * @param forExam 是否为考试场景（考试场景下隐藏答案和解析）
      * @return 试卷详情
      */
-    Object getPaperDetail(Long id, boolean forExam);
+    PaperVO getPaperDetail(Long id, boolean forExam);
     
     /**
      * 获取试卷详情（含题目）- 考试场景
@@ -36,7 +37,7 @@ public interface PaperService extends IService<Paper> {
      * @param planId 培训计划ID（用于验证考试资格）
      * @return 试卷详情
      */
-    Object getPaperDetail(Long id, boolean forExam, Long planId);
+    PaperVO getPaperDetail(Long id, boolean forExam, Long planId);
     
     /**
      * 新增试卷

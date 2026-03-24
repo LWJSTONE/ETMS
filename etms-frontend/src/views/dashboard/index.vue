@@ -171,12 +171,12 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import * as echarts from 'echarts'
-import { Loading } from '@element-plus/icons-vue'
+import { Loading, User, Notebook, Calendar, TrendCharts, Edit, Reading } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import { getUserList } from '@/api/user'
 import { getCourseList } from '@/api/course'
 import { getPlanList, getMyProgress } from '@/api/training'
-import { getPaperList, getMyExamRecordList } from '@/api/exam'
+import { getMyExamRecordList } from '@/api/exam'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -244,12 +244,12 @@ const handleResize = () => {
 
 // 跳转到我的培训页面
 const goToMyTraining = () => {
-  router.push('/training/my-progress')
+  router.push('/my/progress')
 }
 
 // 跳转到我的考试页面
 const goToMyExam = () => {
-  router.push('/exam/my-exam')
+  router.push('/my/exam')
 }
 
 // 获取管理员统计数据

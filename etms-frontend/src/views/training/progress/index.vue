@@ -194,8 +194,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, Download, View } from '@element-plus/icons-vue'
-import { getProgressList, getProgressDetail } from '@/api/training'
-import { getPlanList } from '@/api/training'
+import { getProgressList, getProgressDetail, getPlanList } from '@/api/training'
 import { useUserStore } from '@/stores/user'
 
 // 定义进度数据类型

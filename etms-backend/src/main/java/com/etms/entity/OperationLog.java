@@ -17,8 +17,8 @@ public class OperationLog implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 日志ID */
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long logId;
+    @TableId(type = IdType.AUTO)
+    private Long id;
 
     /** 操作用户ID */
     private Long userId;

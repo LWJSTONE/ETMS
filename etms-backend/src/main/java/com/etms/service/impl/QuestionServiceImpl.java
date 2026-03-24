@@ -273,6 +273,14 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     }
     
     @Override
+    public boolean isUsedInPapers(Long questionId) {
+        Long count = paperQuestionMapper.selectCount(
+            new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getQuestionId, questionId)
+        );
+        return count > 0;
+    }
+    
+    @Override
     public List<QuestionVO> randomQuestions(Integer questionType, Integer difficulty, Integer count, Long courseId) {
         // 使用Mapper方法替代字符串拼接，避免SQL注入
         List<Question> questions = baseMapper.selectRandomQuestions(questionType, difficulty, count, courseId);

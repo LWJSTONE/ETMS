@@ -35,16 +35,13 @@ const props = withDefaults(defineProps<Props>(), {
   ]
 })
 
-// 配置 DOMPurify
-DOMPurify.setConfig({
-  ALLOWED_TAGS: props.allowedTags,
-  ALLOWED_ATTR: props.allowedAttributes,
-  ALLOW_DATA_ATTR: false
-})
-
-// 清理 HTML
+// 清理 HTML - 在 sanitize 调用时配置，避免在组件级别设置全局配置
 const sanitizedHtml = computed(() => {
   if (!props.html) return ''
-  return DOMPurify.sanitize(props.html)
+  return DOMPurify.sanitize(props.html, {
+    ALLOWED_TAGS: props.allowedTags,
+    ALLOWED_ATTR: props.allowedAttributes,
+    ALLOW_DATA_ATTR: false
+  })
 })
 </script>

@@ -205,6 +205,18 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { 
+  Search, 
+  Refresh, 
+  Reading, 
+  Clock, 
+  Loading, 
+  CircleCheck, 
+  Timer, 
+  Star,
+  VideoPlay,
+  View
+} from '@element-plus/icons-vue'
 import { getMyProgress } from '@/api/training'
 import { getCourseList as getCourseListApi } from '@/api/course'
 
@@ -322,6 +334,7 @@ const getCourseListData = async () => {
       if (courseRes.data?.records) {
         courseList.value = courseRes.data.records.map((item: any) => ({
           ...item,
+          courseId: item.id, // 确保courseId正确设置
           learnStatus: 0,
           progress: 0
         }))

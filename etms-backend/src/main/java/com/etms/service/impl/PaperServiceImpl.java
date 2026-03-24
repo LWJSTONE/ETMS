@@ -56,17 +56,17 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     }
 
     @Override
-    public Object getPaperDetail(Long id) {
+    public PaperVO getPaperDetail(Long id) {
         return getPaperDetail(id, false, null);
     }
     
     @Override
-    public Object getPaperDetail(Long id, boolean forExam) {
+    public PaperVO getPaperDetail(Long id, boolean forExam) {
         return getPaperDetail(id, forExam, null);
     }
     
     @Override
-    public Object getPaperDetail(Long id, boolean forExam, Long planId) {
+    public PaperVO getPaperDetail(Long id, boolean forExam, Long planId) {
         Paper paper = baseMapper.selectById(id);
         if (paper == null) {
             return null;

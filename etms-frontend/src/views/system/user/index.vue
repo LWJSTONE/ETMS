@@ -83,7 +83,7 @@
     </el-card>
     
     <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" @close="handleDialogClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" placeholder="请输入用户名" :disabled="isEdit" />
@@ -141,7 +141,7 @@
     </el-dialog>
     
     <!-- 分配角色对话框 -->
-    <el-dialog v-model="roleDialogVisible" title="分配角色" width="500px">
+    <el-dialog v-model="roleDialogVisible" title="分配角色" width="500px" @close="handleRoleDialogClose">
       <el-form label-width="80px">
         <el-form-item label="用户名">
           <el-input :value="currentUser.username" disabled />
@@ -475,6 +475,20 @@ const handleExport = async () => {
     console.error('导出失败:', error)
     ElMessage.error('导出失败')
   }
+}
+
+// 对话框关闭时重置表单
+const handleDialogClose = () => {
+  formRef.value?.resetFields()
+  formRef.value?.clearValidate()
+}
+
+// 分配角色对话框关闭时重置
+const handleRoleDialogClose = () => {
+  currentUser.id = 0
+  currentUser.username = ''
+  currentUser.realName = ''
+  selectedRoleIds.value = []
 }
 
 onMounted(() => { getList(); getRoleList(); getDeptTreeData(); getPositionListData() })

@@ -1,8 +1,10 @@
 package com.etms.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import java.time.LocalDateTime;
 
 /**
  * 考试记录实体
@@ -28,7 +30,7 @@ public class ExamRecord extends BaseEntity {
     private Long planId;
     
     /**
-     * 考试状态：0-未开始 1-进行中 2-已完成 3-已超时 4-已放弃
+     * 考试状态：0-考试中 1-已提交 2-超时 3-已批阅
      */
     private Integer status;
     
@@ -48,19 +50,34 @@ public class ExamRecord extends BaseEntity {
     private Integer passed;
     
     /**
-     * 开始时间
+     * 考试开始时间
      */
-    private java.time.LocalDateTime startTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @TableField("exam_start_time")
+    private LocalDateTime startTime;
+    
+    /**
+     * 考试结束时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @TableField("exam_end_time")
+    private LocalDateTime endTime;
     
     /**
      * 提交时间
      */
-    private java.time.LocalDateTime submitTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime submitTime;
 
     /**
      * 实际用时（分钟）
      */
     private Integer durationUsed;
+
+    /**
+     * 切屏次数（防作弊）
+     */
+    private Integer switchCount;
 
     /**
      * 客观题得分
@@ -81,9 +98,4 @@ public class ExamRecord extends BaseEntity {
      * 补考次数
      */
     private Integer retakeCount;
-
-    /**
-     * 切屏次数（防作弊）
-     */
-    private Integer switchCount;
 }

@@ -1,6 +1,6 @@
 package com.etms.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -25,6 +25,7 @@ public class PaperQuestion extends BaseEntity {
     /**
      * 题目分数
      */
+    @TableField("question_score")
     private Integer score;
     
     /**

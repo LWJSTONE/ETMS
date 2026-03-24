@@ -73,7 +73,14 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateDictType(DictType dictType) {
+        // 检查字典类型是否存在
+        DictType existing = baseMapper.selectById(dictType.getId());
+        if (existing == null) {
+            throw new BusinessException("字典类型不存在");
+        }
+        
         // 检查字典类型是否重复（排除自身）
         Long count = baseMapper.selectCount(
             new LambdaQueryWrapper<DictType>()
@@ -83,7 +90,14 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
         if (count > 0) {
             throw new BusinessException("字典类型已存在");
         }
+        
         baseMapper.updateById(dictType);
+        
+        // 如果字典类型编码变更，需要更新缓存中的key
+        if (!existing.getDictType().equals(dictType.getDictType())) {
+            dictCache.remove(existing.getDictType());
+            refreshCacheByDictTypeId(dictType.getId());
+        }
     }
     
     @Override
@@ -121,6 +135,7 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void addDictData(DictData dictData) {
         // 修复：添加字典数据唯一性校验（同一字典类型下dictLabel不能重复）
         Long count = dictDataMapper.selectCount(
@@ -145,6 +160,7 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateDictData(DictData dictData) {
         // 修复：添加唯一性校验（同一字典类型下dictLabel不能重复，排除自身）
         if (dictData.getDictLabel() != null && dictData.getDictTypeId() != null) {
@@ -166,6 +182,7 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteDictData(Long id) {
         // 获取字典数据信息，用于更新缓存
         DictData dictData = dictDataMapper.selectById(id);

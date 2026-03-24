@@ -73,6 +73,14 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> delete(@PathVariable Long id) {
+        // 修复：删除分类前检查是否有子分类
+        if (categoryService.hasChildren(id)) {
+            return Result.error("该分类下存在子分类，无法删除");
+        }
+        // 修复：删除分类前检查是否有关联课程
+        if (categoryService.hasCourses(id)) {
+            return Result.error("该分类下存在关联课程，无法删除");
+        }
         categoryService.deleteCategory(id);
         return Result.success();
     }

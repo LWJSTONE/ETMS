@@ -84,6 +84,7 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateConfig(Config config) {
         // 获取原配置信息
         Config oldConfig = baseMapper.selectById(config.getId());
@@ -103,16 +104,19 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
         
         baseMapper.updateById(config);
         
-        // 修复：如果configKey变更，需要清理旧key的缓存
+        // 如果configKey变更，需要清理旧key的缓存
         if (oldConfig.getConfigKey() != null && !oldConfig.getConfigKey().equals(config.getConfigKey())) {
             configCache.remove(oldConfig.getConfigKey());
         }
         
         // 更新新key的缓存
-        configCache.put(config.getConfigKey(), config.getConfigValue());
+        if (config.getConfigKey() != null && config.getConfigValue() != null) {
+            configCache.put(config.getConfigKey(), config.getConfigValue());
+        }
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteConfig(Long id) {
         Config config = baseMapper.selectById(id);
         if (config != null) {

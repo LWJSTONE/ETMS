@@ -1,23 +1,16 @@
 package com.etms.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import java.io.Serializable;
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
 
 /**
  * 权限实体类
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("sys_permission")
-public class Permission implements Serializable {
-    
-    private static final long serialVersionUID = 1L;
-    
-    /** 权限ID */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class Permission extends BaseEntity {
     
     /** 权限编码 */
     private String permCode;
@@ -49,13 +42,9 @@ public class Permission implements Serializable {
     /** 状态(0禁用 1正常) */
     private Integer status;
     
-    /** 创建时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createTime;
-    
-    /** 更新时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime updateTime;
+    /** 逻辑删除标志 */
+    @TableLogic
+    private Integer deleted;
     
     @TableField(exist = false)
     private java.util.List<Permission> children;

@@ -1,8 +1,10 @@
 package com.etms.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import java.time.LocalDateTime;
 
 /**
  * 用户培训计划学习记录实体
@@ -38,22 +40,29 @@ public class UserPlan extends BaseEntity {
     private Integer studyTime;
     
     /**
-     * 学习状态：0-未开始 1-进行中 2-已完成
+     * 学习状态：0-未开始 1-进行中 2-已完成 3-已超时
      */
     private Integer status;
     
     /**
-     * 开始时间
-     */
-    private java.time.LocalDateTime startTime;
-    
-    /**
      * 最后学习时间
      */
-    private java.time.LocalDateTime lastStudyTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime lastStudyTime;
     
     /**
      * 完成时间
      */
-    private java.time.LocalDateTime completeTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime completeTime;
+    
+    /**
+     * 是否进度滞后
+     */
+    private Integer isLate;
+    
+    /**
+     * 预警通知是否发送
+     */
+    private Integer warningSent;
 }

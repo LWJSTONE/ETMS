@@ -69,7 +69,7 @@
     </el-card>
     
     <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" @close="handleDialogClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="form.roleName" placeholder="请输入角色名称" />
@@ -104,7 +104,7 @@
     </el-dialog>
     
     <!-- 分配权限对话框 -->
-    <el-dialog v-model="permDialogVisible" title="分配权限" width="500px">
+    <el-dialog v-model="permDialogVisible" title="分配权限" width="500px" @close="handlePermDialogClose">
       <el-tree
         ref="permTreeRef"
         :data="permissionTree"
@@ -337,6 +337,19 @@ onMounted(() => {
   getList()
   getPermissionTreeData()
 })
+
+// 对话框关闭时重置表单
+const handleDialogClose = () => {
+  formRef.value?.resetFields()
+  formRef.value?.clearValidate()
+}
+
+// 权限对话框关闭时重置
+const handlePermDialogClose = () => {
+  currentRoleId.value = null
+  checkedPermIds.value = []
+  permTreeRef.value?.setCheckedKeys([])
+}
 </script>
 
 <style lang="scss" scoped>

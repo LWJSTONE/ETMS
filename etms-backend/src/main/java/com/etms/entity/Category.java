@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("sys_category")
+@TableName("training_category")
 public class Category extends BaseEntity {
     
     /** 分类名称 */

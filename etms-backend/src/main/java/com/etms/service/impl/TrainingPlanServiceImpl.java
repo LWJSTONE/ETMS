@@ -188,6 +188,14 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     }
     
     @Override
+    public boolean hasParticipants(Long planId) {
+        Long count = userPlanMapper.selectCount(
+            new LambdaQueryWrapper<UserPlan>().eq(UserPlan::getPlanId, planId)
+        );
+        return count > 0;
+    }
+    
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean publishPlan(Long id) {
         // 获取当前培训计划状态

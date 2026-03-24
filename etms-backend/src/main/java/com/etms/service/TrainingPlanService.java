@@ -36,6 +36,13 @@ public interface TrainingPlanService extends IService<TrainingPlan> {
     boolean deletePlan(Long id);
     
     /**
+     * 检查培训计划是否有学员参与
+     * @param planId 培训计划ID
+     * @return 是否有学员参与
+     */
+    boolean hasParticipants(Long planId);
+    
+    /**
      * 发布培训计划
      */
     boolean publishPlan(Long id);

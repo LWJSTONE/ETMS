@@ -79,14 +79,34 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
     @Override
     @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public void updatePosition(Position position) {
+        // 检查岗位是否存在
+        Position existingPosition = baseMapper.selectById(position.getId());
+        if (existingPosition == null) {
+            throw new BusinessException("岗位不存在");
+        }
+        
         // 检查岗位编码是否重复（排除自身）
-        Long count = baseMapper.selectCount(
-            new LambdaQueryWrapper<Position>()
-                .eq(Position::getPositionCode, position.getPositionCode())
-                .ne(Position::getId, position.getId())
-        );
-        if (count > 0) {
-            throw new BusinessException("岗位编码已存在");
+        if (position.getPositionCode() != null) {
+            Long count = baseMapper.selectCount(
+                new LambdaQueryWrapper<Position>()
+                    .eq(Position::getPositionCode, position.getPositionCode())
+                    .ne(Position::getId, position.getId())
+            );
+            if (count > 0) {
+                throw new BusinessException("岗位编码已存在");
+            }
+        }
+        
+        // 检查岗位名称是否重复（排除自身）
+        if (position.getPositionName() != null) {
+            Long nameCount = baseMapper.selectCount(
+                new LambdaQueryWrapper<Position>()
+                    .eq(Position::getPositionName, position.getPositionName())
+                    .ne(Position::getId, position.getId())
+            );
+            if (nameCount > 0) {
+                throw new BusinessException("岗位名称已存在");
+            }
         }
         
         baseMapper.updateById(position);
@@ -104,6 +124,14 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
         }
         
         baseMapper.deleteById(id);
+    }
+    
+    @Override
+    public boolean hasUsers(Long positionId) {
+        Long userCount = userMapper.selectCount(
+            new LambdaQueryWrapper<User>().eq(User::getPositionId, positionId)
+        );
+        return userCount > 0;
     }
 
     @Override

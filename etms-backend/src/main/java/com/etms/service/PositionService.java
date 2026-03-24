@@ -34,6 +34,13 @@ public interface PositionService extends IService<Position> {
      * 删除岗位
      */
     void deletePosition(Long id);
+    
+    /**
+     * 检查岗位是否有用户关联
+     * @param positionId 岗位ID
+     * @return 是否有用户关联
+     */
+    boolean hasUsers(Long positionId);
 
     /**
      * 导出岗位

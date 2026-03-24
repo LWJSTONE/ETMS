@@ -111,6 +111,7 @@
       :title="dialogTitle"
       width="700px"
       :close-on-click-modal="false"
+      @close="resetForm"
     >
       <el-form
         ref="formRef"

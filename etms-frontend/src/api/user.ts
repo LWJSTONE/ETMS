@@ -33,8 +33,8 @@ export function deleteUser(id: number): Promise<ApiResponse<void>> {
   return request.delete(`/system/users/${id}`)
 }
 
-// 重置密码
-export function resetPassword(id: number): Promise<ApiResponse<void>> {
+// 重置密码 - 返回新密码
+export function resetPassword(id: number): Promise<ApiResponse<string>> {
   return request.put(`/system/users/${id}/reset-password`)
 }
 

@@ -343,9 +343,9 @@ const getList = async () => {
     
     // 获取统计数据
     getStats()
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
-    ElMessage.error('获取成绩列表失败')
+    ElMessage.error(error.message || '获取成绩列表失败')
   } finally {
     loading.value = false
   }
@@ -367,7 +367,7 @@ const getStats = async () => {
       stats.passRate = (res.data.passRate || 0).toFixed(1)
       stats.avgScore = (res.data.avgScore || 0).toFixed(1)
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取统计数据失败:', error)
     // 如果后端API不可用，使用前端计算作为备选
     calculateStats()
@@ -498,9 +498,9 @@ const handleViewDetail = async (row: any) => {
         }))
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.warn('获取详情失败:', error)
-    ElMessage.error('获取成绩详情失败')
+    ElMessage.error(error.message || '获取成绩详情失败')
     // 如果API调用失败，使用行数据
     if (row.answerDetail) {
       try {

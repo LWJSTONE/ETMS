@@ -28,6 +28,7 @@ export interface LogItem {
 
 // 日志搜索参数
 export interface LogSearchParams extends PageParams {
+  module?: string
   operator?: string
   operationType?: string
   status?: number | null

@@ -27,6 +27,50 @@ export interface PageParams {
 }
 
 /**
+ * 字典类型创建参数
+ */
+export interface DictTypeCreateParams {
+  dictName: string
+  dictType: string
+  status?: number
+  remark?: string
+}
+
+/**
+ * 字典类型更新参数
+ */
+export interface DictTypeUpdateParams {
+  dictName?: string
+  dictType?: string
+  status?: number
+  remark?: string
+}
+
+/**
+ * 字典数据创建参数
+ */
+export interface DictDataCreateParams {
+  dictTypeId: number
+  dictLabel: string
+  dictValue: string
+  dictSort?: number
+  status?: number
+  remark?: string
+}
+
+/**
+ * 字典数据更新参数
+ */
+export interface DictDataUpdateParams {
+  dictTypeId?: number
+  dictLabel?: string
+  dictValue?: string
+  dictSort?: number
+  status?: number
+  remark?: string
+}
+
+/**
  * 用户相关类型
  */
 export interface User {

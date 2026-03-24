@@ -123,6 +123,7 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { Plus, Sort } from '@element-plus/icons-vue'
 import {
   getCategoryTree,
   getCategoryDetail,
@@ -288,9 +289,15 @@ const handleReset = () => {
 // 展开/折叠所有
 const toggleExpandAll = () => {
   isExpandAll.value = !isExpandAll.value
-  // 刷新表格以应用展开状态
+  // 通过重新设置 tableData 的 key 来触发表格重新渲染，从而应用展开状态
+  // 使用 nextTick 确保 isExpandAll 状态已更新
   nextTick(() => {
-    getCategoryTreeData()
+    // 强制表格重新渲染以应用 default-expand-all 属性
+    const tempData = [...tableData.value]
+    tableData.value = []
+    nextTick(() => {
+      tableData.value = tempData
+    })
   })
 }
 

@@ -170,15 +170,20 @@ CREATE TABLE training_category (
     parent_id BIGINT(20) DEFAULT 0 COMMENT '父分类ID',
     category_name VARCHAR(50) NOT NULL COMMENT '分类名称',
     category_code VARCHAR(50) DEFAULT NULL COMMENT '分类编码',
+    category_type TINYINT(1) DEFAULT 1 COMMENT '分类类型(1课程分类 2题目分类)',
     level INT(11) DEFAULT 1 COMMENT '分类层级',
     sort_order INT(11) DEFAULT 0 COMMENT '排序顺序',
     icon VARCHAR(50) DEFAULT NULL COMMENT '分类图标',
     status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1正常)',
+    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
     PRIMARY KEY (id),
     UNIQUE KEY uk_category_code (category_code),
-    KEY idx_parent_id (parent_id)
+    KEY idx_parent_id (parent_id),
+    KEY idx_category_type (category_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程分类表';
 
 -- 9. 课程表
@@ -298,6 +303,25 @@ CREATE TABLE training_plan (
     KEY idx_end_date (end_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='培训计划表';
 
+-- 12.1 培训计划课程关联表
+DROP TABLE IF EXISTS etms_plan_course;
+CREATE TABLE etms_plan_course (
+    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+    plan_id BIGINT(20) NOT NULL COMMENT '培训计划ID',
+    course_id BIGINT(20) NOT NULL COMMENT '课程ID',
+    sort_order INT(11) DEFAULT 0 COMMENT '课程排序',
+    required TINYINT(1) DEFAULT 1 COMMENT '是否必修(0选修 1必修)',
+    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_plan_course (plan_id, course_id),
+    KEY idx_plan_id (plan_id),
+    KEY idx_course_id (course_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='培训计划课程关联表';
+
 -- 13. 学习进度表
 DROP TABLE IF EXISTS learning_progress;
 CREATE TABLE learning_progress (
@@ -312,8 +336,11 @@ CREATE TABLE learning_progress (
     complete_time DATETIME DEFAULT NULL COMMENT '完成时间',
     is_late TINYINT(1) DEFAULT 0 COMMENT '是否进度滞后',
     warning_sent TINYINT(1) DEFAULT 0 COMMENT '预警通知是否发送',
+    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_plan (user_id, plan_id),
     KEY idx_user_id (user_id),
@@ -468,13 +495,25 @@ CREATE TABLE exam_record (
     submit_time DATETIME DEFAULT NULL COMMENT '提交时间',
     duration_used INT(11) DEFAULT NULL COMMENT '实际用时(分钟)',
     switch_count INT(11) DEFAULT 0 COMMENT '切屏次数',
+    total_score INT(11) DEFAULT NULL COMMENT '总分',
+    user_score INT(11) DEFAULT NULL COMMENT '得分',
+    passed TINYINT(1) DEFAULT 0 COMMENT '是否通过(0否 1是)',
+    objective_score INT(11) DEFAULT NULL COMMENT '客观题得分',
+    subjective_score INT(11) DEFAULT NULL COMMENT '主观题得分',
+    answer_detail TEXT DEFAULT NULL COMMENT '答题详情(JSON)',
+    retake_count INT(11) DEFAULT 0 COMMENT '补考次数',
     status TINYINT(1) DEFAULT 0 COMMENT '状态(0考试中 1已提交 2超时 3已批阅)',
+    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
     PRIMARY KEY (id),
     KEY idx_user_id (user_id),
     KEY idx_plan_id (plan_id),
     KEY idx_paper_id (paper_id),
-    KEY idx_status (status)
+    KEY idx_status (status),
+    KEY idx_passed (passed)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='考试记录表';
 
 -- 20. 考核成绩表
@@ -584,32 +623,52 @@ CREATE TABLE sys_config (
     config_value VARCHAR(500) DEFAULT NULL COMMENT '配置值',
     config_type TINYINT(1) DEFAULT 1 COMMENT '配置类型(1系统 2业务)',
     is_editable TINYINT(1) DEFAULT 1 COMMENT '是否可编辑',
-    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1启用)',
+    sort_order INT(11) DEFAULT 0 COMMENT '排序顺序',
+    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
     PRIMARY KEY (id),
     UNIQUE KEY uk_config_key (config_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
 
--- 25. 数据字典表
-DROP TABLE IF EXISTS sys_dict;
-CREATE TABLE sys_dict (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '字典ID',
-    dict_type VARCHAR(50) NOT NULL COMMENT '字典类型',
-    dict_code VARCHAR(50) NOT NULL COMMENT '字典编码',
-    dict_label VARCHAR(100) NOT NULL COMMENT '字典标签',
-    dict_value VARCHAR(100) NOT NULL COMMENT '字典值',
-    sort_order INT(11) DEFAULT 0 COMMENT '排序顺序',
+-- 25. 字典类型表
+DROP TABLE IF EXISTS sys_dict_type;
+CREATE TABLE sys_dict_type (
+    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '字典类型ID',
+    dict_name VARCHAR(100) NOT NULL COMMENT '字典名称',
+    dict_type VARCHAR(100) NOT NULL COMMENT '字典类型',
     status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1正常)',
-    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
     PRIMARY KEY (id),
-    KEY idx_dict_type (dict_type),
-    UNIQUE KEY uk_dict_type_code (dict_type, dict_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据字典表';
+    UNIQUE KEY uk_dict_type (dict_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典类型表';
 
--- 26. 通知公告表
+-- 26. 字典数据表
+DROP TABLE IF EXISTS sys_dict_data;
+CREATE TABLE sys_dict_data (
+    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '字典数据ID',
+    dict_type_id BIGINT(20) NOT NULL COMMENT '字典类型ID',
+    dict_label VARCHAR(100) NOT NULL COMMENT '字典标签',
+    dict_value VARCHAR(100) NOT NULL COMMENT '字典键值',
+    dict_sort INT(11) DEFAULT 0 COMMENT '排序顺序',
+    status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1正常)',
+    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    PRIMARY KEY (id),
+    KEY idx_dict_type_id (dict_type_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典数据表';
+
+-- 27. 通知公告表
 DROP TABLE IF EXISTS sys_notice;
 CREATE TABLE sys_notice (
     id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '公告ID',

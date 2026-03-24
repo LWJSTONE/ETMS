@@ -412,7 +412,8 @@ const handleContinueLearning = (item: ProgressItem) => {
     path: '/my/learning',
     query: {
       courseId: item.courseId,
-      progressId: item.id
+      progressId: item.id,
+      planId: item.planId
     }
   })
   

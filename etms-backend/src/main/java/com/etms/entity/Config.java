@@ -21,15 +21,15 @@ public class Config extends BaseEntity {
     /** 配置键值 */
     private String configValue;
     
-    /** 系统内置(Y是 N否) */
-    private String configType;
+    /** 配置类型(1系统 2业务) */
+    private Integer configType;
+    
+    /** 是否可编辑 */
+    private Integer isEditable;
     
     /** 状态(0禁用 1启用) */
     private Integer status;
     
     /** 排序顺序 */
     private Integer sortOrder;
-    
-    /** 备注 */
-    private String remark;
 }

@@ -396,8 +396,9 @@ const getDeptData = async () => {
   try {
     const res = await getDeptList()
     deptList.value = res.data || []
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取部门列表失败:', error)
+    // 部门列表获取失败不影响主功能，静默处理
   }
 }
 
@@ -458,9 +459,9 @@ const getStatistics = async () => {
     initDeptProgressChart(stats.deptProgress)
     initHoursChart(stats.monthlyHours)
     initTypeChart(stats.typeDistribution)
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取统计数据失败:', error)
-    ElMessage.error('获取统计数据失败')
+    ElMessage.error(error.message || '获取统计数据失败')
   } finally {
     statsLoading.value = false
   }
@@ -658,9 +659,9 @@ const getTableList = async () => {
         endDate: plan.endDate
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取表格数据失败:', error)
-    ElMessage.error('获取培训数据失败')
+    ElMessage.error(error.message || '获取培训数据失败')
   } finally {
     loading.value = false
   }
@@ -1042,9 +1043,9 @@ const handleViewDetail = async (row: any) => {
       participants: participants.length > 0 ? participants : []
     }
     detailDialogVisible.value = true
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取培训详情失败:', error)
-    ElMessage.error('获取培训详情失败')
+    ElMessage.error(error.message || '获取培训详情失败')
   }
 }
 
@@ -1106,9 +1107,9 @@ const handleExport = () => {
     URL.revokeObjectURL(url)
     
     ElMessage.success('报表导出成功')
-  } catch (error) {
+  } catch (error: any) {
     console.error('导出报表失败:', error)
-    ElMessage.error('导出报表失败')
+    ElMessage.error(error.message || '导出报表失败')
   }
 }
 

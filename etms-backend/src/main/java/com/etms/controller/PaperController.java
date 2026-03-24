@@ -5,6 +5,7 @@ import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.Paper;
 import com.etms.service.PaperService;
+import com.etms.vo.PaperVO;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class PaperController {
     @ApiOperation(value = "分页查询试卷列表")
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
-    public Result<PageResult<?>> page(
+    public Result<PageResult<Paper>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
             @RequestParam(required = false) String paperName,
@@ -44,7 +45,7 @@ public class PaperController {
     
     @ApiOperation(value = "获取可参加的考试列表")
     @GetMapping("/available")
-    public Result<PageResult<?>> available(
+    public Result<PageResult<Paper>> available(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size) {
         // 普通用户可访问，只返回已发布的试卷
@@ -58,14 +59,18 @@ public class PaperController {
     
     @ApiOperation(value = "获取试卷详情")
     @GetMapping("/{id}")
-    public Result<?> get(@PathVariable Long id, 
+    public Result<PaperVO> get(@PathVariable Long id, 
                           @RequestParam(required = false, defaultValue = "false") boolean forExam,
                           @RequestParam(required = false) Long planId) {
         // 修复：根据场景区分权限
         // 考试场景(forExam=true)：登录用户可访问，但需验证考试资格
         // 管理场景(forExam=false)：需要管理员权限查看完整信息（包含答案）
         // 当forExam=true且planId不为空时，会验证用户是否有考试资格
-        return Result.success(paperService.getPaperDetail(id, forExam, planId));
+        PaperVO vo = paperService.getPaperDetail(id, forExam, planId);
+        if (vo == null) {
+            return Result.error(404, "试卷不存在");
+        }
+        return Result.success(vo);
     }
     
     @ApiOperation(value = "新增试卷")

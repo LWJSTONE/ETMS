@@ -121,7 +121,7 @@
     </el-row>
     
     <!-- 字典类型对话框 -->
-    <el-dialog v-model="typeDialogVisible" :title="typeDialogTitle" width="500px">
+    <el-dialog v-model="typeDialogVisible" :title="typeDialogTitle" width="500px" @close="handleTypeDialogClose">
       <el-form ref="typeFormRef" :model="typeForm" :rules="typeRules" label-width="100px">
         <el-form-item label="字典名称" prop="dictName">
           <el-input v-model="typeForm.dictName" placeholder="请输入字典名称" />
@@ -146,7 +146,7 @@
     </el-dialog>
     
     <!-- 字典数据对话框 -->
-    <el-dialog v-model="dataDialogVisible" :title="dataDialogTitle" width="500px">
+    <el-dialog v-model="dataDialogVisible" :title="dataDialogTitle" width="500px" @close="handleDataDialogClose">
       <el-form ref="dataFormRef" :model="dataForm" :rules="dataRules" label-width="100px">
         <el-form-item label="数据标签" prop="dictLabel">
           <el-input v-model="dataForm.dictLabel" placeholder="请输入数据标签" />
@@ -567,6 +567,19 @@ const handleRefreshCache = async () => {
   } finally {
     cacheLoading.value = false
   }
+}
+
+// ==================== 对话框关闭处理 ====================
+// 字典类型对话框关闭
+const handleTypeDialogClose = () => {
+  typeFormRef.value?.resetFields()
+  typeFormRef.value?.clearValidate()
+}
+
+// 字典数据对话框关闭
+const handleDataDialogClose = () => {
+  dataFormRef.value?.resetFields()
+  dataFormRef.value?.clearValidate()
 }
 
 // ==================== 初始化 ====================

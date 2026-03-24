@@ -156,8 +156,9 @@ export function getStatusName(
  * @param bytes 字节数
  * @returns 格式化后的文件大小字符串
  */
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
+export function formatFileSize(bytes: number | null | undefined): string {
+  if (bytes === null || bytes === undefined || bytes === 0) return '0 B'
+  if (bytes < 0) return '0 B'
   
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   const k = 1024
@@ -172,7 +173,7 @@ export function formatFileSize(bytes: number): string {
  * @param decimals 小数位数，默认为 0
  * @returns 格式化后的百分比字符串
  */
-export function formatPercentage(value: number, decimals = 0): string {
+export function formatPercentage(value: number | null | undefined, decimals = 0): string {
   if (value === null || value === undefined) return '0%'
   return value.toFixed(decimals) + '%'
 }

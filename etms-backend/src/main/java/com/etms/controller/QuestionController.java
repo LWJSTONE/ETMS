@@ -78,6 +78,10 @@ public class QuestionController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> delete(@PathVariable Long id) {
+        // 修复：删除题目前检查是否被试卷引用
+        if (questionService.isUsedInPapers(id)) {
+            return Result.error("该题目已被试卷引用，无法删除");
+        }
         questionService.deleteQuestion(id);
         return Result.success();
     }

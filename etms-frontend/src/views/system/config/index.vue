@@ -99,6 +99,7 @@
       :title="dialogTitle" 
       width="600px"
       :close-on-click-modal="false"
+      @close="handleDialogClose"
     >
       <el-form 
         ref="formRef" 
@@ -301,8 +302,10 @@ const handleEdit = (row: ConfigItem) => {
     status: row.status
   })
   dialogVisible.value = true
-  // 清除表单验证
-  formRef.value?.clearValidate()
+  // 使用 nextTick 确保表单已渲染后再清除验证
+  nextTick(() => {
+    formRef.value?.clearValidate()
+  })
 }
 
 // 删除
@@ -414,6 +417,12 @@ const handleSubmit = async () => {
 onMounted(() => {
   getList()
 })
+
+// 对话框关闭时重置表单
+const handleDialogClose = () => {
+  formRef.value?.resetFields()
+  formRef.value?.clearValidate()
+}
 </script>
 
 <style lang="scss" scoped>
