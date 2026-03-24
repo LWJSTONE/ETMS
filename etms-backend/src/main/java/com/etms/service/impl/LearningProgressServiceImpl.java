@@ -23,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -432,8 +433,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             userPlan.setCourseId(courseId);
             userPlan.setProgress(progress);
             userPlan.setStatus(progress >= 100 ? 2 : 1); // 设置状态：0未开始、1进行中、2已完成
-            userPlan.setStartTime(now);
-            userPlan.setLastStudyTime(now); // 设置最后学习时间
+            userPlan.setLastStudyTime(now);
             if (progress >= 100) {
                 userPlan.setCompleteTime(now);
             }

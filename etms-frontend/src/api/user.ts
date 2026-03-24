@@ -8,8 +8,16 @@ import type {
   UserUpdateParams
 } from './types'
 
+// 用户查询参数类型
+export interface UserQueryParams extends PageParams {
+  username?: string
+  realName?: string
+  deptId?: number
+  status?: number
+}
+
 // 获取用户列表
-export function getUserList(params: PageParams): Promise<ApiResponse<PageResult<User>>> {
+export function getUserList(params: UserQueryParams): Promise<ApiResponse<PageResult<User>>> {
   return request.get('/system/users', params)
 }
 

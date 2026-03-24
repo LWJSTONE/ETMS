@@ -21,7 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -53,7 +57,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
                 .collect(Collectors.toList());
         
         // 批量查询每个角色的权限数量
-        Map<Long, Long> permissionCountMap = new java.util.HashMap<>();
+        Map<Long, Long> permissionCountMap = new HashMap<>();
         if (!roleIds.isEmpty()) {
             List<RolePermission> rolePermissions = rolePermissionService.list(
                 new LambdaQueryWrapper<RolePermission>().in(RolePermission::getRoleId, roleIds)
@@ -68,7 +72,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             RoleVO vo = new RoleVO();
             BeanUtils.copyProperties(role, vo);
             // 从批量查询结果中获取权限数量
-            vo.setPermissionCount(finalPermissionCountMap.getOrDefault(role.getId(), 0L).intValue());
+            vo.setPermissionCount(finalPermissionCountMap.getOrDefault(role.getId(), 0L));
             return vo;
         }).collect(Collectors.toList());
 
@@ -220,7 +224,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
             }
             
             // 自动补充父权限
-            Set<Long> allPermissionIds = new java.util.HashSet<>(permissionIds);
+            Set<Long> allPermissionIds = new HashSet<>(permissionIds);
             for (Long permissionId : permissionIds) {
                 addParentPermissions(permissionId, allPermissionIds);
             }

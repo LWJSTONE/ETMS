@@ -159,7 +159,7 @@ public class LogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog
             int rowNum = 1;
             for (OperationLog log : logs) {
                 Row row = sheet.createRow(rowNum++);
-                row.createCell(0).setCellValue(log.getLogId() != null ? log.getLogId() : 0);
+                row.createCell(0).setCellValue(log.getId() != null ? log.getId() : 0);
                 row.createCell(1).setCellValue(log.getModule() != null ? log.getModule() : "");
                 row.createCell(2).setCellValue(log.getOperationType() != null ? log.getOperationType() : "");
                 row.createCell(3).setCellValue(log.getUsername() != null ? log.getUsername() : "");

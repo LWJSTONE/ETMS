@@ -131,6 +131,17 @@ export function getExamRecordDetail(id: number): Promise<ApiResponse<ExamRecord>
   return request.get(`/exam/records/${id}`)
 }
 
+// 导出考试记录
+export function exportExamRecords(params?: {
+  paperId?: number
+  userId?: number
+  status?: number
+  userName?: string
+  paperName?: string
+}): Promise<Blob> {
+  return request.getBlob('/exam/records/export', params)
+}
+
 /**
  * 成绩管理API
  */

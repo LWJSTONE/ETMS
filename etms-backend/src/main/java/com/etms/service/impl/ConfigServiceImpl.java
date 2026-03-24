@@ -75,7 +75,7 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
             config.setStatus(1);
         }
         if (config.getConfigType() == null) {
-            config.setConfigType("N");
+            config.setConfigType(2); // 默认业务配置
         }
         
         baseMapper.insert(config);
