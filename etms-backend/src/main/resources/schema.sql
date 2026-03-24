@@ -879,9 +879,13 @@ UPDATE exam_record SET start_time = exam_start_time WHERE start_time IS NULL AND
 ALTER TABLE exam_record ADD INDEX IF NOT EXISTS idx_passed (passed);
 ALTER TABLE exam_record ADD INDEX IF NOT EXISTS idx_start_time (start_time);
 
--- 为字典表添加逻辑删除字段（修复：使用正确的表名 sys_dict）
-ALTER TABLE sys_dict ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
-ALTER TABLE sys_dict ADD INDEX idx_deleted (deleted);
+-- 为字典类型表添加逻辑删除字段
+ALTER TABLE sys_dict_type ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_dict_type ADD INDEX idx_deleted (deleted);
+
+-- 为字典数据表添加逻辑删除字段
+ALTER TABLE sys_dict_data ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';
+ALTER TABLE sys_dict_data ADD INDEX idx_deleted (deleted);
 
 -- 为系统配置表添加逻辑删除字段
 ALTER TABLE sys_config ADD COLUMN deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)';

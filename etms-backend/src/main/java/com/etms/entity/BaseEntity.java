@@ -38,4 +38,8 @@ public class BaseEntity implements Serializable {
     
     /** 备注 */
     private String remark;
+    
+    /** 逻辑删除标志(0未删除 1已删除) */
+    @TableLogic
+    private Integer deleted;
 }

@@ -42,10 +42,6 @@ public class Permission extends BaseEntity {
     /** 状态(0禁用 1正常) */
     private Integer status;
     
-    /** 逻辑删除标志(0未删除 1已删除) */
-    @TableLogic
-    private Integer deleted;
-    
     @TableField(exist = false)
     private java.util.List<Permission> children;
 }
