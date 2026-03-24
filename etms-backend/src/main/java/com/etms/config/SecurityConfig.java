@@ -49,6 +49,7 @@ public class SecurityConfig {
             .and()
             .authorizeRequests()
             .antMatchers("/auth/login", "/auth/captcha", "/auth/register").permitAll()
+            .antMatchers("/system/depts/public/**").permitAll()  // 部门公开接口，用于报表等模块
             .antMatchers("/files/**").permitAll()
             .antMatchers("/swagger-ui/**", "/v3/api-docs/**", "/doc.html", "/webjars/**", "/swagger-resources/**").permitAll()
             .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()

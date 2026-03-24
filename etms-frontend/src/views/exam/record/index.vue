@@ -181,7 +181,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, Check, Close } from '@element-plus/icons-vue'
-import { getExamRecordList, getExamRecordDetail, exportResults } from '@/api/exam'
+import { getExamRecordList, getExamRecordDetail, exportExamRecords } from '@/api/exam'
 
 // 定义类型
 interface Answer {
@@ -345,8 +345,8 @@ const handleExport = async () => {
     if (searchForm.paperName) params.paperName = searchForm.paperName
     if (searchForm.status !== null) params.status = searchForm.status
     
-    // 使用封装的导出API
-    const blob = await exportResults(params)
+    // 使用考试记录导出API
+    const blob = await exportExamRecords(params)
     
     // 创建下载链接
     const url = window.URL.createObjectURL(blob)

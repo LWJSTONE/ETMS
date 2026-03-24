@@ -88,6 +88,7 @@ export interface User {
   positionName?: string
   roleIds?: number[]
   roleNames?: string[]
+  roles?: { id: number; roleName: string }[]  // 用户详情中的角色列表
   loginIp?: string
   loginTime?: string
   createTime?: string

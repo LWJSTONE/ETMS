@@ -16,6 +16,16 @@ export function getDeptList(parentId?: number): Promise<ApiResponse<Dept[]>> {
   return request.get('/system/depts', parentId ? { parentId } : undefined)
 }
 
+// 获取部门列表（公开接口，无需权限）
+export function getPublicDeptList(): Promise<ApiResponse<Dept[]>> {
+  return request.get('/system/depts/public/list')
+}
+
+// 获取部门树形结构（公开接口，无需权限）
+export function getPublicDeptTree(): Promise<ApiResponse<Dept[]>> {
+  return request.get('/system/depts/public/tree')
+}
+
 // 获取部门详情
 export function getDeptDetail(id: number): Promise<ApiResponse<Dept>> {
   return request.get(`/system/depts/${id}`)

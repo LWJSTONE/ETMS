@@ -162,11 +162,8 @@ export function getResultDetail(id: number): Promise<ApiResponse<ExamResult>> {
 }
 
 // 获取成绩统计
-export function getResultStats(startTime?: string, endTime?: string): Promise<ApiResponse<ResultStats>> {
-  const params: Record<string, any> = {}
-  if (startTime) params.startTime = startTime
-  if (endTime) params.endTime = endTime
-  return request.get('/exam/results/stats', Object.keys(params).length > 0 ? params : undefined)
+export function getResultStats(params?: { startTime?: string; endTime?: string }): Promise<ApiResponse<ResultStats>> {
+  return request.get('/exam/results/stats', params)
 }
 
 // 导出成绩

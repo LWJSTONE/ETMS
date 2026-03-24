@@ -38,8 +38,10 @@ public class LearningProgressController {
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String userName,
-            @RequestParam(required = false) String planName) {
-        Page<LearningProgressVO> page = learningProgressService.pageProgress(current, size, planId, userId, status, userName, planName);
+            @RequestParam(required = false) String planName,
+            @RequestParam(required = false) String sortField,
+            @RequestParam(required = false) String sortOrder) {
+        Page<LearningProgressVO> page = learningProgressService.pageProgress(current, size, planId, userId, status, userName, planName, sortField, sortOrder);
         PageResult<LearningProgressVO> pageResult = new PageResult<>(
                 page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize()
         );

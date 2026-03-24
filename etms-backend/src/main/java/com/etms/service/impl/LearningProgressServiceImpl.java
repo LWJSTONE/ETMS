@@ -41,14 +41,36 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
     private final DeptMapper deptMapper;
     
     @Override
-    public Page<LearningProgressVO> pageProgress(Long current, Long size, Long planId, Long userId, Integer status, String userName, String planName) {
+    public Page<LearningProgressVO> pageProgress(Long current, Long size, Long planId, Long userId, Integer status, String userName, String planName, String sortField, String sortOrder) {
         Page<UserPlan> page = new Page<>(current, size);
         
         LambdaQueryWrapper<UserPlan> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(planId != null, UserPlan::getPlanId, planId)
                .eq(userId != null, UserPlan::getUserId, userId)
-               .eq(status != null, UserPlan::getStatus, status)
-               .orderByDesc(UserPlan::getCreateTime);
+               .eq(status != null, UserPlan::getStatus, status);
+        
+        // 处理排序参数
+        if (sortField != null && !sortField.isEmpty() && sortOrder != null && !sortOrder.isEmpty()) {
+            boolean isAsc = "asc".equalsIgnoreCase(sortOrder);
+            switch (sortField) {
+                case "progress":
+                    wrapper.orderBy(true, isAsc, UserPlan::getProgress);
+                    break;
+                case "createTime":
+                    wrapper.orderBy(true, isAsc, UserPlan::getCreateTime);
+                    break;
+                case "lastStudyTime":
+                    wrapper.orderBy(true, isAsc, UserPlan::getLastStudyTime);
+                    break;
+                case "updateTime":
+                    wrapper.orderBy(true, isAsc, UserPlan::getUpdateTime);
+                    break;
+                default:
+                    wrapper.orderByDesc(UserPlan::getCreateTime);
+            }
+        } else {
+            wrapper.orderByDesc(UserPlan::getCreateTime);
+        }
         
         // 修复：将用户名和计划名的过滤改为数据库查询阶段完成，避免先分页后内存过滤导致数据不准确
         // 根据用户名查询符合条件的用户ID列表

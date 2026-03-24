@@ -13,7 +13,7 @@ public interface LearningProgressService extends IService<UserPlan> {
     /**
      * 分页查询学习进度
      */
-    Page<LearningProgressVO> pageProgress(Long current, Long size, Long planId, Long userId, Integer status, String userName, String planName);
+    Page<LearningProgressVO> pageProgress(Long current, Long size, Long planId, Long userId, Integer status, String userName, String planName, String sortField, String sortOrder);
     
     /**
      * 获取我的学习进度

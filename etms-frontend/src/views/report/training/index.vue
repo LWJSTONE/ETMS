@@ -288,7 +288,7 @@ import { ElMessage } from 'element-plus'
 import { Search, Refresh, Download, Calendar, CircleCheck, Timer, TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
-import { getDeptList } from '@/api/dept'
+import { getPublicDeptList } from '@/api/dept'
 import { getPlanList, getProgressList } from '@/api/training'
 import type { TrainingPlan, LearningProgress } from '@/api/types'
 
@@ -394,7 +394,7 @@ const currentDetail = ref<any>({})
 // 获取部门列表
 const getDeptData = async () => {
   try {
-    const res = await getDeptList()
+    const res = await getPublicDeptList()
     deptList.value = res.data || []
   } catch (error: any) {
     console.error('获取部门列表失败:', error)
