@@ -52,9 +52,9 @@ public class ExamRecordController {
     
     @ApiOperation(value = "获取考试记录详情")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<ExamRecordVO> get(@PathVariable Long id) {
-        ExamRecordVO vo = examRecordService.getExamRecordDetail(id);
+        // 权限校验：用户可以查看自己的考试记录详情，管理员可以查看所有
+        ExamRecordVO vo = examRecordService.getExamRecordDetailForUser(id);
         return Result.success(vo);
     }
     

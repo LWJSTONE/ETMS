@@ -24,6 +24,12 @@ public interface ExamRecordService {
     ExamRecordVO getExamRecordDetail(Long id);
     
     /**
+     * 获取考试记录详情（带权限校验）
+     * 用户只能查看自己的考试记录，管理员可以查看所有
+     */
+    ExamRecordVO getExamRecordDetailForUser(Long id);
+    
+    /**
      * 开始考试
      */
     ExamRecord startExam(Long paperId, Long planId);

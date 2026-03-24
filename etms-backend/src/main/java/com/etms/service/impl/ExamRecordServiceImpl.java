@@ -186,6 +186,49 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     }
     
     @Override
+    public ExamRecordVO getExamRecordDetailForUser(Long id) {
+        ExamRecord record = baseMapper.selectById(id);
+        if (record == null) {
+            throw new BusinessException("考试记录不存在");
+        }
+        
+        // 获取当前用户
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            throw new BusinessException("用户未登录");
+        }
+        
+        // 权限校验：用户只能查看自己的考试记录，管理员可以查看所有
+        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+            .anyMatch(r -> "ADMIN".equals(r.getRoleCode()) || "TRAINING_MANAGER".equals(r.getRoleCode()));
+        
+        if (!isAdmin && !record.getUserId().equals(currentUser.getId())) {
+            throw new BusinessException("无权查看此考试记录");
+        }
+        
+        ExamRecordVO vo = new ExamRecordVO();
+        BeanUtils.copyProperties(record, vo);
+        
+        // 获取试卷信息
+        Paper paper = paperMapper.selectById(record.getPaperId());
+        if (paper != null) {
+            vo.setPaperName(paper.getPaperName());
+            vo.setTotalScore(paper.getTotalScore());
+            vo.setPassScore(paper.getPassScore());
+            vo.setDuration(paper.getExamDuration());
+        }
+        
+        // 获取用户信息
+        User user = userMapper.selectById(record.getUserId());
+        if (user != null) {
+            vo.setUserName(user.getUsername());
+            vo.setRealName(user.getRealName());
+        }
+        
+        return vo;
+    }
+    
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public ExamRecord startExam(Long paperId, Long planId) {
         // 获取当前用户

@@ -308,7 +308,7 @@ export interface Paper {
   paperType?: number
   totalScore: number
   passScore: number
-  examDuration: number
+  duration: number  // 考试时长(分钟)，后端通过@JsonProperty("duration")映射examDuration字段
   questionCount?: number
   questionConfig?: string
   shuffleOption?: number
@@ -316,6 +316,8 @@ export interface Paper {
   antiCheat?: number
   maxSwitch?: number
   status: number
+  startTime?: string
+  endTime?: string
   createTime?: string
   updateTime?: string
   questions?: PaperQuestion[]
@@ -338,7 +340,7 @@ export interface PaperCreateParams {
   paperType?: number
   totalScore: number
   passScore: number
-  examDuration: number  // 对应后端examDuration字段，JSON序列化为duration
+  duration: number  // 考试时长(分钟)，后端通过@JsonProperty("duration")映射examDuration字段
   startTime?: string
   endTime?: string
   questionCount?: number
@@ -358,7 +360,7 @@ export interface PaperUpdateParams {
   paperType?: number
   totalScore?: number
   passScore?: number
-  examDuration?: number  // 对应后端examDuration字段，JSON序列化为duration
+  duration?: number  // 考试时长(分钟)，后端通过@JsonProperty("duration")映射examDuration字段
   startTime?: string
   endTime?: string
   questionCount?: number
@@ -386,9 +388,14 @@ export interface ExamRecord {
   submitTime?: string
   totalScore?: number
   userScore?: number
+  passScore?: number  // 及格分数
   passed?: number
   status: number
+  duration?: number  // 考试时长(分钟)
+  durationUsed?: number  // 实际用时(分钟)
   answers?: ExamAnswer[]
+  questions?: any[]  // 题目列表
+  paperQuestions?: any[]  // 试卷题目列表
   createTime?: string
   updateTime?: string
 }

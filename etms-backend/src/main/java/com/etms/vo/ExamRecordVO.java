@@ -36,10 +36,10 @@ public class ExamRecordVO {
     
     private Integer passScore;
     
-    private Integer passed;
-    
-    /** 考试时长(分钟) */
+    /** 考试时长(分钟) - 试卷规定的考试时间限制 */
     private Integer duration;
+    
+    private Integer passed;
 
     /** 实际用时(分钟) */
     private Integer durationUsed;
