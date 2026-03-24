@@ -158,7 +158,7 @@ import dayjs from 'dayjs'
 import { getUserList } from '@/api/user'
 import { getCourseList } from '@/api/course'
 import { getPlanList, getMyProgress } from '@/api/training'
-import { getPaperList, getExamRecordList } from '@/api/exam'
+import { getPaperList, getMyExamRecordList } from '@/api/exam'
 
 const userStore = useUserStore()
 
@@ -201,29 +201,29 @@ const handleResize = () => {
 // 获取统计数据
 const getStatistics = async () => {
   try {
-    // 获取用户总数
+    // 获取用户总数 - 仅管理员可访问
     const userRes = await getUserList({ current: 1, size: 1 })
     overview.value.userCount = userRes.data?.total || 0
 
-    // 获取课程总数
+    // 获取课程总数 - 仅管理员可访问
     const courseRes = await getCourseList({ current: 1, size: 1, status: 2 })
     overview.value.courseCount = courseRes.data?.total || 0
 
-    // 获取培训计划总数
+    // 获取培训计划总数 - 仅管理员可访问
     const planRes = await getPlanList({ current: 1, size: 1 })
     overview.value.planCount = planRes.data?.total || 0
 
-    // 获取考试记录总数
-    const examRes = await getExamRecordList({ current: 1, size: 1, status: 2 })
+    // 获取我的考试记录总数 - 使用个人考试记录接口，避免权限问题
+    const examRes = await getMyExamRecordList({ current: 1, size: 1, status: 2 })
     overview.value.examCount = examRes.data?.total || 0
 
     // 获取我的待学习课程数
     const progressRes = await getMyProgress({ current: 1, size: 100, status: 1 })
     stats.value.courseCount = progressRes.data?.records?.filter((r: any) => r.status === 1).length || 0
 
-    // 获取待参加考试数
-    const paperRes = await getPaperList({ current: 1, size: 100, status: 1 })
-    stats.value.examCount = paperRes.data?.records?.length || 0
+    // 获取待参加考试数 - 使用个人考试记录接口
+    const myExamRes = await getMyExamRecordList({ current: 1, size: 100 })
+    stats.value.examCount = myExamRes.data?.records?.filter((r: any) => r.status === 0 || r.status === 1).length || 0
 
     // 设置最近培训数据
     if (progressRes.data?.records) {

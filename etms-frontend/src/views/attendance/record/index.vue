@@ -301,7 +301,7 @@ import {
   getAttendanceList, 
   signIn, 
   auditAttendance, 
-  getAttendanceStats 
+  getMyAttendanceStats 
 } from '@/api/attendance'
 import { getPlanList } from '@/api/training'
 import { useUserStore } from '@/stores/user'
@@ -373,12 +373,10 @@ const detailDialogVisible = ref(false)
 // 获取统计
 const getStats = async () => {
   try {
-    const userId = userStore.userInfo?.id
-    if (userId) {
-      const res = await getAttendanceStats(userId)
-      if (res.data) {
-        stats.value = res.data
-      }
+    // 修复：使用个人统计接口，避免权限问题
+    const res = await getMyAttendanceStats()
+    if (res.data) {
+      stats.value = res.data
     }
   } catch (error: any) {
     console.error('获取统计失败:', error)

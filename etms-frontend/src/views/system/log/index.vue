@@ -58,7 +58,7 @@
       </template>
 
       <el-table :data="tableData" v-loading="loading" stripe border>
-        <el-table-column prop="logId" label="日志编号" width="100" />
+        <el-table-column prop="id" label="日志编号" width="100" />
         <el-table-column prop="module" label="操作模块" width="120" />
         <el-table-column prop="operationType" label="操作类型" width="100">
           <template #default="{ row }">
@@ -99,7 +99,7 @@
     <!-- 详情对话框 -->
     <el-dialog v-model="detailDialogVisible" title="日志详情" width="700px">
       <el-descriptions :column="2" border v-if="currentLog">
-        <el-descriptions-item label="日志编号">{{ currentLog.logId }}</el-descriptions-item>
+        <el-descriptions-item label="日志编号">{{ currentLog.id }}</el-descriptions-item>
         <el-descriptions-item label="操作模块">{{ currentLog.module }}</el-descriptions-item>
         <el-descriptions-item label="操作类型">{{ currentLog.operationType }}</el-descriptions-item>
         <el-descriptions-item label="操作人员">{{ currentLog.username }}</el-descriptions-item>
@@ -259,7 +259,7 @@ const handleReset = () => {
 // 查看详情
 const handleViewDetail = async (row: LogItem) => {
   try {
-    const res = await getLogDetail(row.logId)
+    const res = await getLogDetail(row.id)
     if (res.data) {
       currentLog.value = res.data
       detailDialogVisible.value = true

@@ -9,6 +9,7 @@ import com.etms.vo.LearningProgressVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +30,7 @@ public class LearningProgressController {
     
     @ApiOperation(value = "分页查询学习进度列表")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
     public Result<PageResult<LearningProgressVO>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
@@ -71,6 +73,7 @@ public class LearningProgressController {
     
     @ApiOperation(value = "获取学习进度详情")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
     public Result<LearningProgressVO> get(@PathVariable Long id) {
         LearningProgressVO vo = learningProgressService.getProgressDetail(id);
         return Result.success(vo);

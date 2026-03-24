@@ -343,7 +343,7 @@ import {
   signIn, 
   applySupplementary,
   cancelSupplementary,
-  getAttendanceStats 
+  getMyAttendanceStats 
 } from '@/api/attendance'
 import { getPlanList } from '@/api/training'
 import { useUserStore } from '@/stores/user'
@@ -420,16 +420,14 @@ const currentRecord = ref<any>({})
 // 获取统计
 const getStats = async () => {
   try {
-    const userId = userStore.userInfo?.id
-    if (userId) {
-      const res = await getAttendanceStats(userId)
-      if (res.data) {
-        stats.value = {
-          totalCount: res.data.totalCount || 0,
-          normalCount: res.data.normalCount || 0,
-          pendingCount: res.data.pendingCount || 0,
-          attendanceRate: res.data.attendanceRate || 0
-        }
+    // 修复：使用个人统计接口，避免权限问题
+    const res = await getMyAttendanceStats()
+    if (res.data) {
+      stats.value = {
+        totalCount: res.data.totalCount || 0,
+        normalCount: res.data.normalCount || 0,
+        pendingCount: res.data.pendingCount || 0,
+        attendanceRate: res.data.attendanceRate || 0
       }
     }
   } catch (error) {

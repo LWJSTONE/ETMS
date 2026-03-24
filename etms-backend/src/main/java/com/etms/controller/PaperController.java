@@ -42,6 +42,20 @@ public class PaperController {
         return Result.success(pageResult);
     }
     
+    @ApiOperation(value = "获取可参加的考试列表")
+    @GetMapping("/available")
+    public Result<PageResult<?>> available(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size) {
+        // 普通用户可访问，只返回已发布的试卷
+        Page<Paper> page = new Page<>(current, size);
+        Page<Paper> voPage = paperService.pagePapers(page, null, null, 1);
+        PageResult<Paper> pageResult = new PageResult<>(
+                voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
+        );
+        return Result.success(pageResult);
+    }
+    
     @ApiOperation(value = "获取试卷详情")
     @GetMapping("/{id}")
     public Result<?> get(@PathVariable Long id, 

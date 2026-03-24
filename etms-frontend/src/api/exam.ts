@@ -58,6 +58,11 @@ export function getPaperList(params: PageParams): Promise<ApiResponse<PageResult
   return request.get('/exam/papers', params)
 }
 
+// 获取可参加的考试列表（普通用户可用）
+export function getAvailableExams(params: PageParams): Promise<ApiResponse<PageResult<Paper>>> {
+  return request.get('/exam/papers/available', params)
+}
+
 // 获取试卷详情
 export function getPaperDetail(id: number): Promise<ApiResponse<Paper>> {
   return request.get(`/exam/papers/${id}`)

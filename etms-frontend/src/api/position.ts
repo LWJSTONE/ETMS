@@ -63,3 +63,8 @@ export function updatePositionStatus(id: number, status: number): Promise<ApiRes
 export function exportPositions(params: PageParams & { positionName?: string; positionCode?: string; status?: number }): Promise<Blob> {
   return request.get('/system/positions/export', params, { responseType: 'blob' })
 }
+
+// 获取所有岗位列表(不分页)
+export function getPositionListAll(): Promise<ApiResponse<Position[]>> {
+  return request.get('/system/positions/all')
+}

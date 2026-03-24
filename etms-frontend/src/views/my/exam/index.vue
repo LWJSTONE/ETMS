@@ -191,7 +191,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Timer, DataLine, CircleCheck, Document, Clock } from '@element-plus/icons-vue'
-import { getPaperList, getMyExamRecordList, startExam, getExamRecordDetail } from '@/api/exam'
+import { getAvailableExams, getMyExamRecordList, startExam, getExamRecordDetail } from '@/api/exam'
 
 const router = useRouter()
 
@@ -324,13 +324,13 @@ const getRecordStatusText = (status: number) => {
 }
 
 // 获取可参加的考试列表
-const getAvailableExams = async () => {
+const fetchAvailableExams = async () => {
   availableLoading.value = true
   try {
-    const res = await getPaperList({
+    // 修复：使用可参加考试列表接口，避免权限问题
+    const res = await getAvailableExams({
       current: 1,
-      size: 100,
-      status: 1 // 只获取已发布的试卷
+      size: 100
     })
     availableExams.value = (res.data?.records || []).map((item: any) => ({
       ...item,
@@ -413,7 +413,7 @@ const handleViewResult = async (record: any) => {
 
 // 初始化
 onMounted(() => {
-  getAvailableExams()
+  fetchAvailableExams()
   getHistoryRecords()
 })
 </script>

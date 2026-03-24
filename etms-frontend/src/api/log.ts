@@ -7,7 +7,7 @@ import type { ApiResponse, PageResult, PageParams } from './types'
 
 // 日志项类型
 export interface LogItem {
-  logId: number
+  id: number  // 修复：后端返回的字段名是id，不是logId
   userId?: number
   username: string
   module: string
