@@ -150,10 +150,11 @@ public class CourseController {
         
         List<CourseVO> list = courseService.listCourses(categoryId);
         
-        // 如果不是管理员，过滤只显示已发布的课程
+        // 修复：课程状态判断不一致问题
+        // 统一使用状态2表示已上架/已发布的课程（与page()方法保持一致）
         if (!isAdmin) {
             list = list.stream()
-                .filter(c -> c.getStatus() != null && c.getStatus() == 1)
+                .filter(c -> c.getStatus() != null && c.getStatus() == 2)
                 .collect(java.util.stream.Collectors.toList());
         }
         

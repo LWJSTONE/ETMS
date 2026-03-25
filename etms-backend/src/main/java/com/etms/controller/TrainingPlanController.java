@@ -13,6 +13,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
 import com.etms.exception.BusinessException;
 
 /**
@@ -30,13 +33,13 @@ public class TrainingPlanController {
     @ApiOperation(value = "分页查询培训计划列表")
     @GetMapping
     public Result<PageResult<TrainingPlanVO>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) String planName,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) Integer planType,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "日期格式必须为yyyy-MM-dd") String startDate,
+            @RequestParam(required = false) @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "日期格式必须为yyyy-MM-dd") String endDate,
             @RequestParam(required = false) Long deptId) {
         Page<TrainingPlan> page = new Page<>(current, size);
         Page<TrainingPlanVO> voPage = trainingPlanService.pagePlans(page, planName, status, planType, startDate, endDate, deptId);
