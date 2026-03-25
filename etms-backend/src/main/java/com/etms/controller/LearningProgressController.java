@@ -67,6 +67,13 @@ public class LearningProgressController {
     @ApiOperation(value = "更新学习进度")
     @PutMapping
     public Result<Void> updateProgress(@Valid @RequestBody ProgressDTO progressDTO) {
+        // 修复：验证用户只能更新自己的学习进度
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new BusinessException("用户未登录");
+        }
+        
         learningProgressService.updateProgress(
             progressDTO.getPlanId(), 
             progressDTO.getCourseId(), 

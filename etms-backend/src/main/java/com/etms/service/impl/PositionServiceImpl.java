@@ -66,6 +66,11 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
             throw new BusinessException("岗位名称已存在");
         }
         
+        // 修复：校验排序号范围
+        if (position.getSortOrder() != null && (position.getSortOrder() < 0 || position.getSortOrder() > 9999)) {
+            throw new BusinessException("排序号必须在0-9999之间");
+        }
+        
         if (position.getStatus() == null) {
             position.setStatus(1);
         }
@@ -107,6 +112,11 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
             if (nameCount > 0) {
                 throw new BusinessException("岗位名称已存在");
             }
+        }
+        
+        // 修复：校验排序号范围
+        if (position.getSortOrder() != null && (position.getSortOrder() < 0 || position.getSortOrder() > 9999)) {
+            throw new BusinessException("排序号必须在0-9999之间");
         }
         
         baseMapper.updateById(position);

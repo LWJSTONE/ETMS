@@ -121,6 +121,10 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
             if (parent == null) {
                 throw new BusinessException("父分类不存在");
             }
+            // 修复：限制分类层级深度不超过3级
+            if (parent.getLevel() >= 3) {
+                throw new BusinessException("分类层级不能超过3级");
+            }
             category.setLevel(parent.getLevel() + 1);
         }
         

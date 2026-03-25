@@ -335,6 +335,13 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             throw new BusinessException("总分必须大于0");
         }
 
+        // 修复：校验考试时间范围
+        if (paper.getStartTime() != null && paper.getEndTime() != null) {
+            if (paper.getStartTime().isAfter(paper.getEndTime())) {
+                throw new BusinessException("考试开始时间不能晚于结束时间");
+            }
+        }
+
         paper.setStatus(0); // 草稿状态
         baseMapper.insert(paper);
     }
@@ -371,6 +378,13 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         }
         if (totalScore != null && totalScore <= 0) {
             throw new BusinessException("总分必须大于0");
+        }
+
+        // 修复：校验考试时间范围
+        if (paper.getStartTime() != null && paper.getEndTime() != null) {
+            if (paper.getStartTime().isAfter(paper.getEndTime())) {
+                throw new BusinessException("考试开始时间不能晚于结束时间");
+            }
         }
 
         baseMapper.updateById(paper);

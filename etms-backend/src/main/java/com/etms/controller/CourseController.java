@@ -40,8 +40,23 @@ public class CourseController {
             @RequestParam(required = false) Integer courseType,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) Integer difficulty) {
+        // 修复：根据用户权限过滤课程数据
+        // 未登录或普通用户只能查看已发布的课程
+        // 管理员可以查看所有课程
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+            .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || 
+                          "ROLE_TRAINING_MANAGER".equals(a.getAuthority()));
+        
+        // 如果不是管理员，强制只显示已发布的课程
+        Integer queryStatus = status;
+        if (!isAdmin) {
+            queryStatus = 1; // 只显示已发布的课程
+        }
+        
         Page<Course> page = new Page<>(current, size);
-        Page<CourseVO> voPage = courseService.pageCourses(page, courseName, courseCode, categoryId, courseType, status, difficulty);
+        Page<CourseVO> voPage = courseService.pageCourses(page, courseName, courseCode, categoryId, courseType, queryStatus, difficulty);
         PageResult<CourseVO> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );
@@ -125,7 +140,23 @@ public class CourseController {
     @ApiOperation(value = "获取课程列表(不分页)")
     @GetMapping("/all")
     public Result<List<CourseVO>> list(@RequestParam(required = false) Long categoryId) {
+        // 修复：根据用户权限过滤课程数据
+        // 未登录或普通用户只能查看已发布的课程
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+            .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || 
+                          "ROLE_TRAINING_MANAGER".equals(a.getAuthority()));
+        
         List<CourseVO> list = courseService.listCourses(categoryId);
+        
+        // 如果不是管理员，过滤只显示已发布的课程
+        if (!isAdmin) {
+            list = list.stream()
+                .filter(c -> c.getStatus() != null && c.getStatus() == 1)
+                .collect(java.util.stream.Collectors.toList());
+        }
+        
         return Result.success(list);
     }
 }
