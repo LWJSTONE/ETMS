@@ -270,19 +270,45 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             return false;
         }
         
-        String str = jsonArrayStr.trim();
-        if (str.startsWith("[") && str.endsWith("]")) {
-            str = str.substring(1, str.length() - 1);
-        }
-        
-        String[] parts = str.split(",");
-        for (String part : parts) {
-            String idStr = part.trim().replace("\"", "");
-            if (idStr.equals(String.valueOf(targetId))) {
-                return true;
+        try {
+            // 修复：使用JSON解析器正确解析JSON数组，避免字符串分割导致的错误匹配
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            java.util.List<?> list = objectMapper.readValue(jsonArrayStr, java.util.List.class);
+            
+            for (Object item : list) {
+                if (item == null) continue;
+                // 支持数字类型和字符串类型
+                Long itemId = null;
+                if (item instanceof Number) {
+                    itemId = ((Number) item).longValue();
+                } else if (item instanceof String) {
+                    try {
+                        itemId = Long.parseLong((String) item);
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                }
+                if (itemId != null && itemId.equals(targetId)) {
+                    return true;
+                }
             }
+            return false;
+        } catch (Exception e) {
+            // JSON解析失败时回退到简单字符串匹配
+            String str = jsonArrayStr.trim();
+            if (str.startsWith("[") && str.endsWith("]")) {
+                str = str.substring(1, str.length() - 1);
+            }
+            
+            String[] parts = str.split(",");
+            for (String part : parts) {
+                String idStr = part.trim().replace("\"", "");
+                if (idStr.equals(String.valueOf(targetId))) {
+                    return true;
+                }
+            }
+            return false;
         }
-        return false;
     }
 
     @Override

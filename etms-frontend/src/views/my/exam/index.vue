@@ -374,7 +374,9 @@ const handleStartExam = async (exam: any) => {
     )
     
     exam.starting = true
-    const res = await startExam(exam.id)
+    // 修复：传递planId参数，用于考试次数限制校验
+    const planId = exam.planId || null
+    const res = await startExam(exam.id, planId || undefined)
     ElMessage.success('考试已开始，请认真作答！')
     
     // 跳转到考试答题页面
