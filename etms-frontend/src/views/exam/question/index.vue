@@ -459,8 +459,8 @@ const getList = async () => {
     if (searchForm.status !== null) params.status = searchForm.status
 
     const res = await getQuestionList(params)
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error: any) {
     console.error('获取题目列表失败:', error)
     ElMessage.error(error.message || '获取题目列表失败')
@@ -530,7 +530,7 @@ const handleEdit = async (row: any) => {
   try {
     // 获取详情
     const res = await getQuestionDetail(row.id)
-    const data = res.data || row
+    const data = res || row
     Object.assign(form, {
       id: data.id,
       questionContent: data.questionContent,
@@ -620,7 +620,7 @@ const handleDelete = async (row: any) => {
 const getCourses = async () => {
   try {
     const res = await getCourseListAll()
-    courseList.value = res.data || []
+    courseList.value = res || []
   } catch (error: any) {
     console.error('获取课程列表失败:', error)
     ElMessage.error(error.message || '获取课程列表失败')

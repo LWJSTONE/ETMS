@@ -395,7 +395,7 @@ const currentDetail = ref<any>({})
 const getDeptData = async () => {
   try {
     const res = await getPublicDeptList()
-    deptList.value = res.data || []
+    deptList.value = res || []
   } catch (error: any) {
     console.error('获取部门列表失败:', error)
     // 部门列表获取失败不影响主功能，静默处理
@@ -1028,7 +1028,7 @@ const handleViewDetail = async (row: any) => {
       current: 1, 
       size: 1000 
     })
-    const participants = (res.data?.records || []).map((p: LearningProgress) => ({
+    const participants = (res.records || []).map((p: LearningProgress) => ({
       userName: p.realName || p.userName,
       deptName: p.deptName || '-',
       progress: p.progress || 0,

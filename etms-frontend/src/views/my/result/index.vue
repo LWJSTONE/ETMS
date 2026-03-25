@@ -314,8 +314,8 @@ const getList = async () => {
       params.examEndTime = searchForm.examTimeRange[1]
     }
     const res = await getMyResults(params)
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
     
     // 获取完整统计数据（不依赖当前页数据）
     await getStatsSummary()
@@ -343,7 +343,7 @@ const getStatsSummary = async () => {
     }
     
     const res = await getMyResults(params)
-    const allRecords = res.data?.records || []
+    const allRecords = res?.records || []
     
     // 计算统计数据
     stats.examCount = allRecords.length

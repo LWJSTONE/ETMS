@@ -240,11 +240,9 @@ const getList = async () => {
       configName: searchForm.configName || undefined,
       configKey: searchForm.configKey || undefined
     })
-    if (res.code === 200 && res.data) {
-      tableData.value = res.data.records
-      pagination.total = res.data.total
-    } else {
-      ElMessage.error(res.message || '获取配置列表失败')
+    if (res) {
+      tableData.value = res?.records
+      pagination.total = res?.total
     }
   } catch (error: any) {
     ElMessage.error(error.message || '获取配置列表失败')

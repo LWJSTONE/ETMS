@@ -180,7 +180,7 @@ const getCategoryTreeData = async () => {
   loading.value = true
   try {
     const res = await getCategoryTree()
-    const treeData = res.data || []
+    const treeData = res || []
     // 保存原始数据
     allCategoryData.value = treeData
     // 根据搜索条件过滤
@@ -322,7 +322,7 @@ const handleEdit = async (row: Category) => {
   isEdit.value = true
   try {
     const res = await getCategoryDetail(row.id)
-    const data = res.data
+    const data = res
     resetForm()
     Object.assign(form, {
       id: data.id,

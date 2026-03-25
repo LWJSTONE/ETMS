@@ -202,8 +202,8 @@ const getList = async () => {
       size: pagination.size, 
       ...searchForm 
     })
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '获取角色列表失败')
@@ -217,7 +217,7 @@ const getPermissionTreeData = async () => {
   permissionTreeLoading.value = true
   try {
     const res = await getPermissionTree()
-    permissionTree.value = res.data || []
+    permissionTree.value = res || []
   } catch (error: any) {
     console.error('获取权限树失败:', error)
     ElMessage.error(error.message || '获取权限树失败，请刷新页面重试')
@@ -289,7 +289,7 @@ const handleAssignPermission = async (row: any) => {
   currentRoleId.value = row.id
   try {
     const res = await getRolePermissions(row.id)
-    checkedPermIds.value = res.data || []
+    checkedPermIds.value = res || []
     permDialogVisible.value = true
   } catch (error: any) {
     ElMessage.error(error.message || '获取权限失败')

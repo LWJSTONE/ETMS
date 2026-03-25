@@ -152,18 +152,18 @@ const fetchCourseInfo = async () => {
     if (courseId.value) {
       const res = await getCourseDetail(courseId.value)
       Object.assign(courseInfo, {
-        id: res.data.id,
-        courseId: res.data.id,
-        courseName: res.data.courseName,
-        description: res.data.courseDesc,
-        courseDesc: res.data.courseDesc,
-        courseObjective: res.data.courseObjective,
-        coverImage: res.data.coverImage,
-        videoUrl: res.data.videoUrl,
-        documentUrl: res.data.documentUrl,
-        duration: res.data.duration,
-        credit: res.data.credit,
-        courseType: res.data.courseType || 1
+        id: res.id,
+        courseId: res.id,
+        courseName: res.courseName,
+        description: res.courseDesc,
+        courseDesc: res.courseDesc,
+        courseObjective: res.courseObjective,
+        coverImage: res.coverImage,
+        videoUrl: res.videoUrl,
+        documentUrl: res.documentUrl,
+        duration: res.duration,
+        credit: res.credit,
+        courseType: res.courseType || 1
       })
     }
 

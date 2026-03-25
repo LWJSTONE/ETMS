@@ -295,8 +295,8 @@ const getList = async () => {
       size: pagination.size,
       ...searchForm
     })
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '获取考试记录列表失败')
@@ -327,7 +327,7 @@ const handleViewDetail = async (row: ExamRecord) => {
   detailLoading.value = true
   try {
     const res = await getExamRecordDetail(row.id)
-    detailData.value = res.data || row
+    detailData.value = res || row
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '获取详情失败')

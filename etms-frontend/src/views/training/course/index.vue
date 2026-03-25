@@ -373,8 +373,8 @@ const getList = async () => {
     if (searchForm.status !== null) params.status = searchForm.status
 
     const res = await getCourseList(params)
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error: any) {
     console.error('获取课程列表失败:', error)
     ElMessage.error(error.message || '获取课程列表失败')
@@ -430,7 +430,7 @@ const handleEdit = async (row: any) => {
   try {
     // 修复：调用详情接口获取最新数据，而非直接使用列表数据
     const res = await getCourseDetail(row.id)
-    const data = res.data
+    const data = res
     resetForm()
     Object.assign(form, {
       id: data.id,
@@ -616,7 +616,7 @@ const handleUnpublish = async (row: any) => {
 const getCategoryTreeData = async () => {
   try {
     const res = await getCategoryTree()
-    const treeData = res.data || []
+    const treeData = res || []
     // 设置分类树选项（添加顶级节点选项）
     categoryTreeOptions.value = [
       { id: 0, parentId: null, categoryName: '顶级分类', categoryCode: '', level: 0, sortOrder: 0, icon: null, status: 1, children: treeData }

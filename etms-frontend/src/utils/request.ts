@@ -170,7 +170,8 @@ service.interceptors.response.use(
       return Promise.reject(new Error(message))
     }
     
-    return res
+    // 返回数据部分，而不是整个响应体
+    return res.data
   },
   (error: AxiosError<any>) => {
     NProgress.done()

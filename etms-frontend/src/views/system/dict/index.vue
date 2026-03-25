@@ -294,10 +294,8 @@ const fetchTypeList = async () => {
   typeLoading.value = true
   try {
     const res = await getDictTypeList({ current: 1, size: 1000 })
-    if (res.code === 200 && res.data) {
-      typeList.value = res.data.records || []
-    } else {
-      ElMessage.error(res.message || '获取字典类型列表失败')
+    if (res) {
+      typeList.value = res?.records || []
     }
   } catch (error) {
     console.error('获取字典类型列表失败:', error)
@@ -312,10 +310,8 @@ const fetchDataList = async (dictTypeId: number) => {
   dataLoading.value = true
   try {
     const res = await getDictDataList(dictTypeId)
-    if (res.code === 200 && res.data) {
-      dataList.value = res.data || []
-    } else {
-      ElMessage.error(res.message || '获取字典数据列表失败')
+    if (res) {
+      dataList.value = res || []
     }
   } catch (error) {
     console.error('获取字典数据列表失败:', error)

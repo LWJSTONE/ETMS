@@ -353,8 +353,8 @@ const getCourseListData = async () => {
 const getStats = async () => {
   try {
     const res = await getMyProgress({ current: 1, size: 1000 })
-    if (res.data?.records) {
-      const records = res.data.records
+    if (res.records) {
+      const records = res?.records
       stats.value = {
         total: records.length,
         notStarted: records.filter((r: any) => r.status === 0).length,

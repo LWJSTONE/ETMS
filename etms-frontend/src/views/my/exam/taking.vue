@@ -443,7 +443,7 @@ const fetchExamDetail = async () => {
   loading.value = true
   try {
     const res = await getExamRecordDetail(recordId.value)
-    const data = res.data
+    const data = res
     
     // 填充考试信息
     Object.assign(examInfo, {

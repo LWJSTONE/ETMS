@@ -412,7 +412,7 @@ const getDeptList = async () => {
         return acc
       }, [] as any[])
     }
-    deptList.value = flattenDepts(res.data || [])
+    deptList.value = flattenDepts(res || [])
   } catch (error: any) {
     console.error('获取部门列表失败:', error)
     // 部门列表获取失败不影响主功能，静默处理
@@ -423,7 +423,7 @@ const getDeptList = async () => {
 const getPaperListData = async () => {
   try {
     const res = await getPaperList({ current: 1, size: 1000 })
-    paperList.value = res.data?.records || []
+    paperList.value = res.records || []
   } catch (error: any) {
     console.error('获取试卷列表失败:', error)
     // 试卷列表获取失败不影响主功能，静默处理
@@ -462,7 +462,7 @@ const getReportData = async () => {
     }
 
     const res = await getResultList(params)
-    const records = res.data?.records || []
+    const records = res.records || []
     
     // 如果数据量达到上限，给出提示
     if (records.length >= MAX_RECORDS) {

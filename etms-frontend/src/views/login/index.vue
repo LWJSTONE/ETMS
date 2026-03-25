@@ -123,8 +123,8 @@ const loginRules: FormRules = {
 const refreshCaptcha = async () => {
   try {
     const res = await getCaptcha()
-    captchaImage.value = res.data.captchaImage
-    captchaKey.value = res.data.captchaKey
+    captchaImage.value = res.captchaImage
+    captchaKey.value = res.captchaKey
     captchaRetryCount.value = 0 // 成功后重置计数器
   } catch (error) {
     captchaRetryCount.value++

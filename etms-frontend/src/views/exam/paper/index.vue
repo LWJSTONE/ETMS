@@ -620,8 +620,8 @@ const getList = async () => {
       size: pagination.size,
       ...searchForm
     })
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '获取试卷列表失败')
@@ -673,7 +673,7 @@ const handleEdit = async (row: any) => {
   isEdit.value = true
   try {
     const res = await getPaperDetail(row.id)
-    const data = res.data
+    const data = res
     Object.assign(form, {
       id: data.id,
       paperName: data.paperName,
@@ -695,7 +695,7 @@ const handleEdit = async (row: any) => {
 const handleView = async (row: any) => {
   try {
     const res = await getPaperDetail(row.id)
-    detailData.value = res.data
+    detailData.value = res
     detailVisible.value = true
   } catch (error: any) {
     console.error(error)
@@ -831,8 +831,8 @@ const handleCompose = async (row: any) => {
   try {
     // 获取试卷已有题目
     const res = await getPaperQuestions(row.id)
-    if (res.data) {
-      paperQuestions.value = res.data.map((item: any) => ({
+    if (res) {
+      paperQuestions.value = res.map((item: any) => ({
         questionId: item.questionId,
         questionType: item.question?.questionType || item.questionType,
         questionContent: item.question?.questionContent || item.questionContent,
@@ -865,7 +865,7 @@ const searchQuestions = async () => {
       params.questionType = questionSearchForm.questionType
     }
     const res = await getQuestionList(params)
-    questionList.value = res.data?.records || []
+    questionList.value = res.records || []
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '获取题目列表失败')
@@ -923,9 +923,9 @@ const handleRandomDraw = async () => {
     }
     
     const res = await randomQuestions(params)
-    if (res.data && res.data.length > 0) {
+    if (res && res.length > 0) {
       const existingIds = new Set(paperQuestions.value.map(q => q.questionId))
-      const newQuestions = res.data
+      const newQuestions = res
         .filter((q: any) => !existingIds.has(q.id))
         .map((q: any, index: number) => ({
           questionId: q.id,

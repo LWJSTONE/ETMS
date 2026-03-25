@@ -338,8 +338,8 @@ const getList = async () => {
       params.endTime = searchForm.examTimeRange[1]
     }
     const res = await getResultList(params)
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
     
     // 获取统计数据
     getStats()
@@ -360,12 +360,12 @@ const getStats = async () => {
       params.endTime = searchForm.examTimeRange[1]
     }
     const res = await getResultStats(params)
-    if (res.data) {
-      stats.totalCount = res.data.totalCount || 0
-      stats.passCount = res.data.passCount || 0
-      stats.failCount = res.data.failCount || 0
-      stats.passRate = (res.data.passRate || 0).toFixed(1)
-      stats.avgScore = (res.data.avgScore || 0).toFixed(1)
+    if (res) {
+      stats.totalCount = res?.totalCount || 0
+      stats.passCount = res.passCount || 0
+      stats.failCount = res.failCount || 0
+      stats.passRate = (res.passRate || 0).toFixed(1)
+      stats.avgScore = (res.avgScore || 0).toFixed(1)
     }
   } catch (error: any) {
     console.error('获取统计数据失败:', error)
@@ -462,7 +462,7 @@ const handleViewDetail = async (row: any) => {
   try {
     // 调用成绩详情API获取完整信息
     const res = await getResultDetail(row.id)
-    const detailInfo = res.data
+    const detailInfo = res
     
     // 更新详情数据
     if (detailInfo) {

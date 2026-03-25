@@ -41,4 +41,11 @@ public interface DeptService extends IService<Dept> {
      * @return 是否有用户
      */
     boolean hasUsers(Long deptId);
+    
+    /**
+     * 检查部门是否有子部门
+     * @param deptId 部门ID
+     * @return 是否有子部门
+     */
+    boolean hasChildren(Long deptId);
 }

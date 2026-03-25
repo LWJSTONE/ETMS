@@ -215,7 +215,7 @@ const getDeptTreeData = async () => {
   loading.value = true
   try {
     const res = await getDeptTree()
-    const treeData = res.data || []
+    const treeData = res || []
     // 根据搜索条件过滤
     if (searchForm.deptName || searchForm.status !== null) {
       tableData.value = filterTree(treeData, searchForm)
@@ -259,7 +259,7 @@ const getUserOptions = async () => {
   try {
     // 使用较大的分页值，后续可考虑改用不分页的用户列表接口
     const res = await getUserList({ current: 1, size: 10000, status: 1 })
-    userOptions.value = res.data?.records || []
+    userOptions.value = res.records || []
   } catch (error) {
     console.error('获取用户列表失败:', error)
     ElMessage.error('获取用户列表失败')
@@ -334,7 +334,7 @@ const handleEdit = async (row: Dept) => {
   isEdit.value = true
   try {
     const res = await getDeptDetail(row.id)
-    const data = res.data
+    const data = res
     resetForm()
     Object.assign(form, {
       id: data.id,

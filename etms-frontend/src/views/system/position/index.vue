@@ -180,8 +180,8 @@ const getList = async () => {
       size: pagination.size,
       ...searchForm
     })
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error: any) {
     console.error('获取岗位列表失败:', error)
     ElMessage.error(error.message || '获取岗位列表失败')

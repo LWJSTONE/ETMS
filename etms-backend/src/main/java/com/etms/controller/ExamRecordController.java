@@ -79,6 +79,7 @@ public class ExamRecordController {
     
     @ApiOperation(value = "提交试卷")
     @PostMapping("/submit")
+    @PreAuthorize("isAuthenticated()")
     public Result<Void> submitExam(@Valid @RequestBody SubmitExamDTO submitExamDTO) {
         examRecordService.submitExam(submitExamDTO.getRecordId(), submitExamDTO.getAnswers());
         return Result.success();
@@ -86,6 +87,7 @@ public class ExamRecordController {
     
     @ApiOperation(value = "放弃考试")
     @PostMapping("/giveup/{recordId}")
+    @PreAuthorize("isAuthenticated()")
     public Result<Void> giveUpExam(@PathVariable Long recordId) {
         examRecordService.giveUpExam(recordId);
         return Result.success();
@@ -93,9 +95,10 @@ public class ExamRecordController {
     
     @ApiOperation(value = "获取当前用户的考试记录")
     @GetMapping("/my")
+    @PreAuthorize("isAuthenticated()")
     public Result<PageResult<ExamRecordVO>> pageMy(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) Integer status) {
         Page<ExamRecord> page = new Page<>(current, size);
         Page<ExamRecordVO> voPage = examRecordService.pageMyExamRecords(page, status);

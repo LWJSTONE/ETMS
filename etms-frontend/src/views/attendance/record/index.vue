@@ -375,8 +375,8 @@ const getStats = async () => {
   try {
     // 修复：使用个人统计接口，避免权限问题
     const res = await getMyAttendanceStats()
-    if (res.data) {
-      stats.value = res.data
+    if (res) {
+      stats.value = res
     }
   } catch (error: any) {
     console.error('获取统计失败:', error)
@@ -388,7 +388,7 @@ const getStats = async () => {
 const getPlans = async () => {
   try {
     const res = await getPlanList({ current: 1, size: 1000 })
-    planList.value = res.data?.records || []
+    planList.value = res.records || []
   } catch (error: any) {
     console.error('获取培训计划失败:', error)
     ElMessage.error(error.message || '获取培训计划失败')
@@ -408,8 +408,8 @@ const getList = async () => {
     if (searchForm.auditStatus !== null) params.auditStatus = searchForm.auditStatus
 
     const res = await getAttendanceList(params)
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error: any) {
     console.error('获取列表失败:', error)
     ElMessage.error(error.message || '获取签到记录失败')

@@ -94,9 +94,13 @@ public class DeptController {
     @PreAuthorize("hasAuthority('system:dept:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        // 修复：删除部门前检查是否有用户
+        // 检查是否有子部门
+        if (deptService.hasChildren(id)) {
+            throw new BusinessException("该部门下存在子部门，无法删除");
+        }
+        // 检查是否有用户
         if (deptService.hasUsers(id)) {
-            return Result.error("该部门下存在用户，无法删除");
+            throw new BusinessException("该部门下存在用户，无法删除");
         }
         deptService.deleteDept(id);
         return Result.success();

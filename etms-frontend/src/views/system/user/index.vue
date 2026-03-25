@@ -264,8 +264,8 @@ const getList = async () => {
   loading.value = true
   try {
     const res = await getUserList({ current: pagination.current, size: pagination.size, ...searchForm })
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error: any) {
     console.error('获取用户列表失败:', error)
     ElMessage.error(error.message || '获取用户列表失败')
@@ -277,7 +277,7 @@ const getList = async () => {
 const getRoleList = async () => {
   try {
     const res = await getRoleListAll()
-    roleList.value = res.data || []
+    roleList.value = res || []
   } catch (error: any) {
     console.error('获取角色列表失败:', error)
     ElMessage.error(error.message || '获取角色列表失败')
@@ -287,7 +287,7 @@ const getRoleList = async () => {
 const getDeptTreeData = async () => {
   try {
     const res = await getDeptTree()
-    deptTree.value = res.data || []
+    deptTree.value = res || []
   } catch (error: any) {
     console.error('获取部门树失败:', error)
     ElMessage.error(error.message || '获取部门树失败')
@@ -297,7 +297,7 @@ const getDeptTreeData = async () => {
 const getPositionListData = async () => {
   try {
     const res = await getPositionList({ current: 1, size: 1000, status: 1 })
-    positionList.value = res.data?.records || []
+    positionList.value = res.records || []
   } catch (error: any) {
     console.error('获取职位列表失败:', error)
     ElMessage.error(error.message || '获取职位列表失败')
@@ -313,12 +313,12 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = async (row: any) => { 
+const handleEdit = async (row: any) => {
   isEdit.value = true
   try {
     // 调用API获取用户详情
     const res = await getUserDetail(row.id)
-    const userData = res.data
+    const userData = res
     Object.assign(form, { 
       id: userData.id, 
       username: userData.username, 
@@ -374,7 +374,7 @@ const handleResetPassword = async (row: any) => {
     await ElMessageBox.confirm('确定要重置该用户的密码吗？', '提示', { type: 'warning' })
     const res = await resetPassword(row.id)
     // 显示新密码给管理员
-    const newPassword = res.data
+    const newPassword = res
     if (newPassword) {
       ElMessageBox.alert(`新密码为: ${newPassword}\n\n请将此密码告知用户，建议用户登录后立即修改密码。`, '密码重置成功', { 
         type: 'success',
@@ -406,7 +406,7 @@ const handleAssignRole = async (row: any) => {
   try {
     const res = await getUserDetail(row.id)
     // 从用户详情中获取角色ID列表
-    selectedRoleIds.value = res.data.roles?.map((r: any) => r.id) || []
+    selectedRoleIds.value = res.roles?.map((r: any) => r.id) || []
   } catch (error) {
     console.error('获取用户详情失败:', error)
     // 如果获取失败，使用列表中的角色信息作为降级方案

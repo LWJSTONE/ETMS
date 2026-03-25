@@ -329,8 +329,8 @@ const getList = async () => {
     }
     
     const res = await getProgressList(params)
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error) {
     console.error('获取进度列表失败:', error)
     ElMessage.error('获取进度列表失败')
@@ -343,7 +343,7 @@ const getList = async () => {
 const getPlanOptions = async () => {
   try {
     const res = await getPlanList({ current: 1, size: 1000 })
-    planList.value = res.data?.records || []
+    planList.value = res.records || []
   } catch (error) {
     console.error('获取培训计划列表失败:', error)
   }
@@ -379,7 +379,7 @@ const handleViewDetail = async (row: ProgressItem) => {
   try {
     // 从后端获取详细信息
     const res = await getProgressDetail(row.id)
-    detailData.value = res.data || { ...row }
+    detailData.value = res || { ...row }
     
     // TODO: 学习记录需要后端提供对应接口，目前暂不显示
     // 当后端提供学习记录接口后，替换为真实API调用

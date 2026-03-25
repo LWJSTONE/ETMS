@@ -339,8 +339,8 @@ const getProgressList = async () => {
 
     const res = await getMyProgress(params)
     
-    if (res.data?.records) {
-      progressList.value = res.data.records.map((item: any) => ({
+    if (res.records) {
+      progressList.value = res?.records.map((item: any) => ({
         ...item,
         courseName: item.courseName || item.course?.courseName || '未知课程',
         planName: item.planName || item.trainingPlan?.planName || '',
@@ -348,7 +348,7 @@ const getProgressList = async () => {
         duration: item.duration ?? 0,
         status: item.status ?? 0
       }))
-      pagination.total = res.data.total || 0
+      pagination.total = res?.total || 0
     }
   } catch (error) {
     console.error('获取进度列表失败:', error)
@@ -364,8 +364,8 @@ const getStats = async () => {
     // 获取所有进度数据用于统计
     const res = await getMyProgress({ current: 1, size: 1000 })
     
-    if (res.data?.records) {
-      const records = res.data.records
+    if (res.records) {
+      const records = res?.records
       stats.value = {
         totalCourses: records.length,
         completedCourses: records.filter((r: any) => r.status === 2).length,
@@ -383,7 +383,7 @@ const getStats = async () => {
 const getPlanOptions = async () => {
   try {
     const res = await getPlanList({ current: 1, size: 1000, status: 1 })
-    planList.value = res.data?.records || []
+    planList.value = res.records || []
   } catch (error: any) {
     console.error('获取培训计划列表失败:', error)
     ElMessage.error(error.message || '获取培训计划列表失败')

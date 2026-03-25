@@ -25,8 +25,8 @@ export const useUserStore = defineStore('user', () => {
   const loginAction = async (username: string, password: string, captcha: string, captchaKey: string) => {
     try {
       const res = await login({ username, password, captcha, captchaKey })
-      token.value = res.data.accessToken
-      localStorage.setItem(STORAGE_KEYS.TOKEN, res.data.accessToken)
+      token.value = res.accessToken
+      localStorage.setItem(STORAGE_KEYS.TOKEN, res.accessToken)
       
       // 登录成功后获取完整用户信息
       await getUserInfoAction()
@@ -45,9 +45,9 @@ export const useUserStore = defineStore('user', () => {
   // 获取用户信息
   const getUserInfoAction = async () => {
     const res = await getUserInfo()
-    userInfo.value = res.data
+    userInfo.value = res
     // 持久化用户信息
-    localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(res.data))
+    localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(res))
     return res
   }
 

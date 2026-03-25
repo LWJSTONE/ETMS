@@ -228,9 +228,9 @@ const getList = async () => {
       endTime: searchForm.timeRange?.[1] || undefined
     }
     const res = await getLogList(params)
-    if (res.data) {
-      tableData.value = res.data.records
-      pagination.total = res.data.total
+    if (res) {
+      tableData.value = res?.records
+      pagination.total = res?.total
     }
   } catch (error) {
     console.error('获取日志列表失败:', error)
@@ -272,8 +272,8 @@ const handleCurrentChange = () => {
 const handleViewDetail = async (row: LogItem) => {
   try {
     const res = await getLogDetail(row.id)
-    if (res.data) {
-      currentLog.value = res.data
+    if (res) {
+      currentLog.value = res
       detailDialogVisible.value = true
     }
   } catch (error) {

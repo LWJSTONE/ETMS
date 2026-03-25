@@ -332,7 +332,7 @@ const fetchAvailableExams = async () => {
       current: 1,
       size: 100
     })
-    availableExams.value = (res.data?.records || []).map((item: any) => ({
+    availableExams.value = (res.records || []).map((item: any) => ({
       ...item,
       starting: false
     }))
@@ -352,8 +352,8 @@ const getHistoryRecords = async () => {
       current: historyPagination.current,
       size: historyPagination.size
     })
-    historyRecords.value = res.data?.records || []
-    historyPagination.total = res.data?.total || 0
+    historyRecords.value = res.records || []
+    historyPagination.total = res.total || 0
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '获取考试历史记录失败')
@@ -382,7 +382,7 @@ const handleStartExam = async (exam: any) => {
     ElMessage.success('考试已开始，请认真作答！')
     
     // 跳转到考试答题页面
-    const examRecordId = res.data?.id
+    const examRecordId = res.id
     if (examRecordId) {
       router.push(`/my/exam/taking/${examRecordId}`)
     } else {
@@ -410,7 +410,7 @@ const handleViewPaper = (exam: any) => {
 const handleViewResult = async (record: any) => {
   try {
     const res = await getExamRecordDetail(record.id)
-    currentResult.value = res.data
+    currentResult.value = res
     resultDetailVisible.value = true
   } catch (error: any) {
     console.error(error)

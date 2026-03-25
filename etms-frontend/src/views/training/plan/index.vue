@@ -493,8 +493,8 @@ const getList = async () => {
     if (searchForm.status !== null) params.status = searchForm.status
     
     const res = await getPlanList(params)
-    tableData.value = res.data?.records || []
-    pagination.total = res.data?.total || 0
+    tableData.value = res.records || []
+    pagination.total = res.total || 0
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '获取培训计划列表失败')
@@ -507,7 +507,7 @@ const getList = async () => {
 const getCourseList = async () => {
   try {
     const res = await getCourseListAll()
-    courseList.value = res.data || []
+    courseList.value = res || []
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '获取课程列表失败')
@@ -566,7 +566,7 @@ const handleEdit = async (row: any) => {
   isEdit.value = true
   try {
     const res = await getPlanDetail(row.id)
-    const data = res.data
+    const data = res
     // 解析目标ID
     let targetDeptIds: number[] = []
     let targetPositionIds: number[] = []
@@ -794,7 +794,7 @@ const handleSubmit = async () => {
 const getDeptList = async () => {
   try {
     const res = await getDeptTree()
-    deptList.value = res.data || []
+    deptList.value = res || []
   } catch (error: any) {
     console.error(error)
   }
@@ -804,7 +804,7 @@ const getDeptList = async () => {
 const getPositionListData = async () => {
   try {
     const res = await getPositionListAll()
-    positionList.value = res.data || []
+    positionList.value = res || []
   } catch (error: any) {
     console.error(error)
   }
@@ -814,7 +814,7 @@ const getPositionListData = async () => {
 const getUserListAll = async () => {
   try {
     const res = await getUserList({ current: 1, size: 1000, status: 1 })
-    userList.value = res.data?.records || []
+    userList.value = res.records || []
   } catch (error: any) {
     console.error(error)
   }
