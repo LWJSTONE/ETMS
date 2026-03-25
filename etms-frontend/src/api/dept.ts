@@ -1,47 +1,46 @@
 import request from '@/utils/request'
 import type {
-  ApiResponse,
   Dept,
   DeptCreateParams,
   DeptUpdateParams
 } from './types'
 
 // 获取部门树形结构
-export function getDeptTree(): Promise<ApiResponse<Dept[]>> {
+export function getDeptTree(): Promise<Dept[]> {
   return request.get('/system/depts/tree-structure')
 }
 
 // 获取部门列表
-export function getDeptList(parentId?: number): Promise<ApiResponse<Dept[]>> {
+export function getDeptList(parentId?: number): Promise<Dept[]> {
   return request.get('/system/depts', parentId ? { parentId } : undefined)
 }
 
 // 获取部门列表（公开接口，无需权限）
-export function getPublicDeptList(): Promise<ApiResponse<Dept[]>> {
+export function getPublicDeptList(): Promise<Dept[]> {
   return request.get('/system/depts/public/list')
 }
 
 // 获取部门树形结构（公开接口，无需权限）
-export function getPublicDeptTree(): Promise<ApiResponse<Dept[]>> {
+export function getPublicDeptTree(): Promise<Dept[]> {
   return request.get('/system/depts/public/tree')
 }
 
 // 获取部门详情
-export function getDeptDetail(id: number): Promise<ApiResponse<Dept>> {
+export function getDeptDetail(id: number): Promise<Dept> {
   return request.get(`/system/depts/${id}`)
 }
 
 // 新增部门
-export function createDept(data: DeptCreateParams): Promise<ApiResponse<void>> {
+export function createDept(data: DeptCreateParams): Promise<void> {
   return request.post('/system/depts', data)
 }
 
 // 更新部门
-export function updateDept(id: number, data: DeptUpdateParams): Promise<ApiResponse<void>> {
+export function updateDept(id: number, data: DeptUpdateParams): Promise<void> {
   return request.put(`/system/depts/${id}`, data)
 }
 
 // 删除部门
-export function deleteDept(id: number): Promise<ApiResponse<void>> {
+export function deleteDept(id: number): Promise<void> {
   return request.delete(`/system/depts/${id}`)
 }

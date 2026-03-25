@@ -45,6 +45,7 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
      * 根据配置键名获取配置值
      * @param configKey 配置键名
      * @return 配置值，如果配置不存在或配置值为null则返回null
+     * 注意：不会缓存null值，避免缓存穿透和混淆"配置不存在"与"配置值为null"
      */
     @Override
     public String getConfigValue(String configKey) {
@@ -58,11 +59,12 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
             new LambdaQueryWrapper<Config>().eq(Config::getConfigKey, configKey)
         );
         
-        if (config != null) {
-            // 注意：configValue 可能为 null，调用方需要进行空值判断
+        if (config != null && config.getConfigValue() != null) {
+            // 只缓存非null值，避免缓存穿透
             configCache.put(configKey, config.getConfigValue());
             return config.getConfigValue();
         }
+        // 配置不存在或值为null时返回null，不缓存
         return null;
     }
     
@@ -85,8 +87,10 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
         }
         
         baseMapper.insert(config);
-        // 更新缓存
-        configCache.put(config.getConfigKey(), config.getConfigValue());
+        // 更新缓存 - 只缓存非null值
+        if (config.getConfigValue() != null) {
+            configCache.put(config.getConfigKey(), config.getConfigValue());
+        }
     }
     
     @Override

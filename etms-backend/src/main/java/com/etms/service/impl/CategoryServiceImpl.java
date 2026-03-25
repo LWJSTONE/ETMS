@@ -16,8 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -319,20 +322,37 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     }
     
     /**
-     * 判断是否为子分类
+     * 判断是否为子分类（使用迭代方式，避免递归栈溢出）
      */
     private boolean isChildCategory(Long parentId, Long childId) {
         if (parentId.equals(childId)) {
             return true;
         }
         
-        List<Category> children = baseMapper.selectList(
-            new LambdaQueryWrapper<Category>().eq(Category::getParentId, parentId)
-        );
+        // 使用迭代方式遍历所有子分类，避免递归导致的栈溢出
+        Set<Long> visited = new HashSet<>();  // 防止循环引用
+        LinkedList<Long> queue = new LinkedList<>();
+        queue.add(parentId);
         
-        for (Category child : children) {
-            if (isChildCategory(child.getId(), childId)) {
-                return true;
+        while (!queue.isEmpty()) {
+            Long currentId = queue.poll();
+            
+            // 防止循环引用
+            if (visited.contains(currentId)) {
+                continue;
+            }
+            visited.add(currentId);
+            
+            // 查询当前节点的所有子分类
+            List<Category> children = baseMapper.selectList(
+                new LambdaQueryWrapper<Category>().eq(Category::getParentId, currentId)
+            );
+            
+            for (Category child : children) {
+                if (child.getId().equals(childId)) {
+                    return true;
+                }
+                queue.add(child.getId());
             }
         }
         

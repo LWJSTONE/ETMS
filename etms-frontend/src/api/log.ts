@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { ApiResponse, PageResult, PageParams } from './types'
+import type { PageResult, PageParams } from './types'
 
 /**
  * 日志相关类型定义
@@ -41,12 +41,12 @@ export interface LogSearchParams extends PageParams {
  */
 
 // 分页查询日志列表
-export function getLogList(params: LogSearchParams): Promise<ApiResponse<PageResult<LogItem>>> {
+export function getLogList(params: LogSearchParams): Promise<PageResult<LogItem>> {
   return request.get('/system/logs', params)
 }
 
 // 获取日志详情
-export function getLogDetail(id: number): Promise<ApiResponse<LogItem>> {
+export function getLogDetail(id: number): Promise<LogItem> {
   return request.get(`/system/logs/${id}`)
 }
 
@@ -57,7 +57,7 @@ export interface ClearLogsParams {
 }
 
 // 清空日志
-export function clearLogs(params: ClearLogsParams): Promise<ApiResponse<void>> {
+export function clearLogs(params: ClearLogsParams): Promise<void> {
   return request.delete('/system/logs', params)
 }
 

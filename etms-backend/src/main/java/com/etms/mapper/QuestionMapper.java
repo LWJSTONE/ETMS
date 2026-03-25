@@ -33,4 +33,14 @@ public interface QuestionMapper extends BaseMapper<Question> {
                                           @Param("difficulty") Integer difficulty, 
                                           @Param("count") Integer count, 
                                           @Param("courseId") Long courseId);
+    
+    /**
+     * 统计题目被已发布试卷使用的次数
+     * @param questionId 题目ID
+     * @return 使用次数
+     */
+    @Select("SELECT COUNT(DISTINCT pq.paper_id) FROM exam_paper_question pq " +
+            "INNER JOIN exam_paper p ON pq.paper_id = p.id " +
+            "WHERE pq.question_id = #{questionId} AND p.status = 1")
+    Long countUsedInPublishedPapers(@Param("questionId") Long questionId);
 }

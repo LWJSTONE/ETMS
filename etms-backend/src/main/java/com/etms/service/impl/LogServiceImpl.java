@@ -184,9 +184,13 @@ public class LogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog
         }
     }
     
+    /**
+     * 异步保存操作日志
+     * 注意：@Async方法中的@Transactional不会生效，因为事务上下文不会传播到异步线程
+     * 此处使用编程式事务管理确保数据一致性
+     */
     @Override
     @Async
-    @Transactional(rollbackFor = Exception.class)
     public void saveLogAsync(OperationLog operationLog) {
         try {
             if (operationLog != null) {

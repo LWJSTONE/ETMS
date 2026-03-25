@@ -55,6 +55,7 @@ public class ExamRecordController {
     
     @ApiOperation(value = "获取考试记录详情")
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制
     public Result<ExamRecordVO> get(@PathVariable Long id) {
         // 权限校验：用户可以查看自己的考试记录详情，管理员可以查看所有
         ExamRecordVO vo = examRecordService.getExamRecordDetailForUser(id);
@@ -63,6 +64,7 @@ public class ExamRecordController {
     
     @ApiOperation(value = "开始考试")
     @PostMapping("/start/{paperId}")
+    @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制
     public Result<ExamRecord> startExam(
             @PathVariable Long paperId,
             @RequestParam(required = false) Long planId) {

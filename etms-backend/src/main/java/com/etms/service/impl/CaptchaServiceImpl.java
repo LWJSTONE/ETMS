@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import org.springframework.scheduling.annotation.Scheduled;
 
 /**
  * 验证码服务实现类
@@ -124,10 +125,20 @@ public class CaptchaServiceImpl implements CaptchaService {
     
     /**
      * 清理过期的内存缓存
+     * 每5分钟执行一次清理任务
      */
+    @Scheduled(fixedRate = 300000) // 5分钟执行一次
     public void cleanExpiredCache() {
+        if (memoryCache.isEmpty()) {
+            return;
+        }
         long now = System.currentTimeMillis();
+        int beforeSize = memoryCache.size();
         memoryCache.entrySet().removeIf(entry -> entry.getValue().expireTime < now);
+        int afterSize = memoryCache.size();
+        if (beforeSize != afterSize) {
+            log.info("清理过期验证码缓存: 清理前={}, 清理后={}, 清理数量={}", beforeSize, afterSize, beforeSize - afterSize);
+        }
     }
     
     /**

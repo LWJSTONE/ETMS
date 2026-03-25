@@ -112,13 +112,20 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateQuestion(Question question) {
-        // 检查题目是否被已完成的考试使用
+        // 检查题目是否被已发布的试卷使用
+        // 修复：如果题目被已发布试卷使用，禁止修改关键内容
+        Long usedInPublishedPapers = baseMapper.countUsedInPublishedPapers(question.getId());
+        if (usedInPublishedPapers != null && usedInPublishedPapers > 0) {
+            throw new BusinessException("该题目已被已发布的试卷使用，无法修改。请创建新题目或联系管理员。");
+        }
+        
+        // 检查题目是否被试卷引用（未发布的试卷）
         Long usedInExamCount = paperQuestionMapper.selectCount(
             new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getQuestionId, question.getId())
         );
         if (usedInExamCount > 0) {
-            // 题目已被试卷引用，警告但不禁止修改（因为试卷可能尚未被使用）
-            // 可根据业务需求决定是否禁止修改
+            // 题目已被试卷引用（未发布），记录日志但不禁止修改
+            log.warn("题目ID={} 已被 {} 个试卷引用，修改可能影响这些试卷", question.getId(), usedInExamCount);
         }
         
         // 验证选项依赖关系

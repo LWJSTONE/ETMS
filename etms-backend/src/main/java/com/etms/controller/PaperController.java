@@ -72,6 +72,7 @@ public class PaperController {
     
     @ApiOperation(value = "获取试卷详情")
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制，任何登录用户可访问
     public Result<PaperVO> get(@PathVariable Long id, 
                           @RequestParam(required = false, defaultValue = "false") boolean forExam,
                           @RequestParam(required = false) Long planId) {
