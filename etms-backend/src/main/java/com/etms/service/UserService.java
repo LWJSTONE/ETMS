@@ -82,4 +82,11 @@ public interface UserService extends IService<User> {
      * 导出用户
      */
     void exportUsers(UserDTO userDTO, HttpServletResponse response);
+
+    /**
+     * 根据用户名查询用户
+     * @param username 用户名
+     * @return 用户实体
+     */
+    User getByUsername(String username);
 }

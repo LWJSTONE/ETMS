@@ -648,7 +648,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String username = authentication.getName();
         return baseMapper.selectByUsername(username);
     }
-    
+
+    @Override
+    public User getByUsername(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            return null;
+        }
+        return baseMapper.selectByUsername(username);
+    }
+
     private String getGenderName(Integer gender) {
         if (gender == null) return "未知";
         switch (gender) {
