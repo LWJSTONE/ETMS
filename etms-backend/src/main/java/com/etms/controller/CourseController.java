@@ -49,10 +49,10 @@ public class CourseController {
             .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || 
                           "ROLE_TRAINING_MANAGER".equals(a.getAuthority()));
         
-        // 如果不是管理员，强制只显示已发布的课程
+        // 如果不是管理员，强制只显示已上架的课程(状态2表示已上架)
         Integer queryStatus = status;
         if (!isAdmin) {
-            queryStatus = 1; // 只显示已发布的课程
+            queryStatus = 2; // 只显示已上架的课程
         }
         
         Page<Course> page = new Page<>(current, size);
