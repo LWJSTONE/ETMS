@@ -470,7 +470,7 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         Long inProgressCount = examRecordMapper.selectCount(
             new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getPaperId, id)
-                .eq(ExamRecord::getStatus, 0) // 状态0表示考试中
+                .eq(ExamRecord::getStatus, 1) // 状态1表示考试进行中
         );
         if (inProgressCount != null && inProgressCount > 0) {
             throw new BusinessException("当前有" + inProgressCount + "人正在进行考试，请等待考试结束后再停用");
