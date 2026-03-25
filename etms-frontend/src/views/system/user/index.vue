@@ -371,9 +371,18 @@ const handleDelete = async (row: any) => {
 
 const handleResetPassword = async (row: any) => {
   try {
-    await ElMessageBox.confirm('确定要重置该用户的密码吗？重置后的新密码将发送到用户手机或邮箱。', '提示', { type: 'warning' })
-    await resetPassword(row.id)
-    ElMessage.success('密码已重置，新密码已发送给用户')
+    await ElMessageBox.confirm('确定要重置该用户的密码吗？', '提示', { type: 'warning' })
+    const res = await resetPassword(row.id)
+    // 显示新密码给管理员
+    const newPassword = res.data
+    if (newPassword) {
+      ElMessageBox.alert(`新密码为: ${newPassword}\n\n请将此密码告知用户，建议用户登录后立即修改密码。`, '密码重置成功', { 
+        type: 'success',
+        confirmButtonText: '确定'
+      })
+    } else {
+      ElMessage.success('密码已重置为新密码: 123456')
+    }
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('重置密码失败:', error)

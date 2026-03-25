@@ -110,15 +110,8 @@ public class RoleController {
     @ApiOperation(value = "修改角色状态")
     @PreAuthorize("hasAuthority('system:role:edit')")
     @PutMapping("/{id}/status")
-    public Result<Void> updateStatus(@PathVariable Long id, @RequestBody java.util.Map<String, Integer> params) {
-        Integer status = params.get("status");
-        if (status == null) {
-            return Result.error("状态参数不能为空");
-        }
-        if (status != 0 && status != 1) {
-            return Result.error("状态值不合法，有效值为0(禁用)或1(正常)");
-        }
-        roleService.updateStatus(id, status);
+    public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody com.etms.dto.StatusDTO statusDTO) {
+        roleService.updateStatus(id, statusDTO.getStatus());
         return Result.success();
     }
 }

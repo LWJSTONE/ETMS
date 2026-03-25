@@ -293,4 +293,14 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
         }
         return dictDataMapper.selectById(id);
     }
+    
+    @Override
+    public Page<DictData> pageDictData(Page<DictData> page, Long dictTypeId, String dictLabel, Integer status) {
+        LambdaQueryWrapper<DictData> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(dictTypeId != null, DictData::getDictTypeId, dictTypeId)
+               .like(StringUtils.hasText(dictLabel), DictData::getDictLabel, dictLabel)
+               .eq(status != null, DictData::getStatus, status)
+               .orderByAsc(DictData::getDictSort);
+        return dictDataMapper.selectPage(page, wrapper);
+    }
 }

@@ -1,10 +1,8 @@
 package com.etms.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
-import com.etms.entity.DictType;
 import com.etms.entity.DictData;
 import com.etms.service.DictService;
 import io.swagger.annotations.Api;
@@ -40,18 +38,10 @@ public class DictItemController {
             @RequestParam(required = false) Integer status) {
         
         Page<DictData> page = new Page<>(current, size);
-        LambdaQueryWrapper<DictData> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(dictTypeId != null, DictData::getDictTypeId, dictTypeId)
-               .like(dictLabel != null && !dictLabel.isEmpty(), DictData::getDictLabel, dictLabel)
-               .eq(status != null, DictData::getStatus, status)
-               .orderByAsc(DictData::getDictSort);
-        
-        // 使用 dictService 查询字典数据，而不是使用 page 方法
-        // 因为 DictService 继承 IService<DictType>，不能直接用于 DictData
-        List<DictData> records = dictService.getDictDataList(dictTypeId);
+        Page<DictData> resultPage = dictService.pageDictData(page, dictTypeId, dictLabel, status);
         
         PageResult<DictData> pageResult = new PageResult<>(
-                records, (long) records.size(), current, size
+                resultPage.getRecords(), resultPage.getTotal(), resultPage.getCurrent(), resultPage.getSize()
         );
         return Result.success(pageResult);
     }

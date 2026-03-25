@@ -80,4 +80,14 @@ public interface DictService extends IService<DictType> {
      * @return 字典数据
      */
     DictData getDictDataById(Long id);
+    
+    /**
+     * 分页查询字典数据
+     * @param page 分页参数
+     * @param dictTypeId 字典类型ID
+     * @param dictLabel 字典标签（模糊查询）
+     * @param status 状态
+     * @return 分页结果
+     */
+    Page<DictData> pageDictData(Page<DictData> page, Long dictTypeId, String dictLabel, Integer status);
 }

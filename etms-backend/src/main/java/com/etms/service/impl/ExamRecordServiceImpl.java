@@ -163,6 +163,17 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             return null;
         }
         
+        // 权限校验：用户只能查看自己的考试记录，管理员可以查看所有
+        User currentUser = userService.getCurrentUser();
+        if (currentUser != null && !record.getUserId().equals(currentUser.getId())) {
+            // 检查是否是管理员或培训管理员
+            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
+                .anyMatch(r -> "ADMIN".equals(r.getRoleCode()) || "TRAINING_MANAGER".equals(r.getRoleCode()));
+            if (!isAdmin) {
+                throw new BusinessException("无权查看此考试记录");
+            }
+        }
+        
         ExamRecordVO vo = new ExamRecordVO();
         BeanUtils.copyProperties(record, vo);
         
