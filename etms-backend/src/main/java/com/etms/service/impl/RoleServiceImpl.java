@@ -214,13 +214,18 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
 
         // 批量插入权限记录
         if (permissionIds != null && !permissionIds.isEmpty()) {
-            // 修复：权限存在性验证
-            List<Long> existingPermissionIds = permissionIds.stream()
-                .filter(id -> permissionMapper.selectById(id) != null)
-                .collect(Collectors.toList());
+            // 修复：批量查询权限是否存在，避免N+1查询
+            List<Permission> existingPermissions = permissionMapper.selectBatchIds(permissionIds);
+            Set<Long> existingPermissionIds = existingPermissions.stream()
+                .map(Permission::getId)
+                .collect(Collectors.toSet());
             
+            // 检查是否有无效的权限ID
             if (existingPermissionIds.size() != permissionIds.size()) {
-                throw new BusinessException("存在无效的权限ID，请刷新页面后重试");
+                List<Long> invalidIds = permissionIds.stream()
+                    .filter(id -> !existingPermissionIds.contains(id))
+                    .collect(Collectors.toList());
+                throw new BusinessException("存在无效的权限ID: " + invalidIds + "，请刷新页面后重试");
             }
             
             // 自动补充父权限

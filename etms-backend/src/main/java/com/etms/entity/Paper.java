@@ -69,6 +69,9 @@ public class Paper extends BaseEntity {
     /** 状态(0草稿 1已发布 2已停用) */
     private Integer status;
     
+    /** 试卷描述 */
+    private String description;
+    
     @TableField(exist = false)
     private String planName;
     

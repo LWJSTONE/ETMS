@@ -482,6 +482,7 @@ CREATE TABLE exam_paper (
     anti_cheat TINYINT(1) DEFAULT 1 COMMENT '防作弊开关',
     max_switch INT(11) DEFAULT 3 COMMENT '最大切屏次数',
     status TINYINT(1) DEFAULT 0 COMMENT '状态(0草稿 1已发布 2已使用 3已停用)',
+    description VARCHAR(500) DEFAULT NULL COMMENT '试卷描述',
     create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',

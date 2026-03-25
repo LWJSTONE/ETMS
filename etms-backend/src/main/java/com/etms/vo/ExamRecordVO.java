@@ -54,6 +54,9 @@ public class ExamRecordVO {
     
     private LocalDateTime submitTime;
     
+    /** 答题详情(JSON格式) */
+    private String answerDetail;
+    
     private LocalDateTime createTime;
     
     private LocalDateTime updateTime;
