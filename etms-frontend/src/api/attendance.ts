@@ -49,7 +49,13 @@ export function getUserAttendanceStats(userId: number): Promise<ApiResponse<Atte
   return request.get(`/attendance/records/stats/${userId}`)
 }
 
-// 兼容旧API（已废弃，建议使用getMyAttendanceStats或getUserAttendanceStats）
+// 兼容旧API（已废弃，建议使用getMyAttendanceStats或getUserAttendanceStats)
 export function getAttendanceStats(userId: number): Promise<ApiResponse<AttendanceStats>> {
   return request.get(`/attendance/records/stats/${userId}`)
+}
+
+  
+// 获取我的补签申请列表
+export function getMySupplementaryList(params: PageParams): Promise<ApiResponse<PageResult<AttendanceRecord>>> {
+  return request.get('/attendance/apply/my', params)
 }
