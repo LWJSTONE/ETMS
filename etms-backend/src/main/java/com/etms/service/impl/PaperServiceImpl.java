@@ -568,9 +568,42 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         
         // 批量添加题目
         for (Map<String, Object> item : questions) {
-            Long questionId = Long.valueOf(item.get("questionId").toString());
-            Integer score = item.get("score") != null ? Integer.valueOf(item.get("score").toString()) : 1;
-            Integer sortOrder = item.get("sortOrder") != null ? Integer.valueOf(item.get("sortOrder").toString()) : nextSortOrder;
+            // 安全获取questionId，防止空指针
+            Object questionIdObj = item.get("questionId");
+            if (questionIdObj == null) {
+                throw new BusinessException("题目ID不能为空");
+            }
+            Long questionId;
+            try {
+                questionId = Long.valueOf(questionIdObj.toString());
+            } catch (NumberFormatException e) {
+                throw new BusinessException("题目ID格式错误: " + questionIdObj);
+            }
+            
+            // 安全获取分数，默认为1，且不能为负数
+            Object scoreObj = item.get("score");
+            Integer score = 1;
+            if (scoreObj != null) {
+                try {
+                    score = Integer.valueOf(scoreObj.toString());
+                    if (score < 0) {
+                        throw new BusinessException("题目分数不能为负数");
+                    }
+                } catch (NumberFormatException e) {
+                    throw new BusinessException("分数格式错误: " + scoreObj);
+                }
+            }
+            
+            // 安全获取排序号
+            Object sortOrderObj = item.get("sortOrder");
+            Integer sortOrder = nextSortOrder;
+            if (sortOrderObj != null) {
+                try {
+                    sortOrder = Integer.valueOf(sortOrderObj.toString());
+                } catch (NumberFormatException e) {
+                    // 使用默认排序号
+                }
+            }
             
             // 验证题目是否存在
             Question question = questionMapper.selectById(questionId);

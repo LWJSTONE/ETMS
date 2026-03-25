@@ -240,7 +240,8 @@ CREATE TABLE IF NOT EXISTS learning_progress (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_by BIGINT DEFAULT NULL,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    remark VARCHAR(500) DEFAULT NULL
+    remark VARCHAR(500) DEFAULT NULL,
+    deleted TINYINT DEFAULT 0
 );
 
 -- 14. 签到记录表
@@ -263,7 +264,8 @@ CREATE TABLE IF NOT EXISTS attendance_record (
     audit_status TINYINT DEFAULT 0,
     audit_by BIGINT DEFAULT NULL,
     audit_time TIMESTAMP DEFAULT NULL,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0
 );
 
 -- 15. 补签申请表
@@ -279,7 +281,8 @@ CREATE TABLE IF NOT EXISTS attendance_apply (
     audit_remark VARCHAR(500) DEFAULT NULL,
     audit_by BIGINT DEFAULT NULL,
     audit_time TIMESTAMP DEFAULT NULL,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0
 );
 
 -- 16. 题库表
@@ -352,8 +355,8 @@ CREATE TABLE IF NOT EXISTS exam_paper_question (
 CREATE TABLE IF NOT EXISTS exam_record (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    plan_id BIGINT NOT NULL,
-    paper_id BIGINT NOT NULL,
+    plan_id BIGINT DEFAULT NULL,
+    paper_id BIGINT DEFAULT NULL,
     exam_start_time TIMESTAMP DEFAULT NULL,
     exam_end_time TIMESTAMP DEFAULT NULL,
     submit_time TIMESTAMP DEFAULT NULL,
@@ -371,7 +374,8 @@ CREATE TABLE IF NOT EXISTS exam_record (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_by BIGINT DEFAULT NULL,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    remark VARCHAR(500) DEFAULT NULL
+    remark VARCHAR(500) DEFAULT NULL,
+    deleted TINYINT DEFAULT 0
 );
 
 -- 20. 考核成绩表
@@ -391,7 +395,8 @@ CREATE TABLE IF NOT EXISTS exam_result (
     retake_count INT DEFAULT 0,
     exam_time TIMESTAMP NOT NULL,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0
 );
 
 -- 21. 操作日志表
@@ -412,7 +417,8 @@ CREATE TABLE IF NOT EXISTS sys_operation_log (
     status TINYINT DEFAULT 1,
     error_msg VARCHAR(1000) DEFAULT NULL,
     cost_time INT DEFAULT NULL,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0
 );
 
 -- 22. 系统配置表

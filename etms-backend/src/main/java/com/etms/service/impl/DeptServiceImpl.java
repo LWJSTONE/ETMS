@@ -213,14 +213,21 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
      * @param parentAncestors 父部门的祖级列表
      */
     private void updateChildrenLevelAndAncestors(Long parentId, String parentAncestors) {
+        // 获取父部门信息以获取正确的层级
+        Dept parentDept = baseMapper.selectById(parentId);
+        if (parentDept == null) {
+            return;
+        }
+        int parentLevel = parentDept.getLevel() != null ? parentDept.getLevel() : 1;
+        
         // 查询所有直接子部门
         List<Dept> children = baseMapper.selectList(
             new LambdaQueryWrapper<Dept>().eq(Dept::getParentId, parentId)
         );
         
         for (Dept child : children) {
-            // 更新子部门的层级和祖级列表
-            child.setLevel(child.getLevel() != null ? child.getLevel() + 1 : 2);
+            // 更新子部门的层级和祖级列表：子部门层级 = 父部门层级 + 1
+            child.setLevel(parentLevel + 1);
             child.setAncestors(parentAncestors + "," + parentId);
             baseMapper.updateById(child);
             

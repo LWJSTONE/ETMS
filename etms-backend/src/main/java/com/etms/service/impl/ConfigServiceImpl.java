@@ -120,7 +120,8 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
     public void deleteConfig(Long id) {
         Config config = baseMapper.selectById(id);
         if (config != null) {
-            if ("Y".equals(config.getConfigType())) {
+            // configType=1表示系统内置配置，不能删除
+            if (Integer.valueOf(1).equals(config.getConfigType())) {
                 throw new BusinessException("系统内置配置不能删除");
             }
             baseMapper.deleteById(id);

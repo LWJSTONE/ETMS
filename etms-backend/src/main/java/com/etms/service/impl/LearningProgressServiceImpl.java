@@ -1,5 +1,7 @@
 package com.etms.service.impl;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -17,6 +19,7 @@ import com.etms.mapper.DeptMapper;
 import com.etms.service.LearningProgressService;
 import com.etms.vo.LearningProgressVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 /**
  * 学习进度服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, UserPlan> implements LearningProgressService {
@@ -534,6 +538,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
     
     /**
      * 检查ID是否在JSON数组字符串中
+     * 使用JSON解析器进行精确匹配，避免边界问题
      * @param jsonArrayStr JSON数组字符串，如 "[1, 2, 3]" 或 ["1","2","3"]
      * @param targetId 要查找的ID
      * @return 是否包含该ID
@@ -543,19 +548,27 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
             return false;
         }
         
-        String str = jsonArrayStr.trim();
-        // 处理JSON数组格式
-        if (str.startsWith("[") && str.endsWith("]")) {
-            str = str.substring(1, str.length() - 1);
-        }
-        
-        // 分割并精确匹配
-        String[] parts = str.split(",");
-        for (String part : parts) {
-            String idStr = part.trim().replace("\"", "");
-            if (idStr.equals(String.valueOf(targetId))) {
-                return true;
+        try {
+            // 使用JSON解析器进行精确匹配
+            JSONArray jsonArray = JSON.parseArray(jsonArrayStr);
+            if (jsonArray == null || jsonArray.isEmpty()) {
+                return false;
             }
+            
+            String targetIdStr = String.valueOf(targetId);
+            for (int i = 0; i < jsonArray.size(); i++) {
+                Object item = jsonArray.get(i);
+                String itemIdStr = item != null ? item.toString().trim() : "";
+                if (targetIdStr.equals(itemIdStr)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            // JSON解析失败时，使用备用方法：正则表达式精确匹配
+            log.warn("JSON解析失败，使用备用方法: {}", e.getMessage());
+            // 使用正则表达式精确匹配数字ID
+            String pattern = "(^|[,\\[\\]\\s])" + targetId + "([,\\[\\]\\s]|$)";
+            return jsonArrayStr.matches(".*" + pattern + ".*");
         }
         return false;
     }

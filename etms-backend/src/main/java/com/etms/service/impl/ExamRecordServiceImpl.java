@@ -489,7 +489,13 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 if (questionIdObj == null) {
                     continue;
                 }
-                Long questionId = Long.valueOf(questionIdObj.toString());
+                Long questionId;
+                try {
+                    questionId = Long.valueOf(questionIdObj.toString());
+                } catch (NumberFormatException e) {
+                    log.warn("无效的题目ID格式: {}", questionIdObj);
+                    continue;
+                }
                 String userAnswer = answer.get("userAnswer") != null ? answer.get("userAnswer").toString().trim() : "";
                 
                 Question question = questionMap.get(questionId);

@@ -623,14 +623,10 @@ export interface AttendanceAuditParams {
 }
 
 export interface AttendanceStats {
-  totalCount: number
-  normalCount: number
-  lateCount: number
-  earlyLeaveCount: number
-  absentCount: number
-  supplementaryCount: number
-  pendingCount: number
-  attendanceRate: number
+  totalCount: number      // 总签到次数
+  normalCount: number     // 正常签到次数
+  pendingCount: number    // 待审核数量
+  attendanceRate: number  // 出勤率(百分比)
 }
 
 /**
