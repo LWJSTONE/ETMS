@@ -724,8 +724,12 @@ const handleArchive = async (row: any) => {
 const handleSubmit = async () => {
   try {
     const valid = await formRef.value?.validate()
-    if (!valid) return
+    if (!valid) {
+      ElMessage.warning('请检查表单填写是否正确')
+      return
+    }
   } catch {
+    ElMessage.warning('表单验证失败，请检查输入')
     return
   }
 

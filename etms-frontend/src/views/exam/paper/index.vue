@@ -760,8 +760,16 @@ const handleDisable = async (row: any) => {
 
 // 提交表单
 const handleSubmit = async () => {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await formRef.value?.validate()
+    if (!valid) {
+      ElMessage.warning('请检查表单填写是否正确')
+      return
+    }
+  } catch {
+    ElMessage.warning('表单验证失败，请检查输入')
+    return
+  }
 
   submitLoading.value = true
   try {

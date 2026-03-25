@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -180,6 +181,19 @@ public class LogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog
         } catch (IOException e) {
             log.error("导出日志失败", e);
             throw new BusinessException("导出日志失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    @Async
+    @Transactional(rollbackFor = Exception.class)
+    public void saveLogAsync(OperationLog operationLog) {
+        try {
+            if (operationLog != null) {
+                save(operationLog);
+            }
+        } catch (Exception e) {
+            log.error("异步保存操作日志失败: {}", e.getMessage());
         }
     }
 }

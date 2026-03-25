@@ -323,8 +323,8 @@ router.beforeEach(async (to, from, next) => {
   // 设置页面标题
   document.title = (to.meta?.title as string) || 'ETMS'
   
-  // 白名单路由直接放行
-  if (whiteList.some(path => to.path.startsWith(path))) {
+  // 白名单路由直接放行 - 使用精确匹配避免误匹配
+  if (whiteList.includes(to.path) || to.path === '/404') {
     // 已登录用户访问登录页，重定向到首页
     if (to.path === '/login' && token) {
       next({ path: '/' })

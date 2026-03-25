@@ -1,5 +1,6 @@
 package com.etms.controller;
 
+import com.etms.annotation.RateLimiter;
 import com.etms.common.Result;
 import com.etms.dto.LoginDTO;
 import com.etms.entity.User;
@@ -18,19 +19,6 @@ import java.util.Map;
 
 /**
  * 认证控制器
- * 
- * 安全说明：
- * 1. 登录接口应添加限流控制，防止暴力破解攻击
- *    建议使用 Spring Security + Redis 实现基于IP的限流，如：
- *    - 同一IP每分钟最多尝试5次登录
- *    - 失败次数过多则临时封禁IP
- *    实现方案参考：
- *    - 使用 @RateLimiter 注解（需自定义切面实现）
- *    - 或使用 Bucket4j/Guava RateLimiter
- *    - 或集成 Spring Cloud Gateway 限流功能
- * 
- * 2. 验证码接口也应添加限流，防止验证码刷新攻击
- *    - 同一IP每分钟最多获取10次验证码
  */
 @Api(tags = "认证管理")
 @RestController
@@ -42,7 +30,7 @@ public class AuthController {
     private final UserService userService;
     private final CaptchaService captchaService;
     
-    // TODO: 添加限流注解，如 @RateLimiter(key = "'captcha:' + #request.remoteAddr", limit = 10, period = 60)
+    @RateLimiter(key = "captcha", limit = 10, period = 60, message = "获取验证码过于频繁，请稍后再试")
     @ApiOperation(value = "获取验证码")
     @PostMapping("/captcha")
     public Result<Map<String, String>> getCaptcha(HttpServletRequest request) {
@@ -50,7 +38,7 @@ public class AuthController {
         return Result.success(captcha);
     }
     
-    // TODO: 添加限流注解，如 @RateLimiter(key = "'login:' + #request.remoteAddr", limit = 5, period = 60)
+    @RateLimiter(key = "login", limit = 5, period = 60, message = "登录尝试过于频繁，请稍后再试")
     @ApiOperation(value = "用户登录")
     @PostMapping("/login")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO loginDTO, HttpServletRequest request) {

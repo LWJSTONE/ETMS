@@ -450,8 +450,16 @@ const handleSignOut = () => {
 
 // 提交签到/签退
 const handleSignSubmit = async () => {
-  const valid = await signFormRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await signFormRef.value?.validate()
+    if (!valid) {
+      ElMessage.warning('请完善签到信息')
+      return
+    }
+  } catch {
+    ElMessage.warning('表单验证失败，请检查输入')
+    return
+  }
 
   signLoading.value = true
   try {
@@ -483,8 +491,16 @@ const handleAudit = (row: any) => {
 
 // 提交审核
 const handleAuditSubmit = async () => {
-  const valid = await auditFormRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await auditFormRef.value?.validate()
+    if (!valid) {
+      ElMessage.warning('请完善审核信息')
+      return
+    }
+  } catch {
+    ElMessage.warning('表单验证失败，请检查输入')
+    return
+  }
 
   auditLoading.value = true
   try {

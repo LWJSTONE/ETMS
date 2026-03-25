@@ -52,4 +52,10 @@ public interface LogService extends IService<OperationLog> {
      */
     void exportLogs(String module, String operationType, String operator, Integer status,
                     String startTime, String endTime, HttpServletResponse response);
+    
+    /**
+     * 异步保存操作日志
+     * @param operationLog 操作日志
+     */
+    void saveLogAsync(OperationLog operationLog);
 }
