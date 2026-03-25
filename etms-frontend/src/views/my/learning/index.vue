@@ -228,10 +228,18 @@ const debouncedSaveProgress = (newProgress: number) => {
 const saveProgressImmediate = async (newProgress: number) => {
   if (!progressId.value) return
   
+  const actualPlanId = planId.value || courseInfo.planId
+  const actualCourseId = courseId.value
+  
+  if (!actualPlanId || !actualCourseId) {
+    console.warn('缺少必要的 planId 或 courseId')
+    return
+  }
+  
   try {
     await updateProgress({
-      planId: planId.value || courseInfo.planId || 0,
-      courseId: courseId.value || 0,
+      planId: actualPlanId,
+      courseId: actualCourseId,
       progress: newProgress
     })
   } catch (error) {

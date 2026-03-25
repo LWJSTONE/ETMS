@@ -130,7 +130,7 @@
 
       <el-table :data="tableData" v-loading="loading" stripe border>
         <el-table-column prop="planName" label="培训计划" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="signCategoryName" label="签到类别" width="100">
+        <el-table-column label="签到类别" width="100">
           <template #default="{ row }">
             <el-tag :type="row.signCategory === 1 ? 'success' : 'warning'" size="small">
               {{ row.signCategory === 1 ? '签到' : '签退' }}

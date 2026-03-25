@@ -382,9 +382,11 @@ const handleStartExam = async (exam: any) => {
     ElMessage.success('考试已开始，请认真作答！')
     
     // 跳转到考试答题页面
-    const examRecordId = res.data?.id || res.data
+    const examRecordId = res.data?.id
     if (examRecordId) {
       router.push(`/my/exam/taking/${examRecordId}`)
+    } else {
+      ElMessage.error('考试启动失败，请重试')
     }
     
     getHistoryRecords()

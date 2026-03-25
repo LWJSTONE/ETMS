@@ -835,9 +835,11 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         List<ExamRecord> records = baseMapper.selectList(wrapper);
         double avgScore = records.stream()
                 .filter(r -> r.getUserScore() != null)
-                .mapToInt(ExamRecord::getUserScore)
+                .mapToDouble(r -> r.getUserScore().doubleValue())
                 .average()
                 .orElse(0.0);
+        // 保留两位小数
+        avgScore = Math.round(avgScore * 100.0) / 100.0;
         stats.setAvgScore(avgScore);
         
         return stats;

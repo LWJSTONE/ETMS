@@ -112,21 +112,19 @@ export function getMyExamRecordList(params: PageParams): Promise<ApiResponse<Pag
 
 // 开始考试
 export function startExam(paperId: number, planId?: number): Promise<ApiResponse<ExamRecord>> {
-  const params = planId ? { planId } : undefined
-  return request.post(`/exam/records/start/${paperId}`, null, { params })
+  if (planId) {
+    return request.post(`/exam/records/start/${paperId}?planId=${planId}`)
+  }
+  return request.post(`/exam/records/start/${paperId}`)
 }
 
 // 提交试卷
 export function submitExam(data: ExamSubmitParams): Promise<ApiResponse<void>> {
-  try {
-    const payload = {
-      recordId: data.recordId,
-      answers: JSON.stringify(data.answers)
-    }
-    return request.post('/exam/records/submit', payload)
-  } catch (e) {
-    return Promise.reject(new Error('答案数据格式错误'))
+  const payload = {
+    recordId: data.recordId,
+    answers: JSON.stringify(data.answers)
   }
+  return request.post('/exam/records/submit', payload)
 }
 
 // 放弃考试

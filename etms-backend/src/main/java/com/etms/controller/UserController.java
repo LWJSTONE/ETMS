@@ -82,14 +82,14 @@ public class UserController {
     @ApiOperation(value = "新增用户")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<Void> add(@Valid @RequestBody UserDTO userDTO) {
+    public Result<Void> add(@Validated(UserDTO.Add.class) @RequestBody UserDTO userDTO) {
         userService.addUser(userDTO);
         return Result.success();
     }
     
     @ApiOperation(value = "更新用户")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody UserDTO userDTO) {
+    public Result<Void> update(@PathVariable Long id, @Validated(UserDTO.Update.class) @RequestBody UserDTO userDTO) {
         // 权限校验：管理员可修改所有，普通用户只能修改自己的基本信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
