@@ -98,8 +98,11 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
         baseMapper.updateById(dictType);
         
         // 如果字典类型编码变更，需要更新缓存中的key
-        if (!existing.getDictType().equals(dictType.getDictType())) {
-            dictCache.remove(existing.getDictType());
+        // 修复：使用 Objects.equals 避免空指针异常
+        if (!java.util.Objects.equals(existing.getDictType(), dictType.getDictType())) {
+            if (existing.getDictType() != null) {
+                dictCache.remove(existing.getDictType());
+            }
             refreshCacheByDictTypeId(dictType.getId());
         }
     }

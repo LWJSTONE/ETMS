@@ -5,6 +5,7 @@ import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.dto.ProgressDTO;
 import com.etms.entity.UserPlan;
+import com.etms.exception.BusinessException;
 import com.etms.service.LearningProgressService;
 import com.etms.vo.LearningProgressVO;
 import io.swagger.annotations.Api;
@@ -80,7 +81,7 @@ public class LearningProgressController {
     public Result<LearningProgressVO> get(@PathVariable Long id) {
         LearningProgressVO vo = learningProgressService.getProgressDetail(id);
         if (vo == null) {
-            return Result.error(404, "学习进度记录不存在");
+            throw new BusinessException("学习进度记录不存在");
         }
         return Result.success(vo);
     }

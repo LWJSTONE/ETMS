@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.Dept;
+import com.etms.exception.BusinessException;
 import com.etms.service.DeptService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Api;
@@ -65,7 +66,7 @@ public class DeptController {
     public Result<Dept> get(@PathVariable Long id) {
         Dept dept = deptService.getById(id);
         if (dept == null) {
-            return Result.error("部门不存在");
+            throw new BusinessException("部门不存在");
         }
         return Result.success(dept);
     }

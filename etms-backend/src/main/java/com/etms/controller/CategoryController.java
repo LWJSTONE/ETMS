@@ -1,7 +1,9 @@
 package com.etms.controller;
 
 import com.etms.common.Result;
+import com.etms.dto.StatusDTO;
 import com.etms.entity.Category;
+import com.etms.exception.BusinessException;
 import com.etms.service.CategoryService;
 import com.etms.vo.CategoryVO;
 import io.swagger.annotations.Api;
@@ -47,7 +49,7 @@ public class CategoryController {
     public Result<CategoryVO> get(@PathVariable Long id) {
         CategoryVO vo = categoryService.getCategoryDetail(id);
         if (vo == null) {
-            return Result.error(404, "分类不存在");
+            throw new BusinessException("分类不存在");
         }
         return Result.success(vo);
     }
@@ -73,13 +75,13 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<Void> delete(@PathVariable Long id) {
-        // 修复：删除分类前检查是否有子分类
+        // 删除分类前检查是否有子分类
         if (categoryService.hasChildren(id)) {
-            return Result.error("该分类下存在子分类，无法删除");
+            throw new BusinessException("该分类下存在子分类，无法删除");
         }
-        // 修复：删除分类前检查是否有关联课程
+        // 删除分类前检查是否有关联课程
         if (categoryService.hasCourses(id)) {
-            return Result.error("该分类下存在关联课程，无法删除");
+            throw new BusinessException("该分类下存在关联课程，无法删除");
         }
         categoryService.deleteCategory(id);
         return Result.success();
@@ -88,12 +90,8 @@ public class CategoryController {
     @ApiOperation(value = "更新分类状态")
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
-    public Result<Void> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
-        // 验证状态值合法性
-        if (status == null || (status != 0 && status != 1)) {
-            return Result.error("状态值不合法，有效值为0(禁用)或1(正常)");
-        }
-        categoryService.updateStatus(id, status);
+    public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusDTO statusDTO) {
+        categoryService.updateStatus(id, statusDTO.getStatus());
         return Result.success();
     }
 }

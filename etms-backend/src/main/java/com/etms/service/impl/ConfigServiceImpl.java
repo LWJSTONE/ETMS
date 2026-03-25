@@ -41,6 +41,11 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
         return baseMapper.selectById(id);
     }
     
+    /**
+     * 根据配置键名获取配置值
+     * @param configKey 配置键名
+     * @return 配置值，如果配置不存在或配置值为null则返回null
+     */
     @Override
     public String getConfigValue(String configKey) {
         // 先从缓存获取
@@ -54,6 +59,7 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
         );
         
         if (config != null) {
+            // 注意：configValue 可能为 null，调用方需要进行空值判断
             configCache.put(configKey, config.getConfigValue());
             return config.getConfigValue();
         }

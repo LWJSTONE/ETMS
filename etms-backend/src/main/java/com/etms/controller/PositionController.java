@@ -5,6 +5,7 @@ import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.dto.StatusDTO;
 import com.etms.entity.Position;
+import com.etms.exception.BusinessException;
 import com.etms.service.PositionService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -50,7 +51,7 @@ public class PositionController {
     public Result<Position> get(@PathVariable Long id) {
         Position position = positionService.getPositionDetail(id);
         if (position == null) {
-            return Result.error("岗位不存在");
+            throw new BusinessException("岗位不存在");
         }
         return Result.success(position);
     }

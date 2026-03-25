@@ -357,8 +357,9 @@ const getStatsSummary = async () => {
     stats.avgScore = allRecords.length > 0 
       ? (totalScore / allRecords.length).toFixed(1) 
       : '0'
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取统计数据失败:', error)
+    ElMessage.error(error.message || '获取统计数据失败')
   }
 }
 

@@ -5,6 +5,7 @@ import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.Paper;
 import com.etms.entity.PaperQuestion;
+import com.etms.exception.BusinessException;
 import com.etms.service.PaperService;
 import com.etms.vo.PaperQuestionVO;
 import com.etms.vo.PaperVO;
@@ -72,7 +73,7 @@ public class PaperController {
         // 当forExam=true且planId不为空时，会验证用户是否有考试资格
         PaperVO vo = paperService.getPaperDetail(id, forExam, planId);
         if (vo == null) {
-            return Result.error(404, "试卷不存在");
+            throw new BusinessException("试卷不存在");
         }
         return Result.success(vo);
     }

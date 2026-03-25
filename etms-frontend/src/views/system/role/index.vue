@@ -204,8 +204,9 @@ const getList = async () => {
     })
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取角色列表失败')
   } finally {
     loading.value = false
   }

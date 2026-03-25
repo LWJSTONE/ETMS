@@ -336,8 +336,9 @@ const fetchAvailableExams = async () => {
       ...item,
       starting: false
     }))
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取可参加考试列表失败')
   } finally {
     availableLoading.value = false
   }
@@ -353,8 +354,9 @@ const getHistoryRecords = async () => {
     })
     historyRecords.value = res.data?.records || []
     historyPagination.total = res.data?.total || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取考试历史记录失败')
   } finally {
     historyLoading.value = false
   }
@@ -408,8 +410,9 @@ const handleViewResult = async (record: any) => {
     const res = await getExamRecordDetail(record.id)
     currentResult.value = res.data
     resultDetailVisible.value = true
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '获取考试结果详情失败')
   }
 }
 

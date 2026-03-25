@@ -389,8 +389,9 @@ const getPlans = async () => {
   try {
     const res = await getPlanList({ current: 1, size: 1000 })
     planList.value = res.data?.records || []
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取培训计划失败:', error)
+    ElMessage.error(error.message || '获取培训计划失败')
   }
 }
 
@@ -409,8 +410,9 @@ const getList = async () => {
     const res = await getAttendanceList(params)
     tableData.value = res.data?.records || []
     pagination.total = res.data?.total || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取列表失败:', error)
+    ElMessage.error(error.message || '获取签到记录失败')
   } finally {
     loading.value = false
   }

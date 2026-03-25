@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.Question;
+import com.etms.exception.BusinessException;
 import com.etms.service.QuestionService;
 import com.etms.vo.QuestionVO;
 import io.swagger.annotations.ApiOperation;
@@ -52,7 +53,7 @@ public class QuestionController {
     public Result<QuestionVO> get(@PathVariable Long id) {
         QuestionVO vo = questionService.getQuestionDetail(id);
         if (vo == null) {
-            return Result.error(404, "题目不存在");
+            throw new BusinessException("题目不存在");
         }
         return Result.success(vo);
     }

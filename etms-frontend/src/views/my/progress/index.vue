@@ -373,8 +373,9 @@ const getStats = async () => {
         totalDuration: records.reduce((sum: number, r: any) => sum + (r.duration || 0), 0)
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取统计数据失败:', error)
+    ElMessage.error(error.message || '获取统计数据失败')
   }
 }
 
@@ -383,8 +384,9 @@ const getPlanOptions = async () => {
   try {
     const res = await getPlanList({ current: 1, size: 1000, status: 1 })
     planList.value = res.data?.records || []
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取培训计划列表失败:', error)
+    ElMessage.error(error.message || '获取培训计划列表失败')
   }
 }
 

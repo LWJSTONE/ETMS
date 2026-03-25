@@ -362,8 +362,9 @@ const getStats = async () => {
         completed: records.filter((r: any) => r.status === 2).length
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取统计数据失败:', error)
+    ElMessage.error(error.message || '获取统计数据失败')
   }
 }
 

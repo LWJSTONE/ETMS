@@ -270,7 +270,7 @@ const getAdminStatistics = async () => {
     // 获取考试次数
     const examRes = await getMyExamRecordList({ current: 1, size: 1, status: 2 })
     overview.value.examCount = examRes.data?.total || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取管理员统计数据失败:', error)
     // 权限不足时显示提示但不中断
   }
@@ -350,8 +350,9 @@ const getUserStatistics = async () => {
       total: completedExams.length
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取用户统计数据失败:', error)
+    ElMessage.error('获取统计数据失败')
   } finally {
     chartDataLoading.value = false
   }
