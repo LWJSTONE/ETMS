@@ -118,12 +118,15 @@ export function startExam(paperId: number, planId?: number): Promise<ApiResponse
 
 // 提交试卷
 export function submitExam(data: ExamSubmitParams): Promise<ApiResponse<void>> {
-  // 修复：后端期望answers为JSON字符串，需要将数组转换为字符串
-  const payload = {
-    recordId: data.recordId,
-    answers: JSON.stringify(data.answers)
+  try {
+    const payload = {
+      recordId: data.recordId,
+      answers: JSON.stringify(data.answers)
+    }
+    return request.post('/exam/records/submit', payload)
+  } catch (e) {
+    return Promise.reject(new Error('答案数据格式错误'))
   }
-  return request.post('/exam/records/submit', payload)
 }
 
 // 放弃考试

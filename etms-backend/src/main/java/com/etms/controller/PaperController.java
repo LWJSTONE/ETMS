@@ -50,9 +50,15 @@ public class PaperController {
     
     @ApiOperation(value = "获取可参加的考试列表")
     @GetMapping("/available")
+    @PreAuthorize("isAuthenticated()")
     public Result<PageResult<Paper>> available(
             @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size) {
+            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(required = false) Long planId) {
+        // 修复：当planId不为空时，验证用户是否属于该培训计划
+        if (planId != null) {
+            paperService.validateUserPlanAccess(planId);
+        }
         // 普通用户可访问，只返回已发布的试卷
         Page<Paper> page = new Page<>(current, size);
         Page<Paper> voPage = paperService.pagePapers(page, null, null, 1);

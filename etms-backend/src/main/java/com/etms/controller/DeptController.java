@@ -37,6 +37,7 @@ public class DeptController {
     
     @ApiOperation(value = "获取部门列表（公开接口，用于报表等模块）")
     @GetMapping("/public/list")
+    @PreAuthorize("isAuthenticated()")
     public Result<List<Dept>> publicList() {
         List<Dept> list = deptService.getDeptList(null, null, 1); // 只返回启用状态的部门
         return Result.success(list);
@@ -44,6 +45,7 @@ public class DeptController {
     
     @ApiOperation(value = "获取部门树形结构（公开接口，用于报表等模块）")
     @GetMapping("/public/tree")
+    @PreAuthorize("isAuthenticated()")
     public Result<List<Dept>> publicTree() {
         List<Dept> tree = deptService.getDeptTree();
         return Result.success(tree);

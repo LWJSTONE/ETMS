@@ -649,7 +649,13 @@ const handlePublish = async (row: any) => {
       let targetDeptIds: number[] = []
       try {
         targetDeptIds = row.targetDeptIds ? JSON.parse(row.targetDeptIds) : []
-      } catch (e) { /* ignore */ }
+        if (!Array.isArray(targetDeptIds)) {
+          targetDeptIds = []
+        }
+      } catch (e) {
+        console.warn('解析目标部门ID失败:', e)
+        targetDeptIds = []
+      }
       if (targetDeptIds.length === 0) {
         missingFields.push('目标部门')
       }
@@ -657,7 +663,13 @@ const handlePublish = async (row: any) => {
       let targetPositionIds: number[] = []
       try {
         targetPositionIds = row.targetPositionIds ? JSON.parse(row.targetPositionIds) : []
-      } catch (e) { /* ignore */ }
+        if (!Array.isArray(targetPositionIds)) {
+          targetPositionIds = []
+        }
+      } catch (e) {
+        console.warn('解析目标岗位ID失败:', e)
+        targetPositionIds = []
+      }
       if (targetPositionIds.length === 0) {
         missingFields.push('目标岗位')
       }
@@ -665,7 +677,13 @@ const handlePublish = async (row: any) => {
       let targetUserIds: number[] = []
       try {
         targetUserIds = row.targetUserIds ? JSON.parse(row.targetUserIds) : []
-      } catch (e) { /* ignore */ }
+        if (!Array.isArray(targetUserIds)) {
+          targetUserIds = []
+        }
+      } catch (e) {
+        console.warn('解析目标人员ID失败:', e)
+        targetUserIds = []
+      }
       if (targetUserIds.length === 0) {
         missingFields.push('目标人员')
       }

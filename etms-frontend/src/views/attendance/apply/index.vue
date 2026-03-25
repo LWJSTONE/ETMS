@@ -502,8 +502,16 @@ const handleSignOut = () => {
 
 // 提交签到/签退
 const handleSignSubmit = async () => {
-  const valid = await signFormRef.value?.validate()
-  if (!valid) return
+  try {
+    const valid = await signFormRef.value?.validate()
+    if (!valid) {
+      ElMessage.warning('请完善表单信息')
+      return
+    }
+  } catch {
+    ElMessage.warning('表单验证失败，请检查输入')
+    return
+  }
 
   signLoading.value = true
   try {

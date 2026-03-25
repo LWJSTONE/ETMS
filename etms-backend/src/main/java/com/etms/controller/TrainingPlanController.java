@@ -32,6 +32,7 @@ public class TrainingPlanController {
     
     @ApiOperation(value = "分页查询培训计划列表")
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public Result<PageResult<TrainingPlanVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,

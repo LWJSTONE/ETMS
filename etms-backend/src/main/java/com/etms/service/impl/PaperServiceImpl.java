@@ -508,6 +508,40 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         return recordCount != null && recordCount > 0;
     }
     
+    @Override
+    public void validateUserPlanAccess(Long planId) {
+        // 获取当前用户
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            throw new BusinessException("用户未登录");
+        }
+        
+        // 获取培训计划
+        TrainingPlan plan = trainingPlanMapper.selectById(planId);
+        if (plan == null) {
+            throw new BusinessException("培训计划不存在");
+        }
+        
+        // 验证培训计划状态
+        if (plan.getStatus() != 1 && plan.getStatus() != 2) {
+            throw new BusinessException("培训计划未发布或未开始");
+        }
+        
+        // 验证培训计划时间窗口
+        LocalDate today = LocalDate.now();
+        if (plan.getStartDate() != null && today.isBefore(plan.getStartDate())) {
+            throw new BusinessException("培训计划尚未开始");
+        }
+        if (plan.getEndDate() != null && today.isAfter(plan.getEndDate())) {
+            throw new BusinessException("培训计划已结束");
+        }
+        
+        // 验证用户是否在培训计划目标范围内
+        if (!isUserInPlanTarget(currentUser, plan)) {
+            throw new BusinessException("您不在该培训计划的目标范围内");
+        }
+    }
+    
     // ==================== 组卷管理方法实现 ====================
     
     @Override
@@ -576,11 +610,13 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             throw new BusinessException("题目列表不能为空");
         }
         
-        // 获取当前最大排序号
-        Integer maxSortOrder = paperQuestionMapper.selectMaxSortOrderByPaperId(paperId);
-        int nextSortOrder = (maxSortOrder != null ? maxSortOrder : 0) + 1;
+        // 修复：先清空原有题目，再添加新题目（原子性操作）
+        paperQuestionMapper.delete(
+            new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getPaperId, paperId)
+        );
         
         // 批量添加题目
+        int sortOrder = 1;
         for (Map<String, Object> item : questions) {
             // 安全获取questionId，防止空指针
             Object questionIdObj = item.get("questionId");
@@ -608,31 +644,10 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
                 }
             }
             
-            // 安全获取排序号
-            Object sortOrderObj = item.get("sortOrder");
-            Integer sortOrder = nextSortOrder;
-            if (sortOrderObj != null) {
-                try {
-                    sortOrder = Integer.valueOf(sortOrderObj.toString());
-                } catch (NumberFormatException e) {
-                    // 使用默认排序号
-                }
-            }
-            
             // 验证题目是否存在
             Question question = questionMapper.selectById(questionId);
             if (question == null) {
                 throw new BusinessException("题目ID " + questionId + " 不存在");
-            }
-            
-            // 检查题目是否已存在于试卷中
-            Long existCount = paperQuestionMapper.selectCount(
-                new LambdaQueryWrapper<PaperQuestion>()
-                    .eq(PaperQuestion::getPaperId, paperId)
-                    .eq(PaperQuestion::getQuestionId, questionId)
-            );
-            if (existCount > 0) {
-                continue; // 已存在则跳过
             }
             
             // 添加题目到试卷
@@ -643,7 +658,7 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             paperQuestion.setSortOrder(sortOrder);
             paperQuestionMapper.insert(paperQuestion);
             
-            nextSortOrder++;
+            sortOrder++;
         }
         
         // 更新试卷题目数量

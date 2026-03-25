@@ -30,6 +30,7 @@ public class CategoryController {
     
     @ApiOperation(value = "获取分类树形结构")
     @GetMapping("/tree")
+    @PreAuthorize("isAuthenticated()")
     public Result<List<CategoryVO>> tree(@RequestParam(required = false) Integer categoryType) {
         List<CategoryVO> tree = categoryService.getCategoryTree(categoryType);
         return Result.success(tree);
@@ -37,6 +38,7 @@ public class CategoryController {
     
     @ApiOperation(value = "获取分类列表")
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public Result<List<CategoryVO>> list(
             @RequestParam(required = false) Integer categoryType,
             @RequestParam(required = false) Long parentId) {

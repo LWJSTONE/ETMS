@@ -102,4 +102,10 @@ public interface PaperService extends IService<Paper> {
      * @param paperId 试卷ID
      */
     void clearPaperQuestions(Long paperId);
+    
+    /**
+     * 验证用户是否有权限访问指定培训计划
+     * @param planId 培训计划ID
+     */
+    void validateUserPlanAccess(Long planId);
 }

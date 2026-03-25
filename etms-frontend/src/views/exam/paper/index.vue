@@ -990,9 +990,7 @@ const savePaperQuestions = async () => {
   
   saveQuestionLoading.value = true
   try {
-    // 先清空原有题目，再批量添加
-    await clearPaperQuestions(composePaper.value.id)
-    
+    // 直接批量添加题目，后端会处理清空和添加的原子性
     const questions = paperQuestions.value.map((q, index) => ({
       questionId: q.questionId,
       score: q.score,
