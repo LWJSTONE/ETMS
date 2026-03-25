@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 用户详情服务实现类
@@ -52,7 +51,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             authorities.add(new SimpleGrantedAuthority(permission));
         }
         
-        return new org.springframework.security.core.userdetails.User(
+        // 使用自定义LoginUser，包含用户ID
+        return new LoginUser(
+                user.getId(),
                 user.getUsername(),
                 user.getPassword(),
                 authorities

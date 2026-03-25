@@ -7,6 +7,11 @@ spring:
   application:
     name: etms-backend
   
+  mvc:
+    pathmatch:
+      # 关闭新的路径匹配策略，兼容旧版 Springfox Swagger
+      matching-strategy: ant_path_matcher
+  
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${DB_HOST:localhost}:3306/etms?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
