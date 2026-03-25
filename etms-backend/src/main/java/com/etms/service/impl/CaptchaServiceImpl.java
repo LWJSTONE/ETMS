@@ -2,6 +2,8 @@ package com.etms.service.impl;
 
 import com.etms.service.CaptchaService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import javax.imageio.ImageIO;
@@ -14,16 +16,22 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
  * 验证码服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CaptchaServiceImpl implements CaptchaService {
     
-    private final StringRedisTemplate stringRedisTemplate;
+    @Autowired(required = false)
+    private StringRedisTemplate stringRedisTemplate;
+    
+    // 内存缓存，用于Redis不可用时存储验证码
+    private final Map<String, CaptchaEntry> memoryCache = new ConcurrentHashMap<>();
     
     private static final String CAPTCHA_PREFIX = "captcha:";
     private static final int CAPTCHA_EXPIRE_MINUTES = 5;
@@ -42,13 +50,20 @@ public class CaptchaServiceImpl implements CaptchaService {
         // 生成验证码key
         String captchaKey = UUID.randomUUID().toString().replace("-", "");
         
-        // 存储到Redis
-        stringRedisTemplate.opsForValue().set(
-            CAPTCHA_PREFIX + captchaKey, 
-            captchaText.toLowerCase(), 
-            CAPTCHA_EXPIRE_MINUTES, 
-            TimeUnit.MINUTES
-        );
+        // 存储验证码
+        if (stringRedisTemplate != null) {
+            // 使用Redis存储
+            stringRedisTemplate.opsForValue().set(
+                CAPTCHA_PREFIX + captchaKey, 
+                captchaText.toLowerCase(), 
+                CAPTCHA_EXPIRE_MINUTES, 
+                TimeUnit.MINUTES
+            );
+        } else {
+            // 使用内存缓存
+            memoryCache.put(captchaKey, new CaptchaEntry(captchaText.toLowerCase(), 
+                System.currentTimeMillis() + CAPTCHA_EXPIRE_MINUTES * 60 * 1000));
+        }
         
         // 生成验证码图片
         String captchaImage = generateCaptchaImage(captchaText);
@@ -66,15 +81,32 @@ public class CaptchaServiceImpl implements CaptchaService {
             return false;
         }
         
-        String key = CAPTCHA_PREFIX + captchaKey;
-        String storedCaptcha = stringRedisTemplate.opsForValue().get(key);
+        String storedCaptcha = null;
+        
+        if (stringRedisTemplate != null) {
+            // 使用Redis验证
+            String key = CAPTCHA_PREFIX + captchaKey;
+            storedCaptcha = stringRedisTemplate.opsForValue().get(key);
+            
+            if (storedCaptcha != null) {
+                // 验证后删除验证码（一次性使用）
+                stringRedisTemplate.delete(key);
+            }
+        } else {
+            // 使用内存缓存验证
+            CaptchaEntry entry = memoryCache.get(captchaKey);
+            if (entry != null) {
+                if (entry.expireTime > System.currentTimeMillis()) {
+                    storedCaptcha = entry.captcha;
+                }
+                // 验证后删除验证码（一次性使用）
+                memoryCache.remove(captchaKey);
+            }
+        }
         
         if (storedCaptcha == null) {
             return false;
         }
-        
-        // 验证后删除验证码（一次性使用）
-        stringRedisTemplate.delete(key);
         
         return storedCaptcha.equalsIgnoreCase(captcha.trim());
     }
@@ -82,7 +114,32 @@ public class CaptchaServiceImpl implements CaptchaService {
     @Override
     public void deleteCaptcha(String captchaKey) {
         if (captchaKey != null) {
-            stringRedisTemplate.delete(CAPTCHA_PREFIX + captchaKey);
+            if (stringRedisTemplate != null) {
+                stringRedisTemplate.delete(CAPTCHA_PREFIX + captchaKey);
+            } else {
+                memoryCache.remove(captchaKey);
+            }
+        }
+    }
+    
+    /**
+     * 清理过期的内存缓存
+     */
+    public void cleanExpiredCache() {
+        long now = System.currentTimeMillis();
+        memoryCache.entrySet().removeIf(entry -> entry.getValue().expireTime < now);
+    }
+    
+    /**
+     * 验证码缓存条目
+     */
+    private static class CaptchaEntry {
+        final String captcha;
+        final long expireTime;
+        
+        CaptchaEntry(String captcha, long expireTime) {
+            this.captcha = captcha;
+            this.expireTime = expireTime;
         }
     }
     

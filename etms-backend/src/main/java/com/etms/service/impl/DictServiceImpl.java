@@ -37,7 +37,11 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
      */
     @PostConstruct
     public void initCache() {
-        refreshCache();
+        try {
+            refreshCache();
+        } catch (Exception e) {
+            // 数据库未初始化时忽略错误，等数据库就绪后再初始化
+        }
     }
     
     @Override

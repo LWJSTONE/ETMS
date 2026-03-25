@@ -5,6 +5,7 @@ import com.etms.entity.User;
 import com.etms.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,8 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
-    private final StringRedisTemplate stringRedisTemplate;
     private final UserMapper userMapper;
+    
+    @Autowired(required = false)
+    private StringRedisTemplate stringRedisTemplate;
     
     private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
     
@@ -144,6 +147,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 检查Token是否在黑名单中
      */
     private boolean isTokenBlacklisted(String token) {
+        if (stringRedisTemplate == null) {
+            // Redis不可用时，跳过黑名单检查
+            return false;
+        }
         String key = TOKEN_BLACKLIST_PREFIX + token;
         return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
     }

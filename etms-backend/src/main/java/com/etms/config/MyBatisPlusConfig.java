@@ -6,10 +6,11 @@ import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.etms.entity.User;
 import com.etms.mapper.UserMapper;
-import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.reflection.MetaObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,10 +21,14 @@ import java.time.LocalDateTime;
  * MyBatis-Plus配置类
  */
 @Configuration
-@RequiredArgsConstructor
 public class MyBatisPlusConfig implements MetaObjectHandler {
     
-    private final UserMapper userMapper;
+    private UserMapper userMapper;
+    
+    @Autowired
+    public void setUserMapper(@Lazy UserMapper userMapper) {
+        this.userMapper = userMapper;
+    }
     
     /**
      * 分页插件

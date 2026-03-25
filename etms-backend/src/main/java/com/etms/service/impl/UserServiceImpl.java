@@ -23,6 +23,7 @@ import com.etms.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -65,7 +66,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final UserRoleMapper userRoleMapper;
     private final DeptMapper deptMapper;
     private final CaptchaService captchaService;
-    private final StringRedisTemplate stringRedisTemplate;
+    
+    @Autowired(required = false)
+    private StringRedisTemplate stringRedisTemplate;
     
     // 登录失败锁定配置
     private static final int MAX_LOGIN_FAIL_COUNT = 5;
@@ -225,11 +228,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             String token = bearerToken.substring(7);
             
-            // 将Token加入黑名单
-            long remainingTime = jwtTokenProvider.getTokenRemainingTime(token);
-            if (remainingTime > 0) {
-                String key = TOKEN_BLACKLIST_PREFIX + token;
-                stringRedisTemplate.opsForValue().set(key, "1", remainingTime, java.util.concurrent.TimeUnit.MILLISECONDS);
+            // 将Token加入黑名单（如果Redis可用）
+            if (stringRedisTemplate != null) {
+                long remainingTime = jwtTokenProvider.getTokenRemainingTime(token);
+                if (remainingTime > 0) {
+                    String key = TOKEN_BLACKLIST_PREFIX + token;
+                    stringRedisTemplate.opsForValue().set(key, "1", remainingTime, java.util.concurrent.TimeUnit.MILLISECONDS);
+                }
             }
         }
         
