@@ -601,6 +601,14 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                .eq(passed != null, ExamRecord::getPassed, passed)
                .orderByDesc(ExamRecord::getSubmitTime);
         
+        // 修复：添加时间范围过滤
+        if (startTime != null && !startTime.isEmpty()) {
+            wrapper.ge(ExamRecord::getSubmitTime, LocalDateTime.parse(startTime + "T00:00:00"));
+        }
+        if (endTime != null && !endTime.isEmpty()) {
+            wrapper.le(ExamRecord::getSubmitTime, LocalDateTime.parse(endTime + "T23:59:59"));
+        }
+        
         // 修复分页性能问题：在SQL层面过滤用户名和试卷名，避免内存过滤导致分页不准确
         // 查询匹配用户名的用户ID列表
         List<Long> matchedUserIds = null;

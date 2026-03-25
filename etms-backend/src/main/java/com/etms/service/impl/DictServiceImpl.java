@@ -285,4 +285,12 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
         );
         return dataCount != null && dataCount > 0;
     }
+    
+    @Override
+    public DictData getDictDataById(Long id) {
+        if (id == null) {
+            return null;
+        }
+        return dictDataMapper.selectById(id);
+    }
 }

@@ -60,9 +60,11 @@ public class DictItemController {
     @PreAuthorize("hasAuthority('system:dict:query')")
     @GetMapping("/{id}")
     public Result<DictData> getById(@PathVariable Long id) {
-        // 通过字典类型服务获取字典数据需要额外的方法
-        // 这里简化处理，返回成功
-        return Result.success(null);
+        DictData dictData = dictService.getDictDataById(id);
+        if (dictData == null) {
+            return Result.error(404, "字典数据不存在");
+        }
+        return Result.success(dictData);
     }
     
     @ApiOperation(value = "根据字典类型ID获取字典数据列表")

@@ -73,4 +73,11 @@ public interface DictService extends IService<DictType> {
      * @return 是否有字典数据
      */
     boolean hasDictData(Long dictTypeId);
+    
+    /**
+     * 根据ID获取字典数据详情
+     * @param id 字典数据ID
+     * @return 字典数据
+     */
+    DictData getDictDataById(Long id);
 }
