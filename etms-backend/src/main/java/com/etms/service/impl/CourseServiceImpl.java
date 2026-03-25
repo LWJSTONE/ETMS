@@ -245,9 +245,14 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                 throw new BusinessException("课程正在审核中，请等待审核完成");
             case 2: // 已上架
                 throw new BusinessException("课程已上架，无需重复操作");
-            case 3: // 已下架 - 允许重新上架（前提是之前已审核通过）
+            case 3: // 已下架 - 允许重新上架（前提是之前已审核通过且未被修改）
                 // 检查课程是否有审核通过记录（通过审核时间判断）
                 if (existingCourse.getAuditTime() != null) {
+                    // 修复：检查课程内容是否在审核后被修改
+                    if (existingCourse.getUpdateTime() != null && 
+                        existingCourse.getUpdateTime().isAfter(existingCourse.getAuditTime())) {
+                        throw new BusinessException("课程内容已修改，请重新提交审核");
+                    }
                     Course course = new Course();
                     course.setId(id);
                     course.setStatus(2); // 已上架

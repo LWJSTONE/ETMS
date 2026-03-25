@@ -730,6 +730,20 @@ const handlePublish = async (row: any) => {
     ElMessage.warning('及格分数必须大于0，请先编辑试卷设置及格分数')
     return
   }
+  // 修复：验证考试时间范围是否有效
+  if (row.startTime && row.endTime) {
+    const now = new Date().getTime()
+    const endTime = new Date(row.endTime).getTime()
+    if (endTime <= now) {
+      ElMessage.warning('考试结束时间必须大于当前时间')
+      return
+    }
+    const startTime = new Date(row.startTime).getTime()
+    if (startTime >= endTime) {
+      ElMessage.warning('考试开始时间必须小于结束时间')
+      return
+    }
+  }
   try {
     await ElMessageBox.confirm('确定要发布该试卷吗？发布后考生可以参加考试。', '提示', { type: 'warning' })
     await publishPaper(row.id)

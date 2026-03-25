@@ -443,6 +443,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         // 单独处理密码字段，如果传入密码则需要加密
         if (StringUtils.hasText(userDTO.getPassword())) {
+            // 修复：更新用户时也需要校验密码强度
+            validatePasswordStrength(userDTO.getPassword());
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         } else {
             // 不更新密码字段，设为null避免覆盖原密码
