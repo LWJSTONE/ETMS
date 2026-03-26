@@ -6,6 +6,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
@@ -23,5 +24,6 @@ public class SubmitExamDTO implements Serializable {
 
     @ApiModelProperty(value = "答案(JSON格式)", required = true)
     @NotBlank(message = "答案不能为空")
+    @Size(max = 50000, message = "答案数据长度不能超过50000个字符")
     private String answers;
 }

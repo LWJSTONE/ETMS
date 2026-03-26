@@ -258,19 +258,19 @@ const getAdminStatistics = async () => {
   try {
     // 获取用户总数
     const userRes = await getUserList({ current: 1, size: 1 })
-    overview.value.userCount = userRes.data?.total || 0
+    overview.value.userCount = userRes?.total || 0
 
     // 获取课程总数
     const courseRes = await getCourseList({ current: 1, size: 1, status: 2 })
-    overview.value.courseCount = courseRes.data?.total || 0
+    overview.value.courseCount = courseRes?.total || 0
 
     // 获取培训计划总数
     const planRes = await getPlanList({ current: 1, size: 1 })
-    overview.value.planCount = planRes.data?.total || 0
+    overview.value.planCount = planRes?.total || 0
 
     // 获取考试次数
     const examRes = await getMyExamRecordList({ current: 1, size: 1, status: 2 })
-    overview.value.examCount = examRes.data?.total || 0
+    overview.value.examCount = examRes?.total || 0
   } catch (error: any) {
     console.error('获取管理员统计数据失败:', error)
     // 权限不足时显示提示但不中断
@@ -283,7 +283,7 @@ const getUserStatistics = async () => {
   try {
     // 获取我的待学习课程数和学习进度
     const progressRes = await getMyProgress({ current: 1, size: 100 })
-    const progressRecords = progressRes.data?.records || []
+    const progressRecords = progressRes?.records || []
     
     // 计算待学习课程数（状态为进行中）
     stats.value.courseCount = progressRecords.filter((r: any) => r.status === 1).length
@@ -296,7 +296,7 @@ const getUserStatistics = async () => {
 
     // 获取我的考试记录
     const myExamRes = await getMyExamRecordList({ current: 1, size: 100 })
-    const examRecords = myExamRes.data?.records || []
+    const examRecords = myExamRes?.records || []
     
     // 计算待参加考试数（未开始或进行中）
     stats.value.examCount = examRecords.filter((r: any) => r.status === 0 || r.status === 1).length

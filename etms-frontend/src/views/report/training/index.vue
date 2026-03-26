@@ -421,7 +421,7 @@ const getStatistics = async () => {
     
     // 获取培训计划数据（限制数量以提高性能）
     const planRes = await getPlanList(params)
-    allPlans.value = planRes.data?.records || []
+    allPlans.value = planRes?.records || []
     
     // 如果数据量达到上限，给出提示
     if (allPlans.value.length >= 500) {
@@ -440,7 +440,7 @@ const getStatistics = async () => {
     }
     
     const progressRes = await getProgressList(progressParams)
-    allProgress.value = progressRes.data?.records || []
+    allProgress.value = progressRes?.records || []
     
     // 如果数据量达到上限，给出提示
     if (allProgress.value.length >= 2000) {
@@ -596,8 +596,8 @@ const getTableList = async () => {
     
     // 调用API获取培训计划列表
     const planRes = await getPlanList(params)
-    const plans = planRes.data?.records || []
-    pagination.total = planRes.data?.total || 0
+    const plans = planRes?.records || []
+    pagination.total = planRes?.total || 0
     
     // 如果当前页没有数据，不再请求学习进度
     if (plans.length === 0) {
@@ -624,7 +624,7 @@ const getTableList = async () => {
     }
     
     const progressRes = await getProgressList(progressParams)
-    const allProgressData = progressRes.data?.records || []
+    const allProgressData = progressRes?.records || []
     
     // 为每个培训计划计算统计数据
     tableData.value = plans.map((plan: TrainingPlan) => {

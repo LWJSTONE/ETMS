@@ -52,6 +52,7 @@ public class TrainingPlanController {
     
     @ApiOperation(value = "获取培训计划详情")
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Result<TrainingPlanVO> get(@PathVariable Long id) {
         TrainingPlanVO vo = trainingPlanService.getPlanDetail(id);
         if (vo == null) {

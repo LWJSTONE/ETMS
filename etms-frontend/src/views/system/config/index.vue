@@ -324,13 +324,9 @@ const handleDelete = async (row: ConfigItem) => {
       }
     )
     
-    const res = await deleteConfig(row.id)
-    if (res.code === 200) {
-      ElMessage.success('删除成功')
-      getList()
-    } else {
-      ElMessage.error(res.message || '删除失败')
-    }
+    await deleteConfig(row.id)
+    ElMessage.success('删除成功')
+    getList()
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '删除失败')
@@ -352,12 +348,8 @@ const handleRefreshCache = async () => {
     )
     
     loading.value = true
-    const res = await refreshConfigCache()
-    if (res.code === 200) {
-      ElMessage.success('缓存刷新成功')
-    } else {
-      ElMessage.error(res.message || '缓存刷新失败')
-    }
+    await refreshConfigCache()
+    ElMessage.success('缓存刷新成功')
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '缓存刷新失败')
@@ -386,24 +378,16 @@ const handleSubmit = async () => {
     
     if (isEdit.value && form.id) {
       // 编辑
-      const res = await updateConfig(form.id, data)
-      if (res.code === 200) {
-        ElMessage.success('更新成功')
-        dialogVisible.value = false
-        getList()
-      } else {
-        ElMessage.error(res.message || '更新失败')
-      }
+      await updateConfig(form.id, data)
+      ElMessage.success('更新成功')
+      dialogVisible.value = false
+      getList()
     } else {
       // 新增
-      const res = await createConfig(data)
-      if (res.code === 200) {
-        ElMessage.success('新增成功')
-        dialogVisible.value = false
-        getList()
-      } else {
-        ElMessage.error(res.message || '新增失败')
-      }
+      await createConfig(data)
+      ElMessage.success('新增成功')
+      dialogVisible.value = false
+      getList()
     }
   } catch (error: any) {
     ElMessage.error(error.message || '操作失败')

@@ -77,8 +77,11 @@ public class PaperController {
                           @RequestParam(required = false, defaultValue = "false") boolean forExam,
                           @RequestParam(required = false) Long planId) {
         // 修复：根据场景区分权限
-        // 考试场景(forExam=true)：登录用户可访问，但需验证考试资格
+        // 考试场景(forExam=true)：登录用户可访问，但需验证考试资格，必须提供planId
         // 管理场景(forExam=false)：需要管理员权限查看完整信息（包含答案）
+        if (forExam && planId == null) {
+            throw new BusinessException("考试场景下必须提供培训计划ID");
+        }
         // 当forExam=true且planId不为空时，会验证用户是否有考试资格
         PaperVO vo = paperService.getPaperDetail(id, forExam, planId);
         if (vo == null) {

@@ -30,8 +30,8 @@ public class LogController {
     @PreAuthorize("hasAuthority('system:log:list')")
     @GetMapping
     public Result<PageResult<OperationLog>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @javax.validation.constraints.Min(value = 1, message = "页码最小为1") Long current,
+            @RequestParam(defaultValue = "10") @javax.validation.constraints.Min(value = 1, message = "每页条数最小为1") @javax.validation.constraints.Max(value = 100, message = "每页条数最大为100") Long size,
             @RequestParam(required = false) String module,
             @RequestParam(required = false) String operationType,
             @RequestParam(required = false) String operator,
@@ -64,12 +64,14 @@ public class LogController {
     @DeleteMapping
     public Result<Void> clear(
             @RequestParam(required = false) String startTime,
-            @RequestParam(required = false) String endTime) {
-        // 修复：参数可选，当不传参数时清空全部日志
-        // 当只传startTime时，清空该日期之后的日志
-        // 当只传endTime时，清空该日期之前的日志
-        // 当两个参数都传时，清空指定时间范围内的日志
-        // 当两个参数都不传时，清空全部日志（需谨慎操作）
+            @RequestParam(required = false) String endTime,
+            @RequestParam(required = false) Boolean confirm) {
+        // 安全检查：清空全部日志时需要确认参数
+        if (startTime == null && endTime == null) {
+            if (confirm == null || !confirm) {
+                return Result.error("清空全部日志是危险操作，请传入confirm=true参数进行确认");
+            }
+        }
         logService.clearLogs(startTime, endTime);
         return Result.success();
     }

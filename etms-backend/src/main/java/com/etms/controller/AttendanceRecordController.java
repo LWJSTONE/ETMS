@@ -39,8 +39,8 @@ public class AttendanceRecordController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
     public Result<PageResult<AttendanceRecordVO>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @javax.validation.constraints.Min(value = 1, message = "页码最小为1") Long current,
+            @RequestParam(defaultValue = "10") @javax.validation.constraints.Min(value = 1, message = "每页条数最小为1") @javax.validation.constraints.Max(value = 100, message = "每页条数最大为100") Long size,
             @RequestParam(required = false) Long planId,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Integer status,
