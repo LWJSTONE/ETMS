@@ -70,10 +70,10 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="score" label="得分" width="80" align="center">
+            <el-table-column prop="userScore" label="得分" width="80" align="center">
               <template #default="{ row }">
-                <span :class="{ 'score-pass': row.score >= row.passScore, 'score-fail': row.score < row.passScore }">
-                  {{ row.score ?? '-' }}
+                <span :class="{ 'score-pass': row.userScore >= row.passScore, 'score-fail': row.userScore < row.passScore }">
+                  {{ row.userScore ?? '-' }}
                 </span>
               </template>
             </el-table-column>
@@ -81,8 +81,8 @@
             <el-table-column label="是否通过" width="90" align="center">
               <template #default="{ row }">
                 <template v-if="row.status === 2 || row.status === 3">
-                  <el-tag :type="row.score >= row.passScore ? 'success' : 'danger'" size="small">
-                    {{ row.score >= row.passScore ? '通过' : '未通过' }}
+                  <el-tag :type="row.userScore >= row.passScore ? 'success' : 'danger'" size="small">
+                    {{ row.userScore >= row.passScore ? '通过' : '未通过' }}
                   </el-tag>
                 </template>
                 <span v-else class="text-gray">-</span>
@@ -164,15 +164,15 @@
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="得分">
-          <span :class="{ 'score-pass': currentResult.score >= currentResult.passScore, 'score-fail': currentResult.score < currentResult.passScore }">
-            {{ currentResult.score ?? '-' }}
+          <span :class="{ 'score-pass': currentResult.userScore >= currentResult.passScore, 'score-fail': currentResult.userScore < currentResult.passScore }">
+            {{ currentResult.userScore ?? '-' }}
           </span>
         </el-descriptions-item>
         <el-descriptions-item label="总分">{{ currentResult.totalScore }}分</el-descriptions-item>
         <el-descriptions-item label="及格分数">{{ currentResult.passScore }}分</el-descriptions-item>
         <el-descriptions-item label="是否通过">
-          <el-tag v-if="currentResult.status === 2 || currentResult.status === 3" :type="currentResult.score >= currentResult.passScore ? 'success' : 'danger'">
-            {{ currentResult.score >= currentResult.passScore ? '通过' : '未通过' }}
+          <el-tag v-if="currentResult.status === 2 || currentResult.status === 3" :type="currentResult.userScore >= currentResult.passScore ? 'success' : 'danger'">
+            {{ currentResult.userScore >= currentResult.passScore ? '通过' : '未通过' }}
           </el-tag>
           <span v-else>-</span>
         </el-descriptions-item>

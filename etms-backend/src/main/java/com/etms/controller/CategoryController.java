@@ -48,6 +48,7 @@ public class CategoryController {
     
     @ApiOperation(value = "获取分类详情")
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()") // 修复：添加权限控制，要求用户已登录
     public Result<CategoryVO> get(@PathVariable Long id) {
         CategoryVO vo = categoryService.getCategoryDetail(id);
         if (vo == null) {

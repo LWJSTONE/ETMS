@@ -306,8 +306,9 @@ const getCourseListData = async () => {
       status: searchForm.status
     })
 
-    if (progressRes.data?.records) {
-      courseList.value = progressRes.data.records.map((item: any) => ({
+    // 修复：request.ts已自动解包返回response.data，直接访问records
+    if (progressRes?.records) {
+      courseList.value = progressRes.records.map((item: any) => ({
         ...item,
         courseName: item.courseName || item.course?.courseName,
         courseType: item.courseType || item.course?.courseType,
@@ -318,7 +319,7 @@ const getCourseListData = async () => {
         learnStatus: item.status ?? 0,
         progress: item.progress ?? 0
       }))
-      pagination.total = progressRes.data.total || 0
+      pagination.total = progressRes.total || 0
     }
   } catch (error) {
     console.error('获取课程列表失败:', error)
@@ -331,14 +332,15 @@ const getCourseListData = async () => {
         status: 2 // 已上架的课程
       })
 
-      if (courseRes.data?.records) {
-        courseList.value = courseRes.data.records.map((item: any) => ({
+      // 修复：request.ts已自动解包返回response.data，直接访问records
+      if (courseRes?.records) {
+        courseList.value = courseRes.records.map((item: any) => ({
           ...item,
           courseId: item.id, // 确保courseId正确设置
           learnStatus: 0,
           progress: 0
         }))
-        pagination.total = courseRes.data.total || 0
+        pagination.total = courseRes.total || 0
       }
     } catch (err) {
       console.error('获取课程列表失败:', err)

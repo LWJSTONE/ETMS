@@ -64,6 +64,7 @@ public class ConfigController {
     
     @ApiOperation(value = "根据配置键名获取配置值")
     @GetMapping("/key/{configKey}")
+    @PreAuthorize("isAuthenticated()") // 修复：添加权限控制，要求用户已登录
     public Result<String> getConfigValue(@PathVariable String configKey) {
         // 安全检查：禁止获取敏感配置
         if (isSensitiveConfig(configKey)) {
