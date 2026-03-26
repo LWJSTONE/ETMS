@@ -311,8 +311,9 @@ const router = createRouter({
 })
 
 // 路由守卫
-// 防止无限重定向的标志
-let hasTriedGetUserInfo = false
+// 用户信息获取状态管理
+let isFetchingUserInfo = false
+let userInfoFetchPromise: Promise<void> | null = null
 
 router.beforeEach(async (to, from, next) => {
   NProgress.start()
@@ -336,8 +337,6 @@ router.beforeEach(async (to, from, next) => {
   
   // 未登录，保存目标路由并重定向到登录页
   if (!token) {
-    // 重置标志，允许下次登录时重新获取用户信息
-    hasTriedGetUserInfo = false
     next({
       path: '/login',
       query: { redirect: to.fullPath }  // 保存原目标路由
@@ -345,24 +344,49 @@ router.beforeEach(async (to, from, next) => {
     return
   }
   
-  // 已登录但无用户信息，尝试获取
-  if (!userStore.userInfo && !hasTriedGetUserInfo) {
-    hasTriedGetUserInfo = true
-    try {
-      await userStore.getUserInfoAction()
-      // 获取成功后重置标志
-      hasTriedGetUserInfo = false
-    } catch (error) {
-      // 获取用户信息失败，清除token并重定向到登录页
-      userStore.token = ''
-      userStore.userInfo = null
-      localStorage.removeItem(STORAGE_KEYS.TOKEN)
-      localStorage.removeItem(STORAGE_KEYS.USER_INFO)
-      next({
-        path: '/login',
-        query: { redirect: to.fullPath }
-      })
-      return
+  // 已登录但无用户信息，尝试获取（避免竞态条件）
+  if (!userStore.userInfo) {
+    // 如果正在获取用户信息，等待获取完成
+    if (isFetchingUserInfo && userInfoFetchPromise) {
+      try {
+        await userInfoFetchPromise
+      } catch (error) {
+        // 获取用户信息失败，清除token并重定向到登录页
+        next({
+          path: '/login',
+          query: { redirect: to.fullPath }
+        })
+        return
+      }
+    } else if (!isFetchingUserInfo) {
+      // 开始获取用户信息
+      isFetchingUserInfo = true
+      userInfoFetchPromise = userStore.getUserInfoAction()
+        .then(() => {
+          // 获取成功
+        })
+        .catch((error) => {
+          // 获取用户信息失败，清除token
+          userStore.token = ''
+          userStore.userInfo = null
+          localStorage.removeItem(STORAGE_KEYS.TOKEN)
+          localStorage.removeItem(STORAGE_KEYS.USER_INFO)
+          throw error
+        })
+        .finally(() => {
+          isFetchingUserInfo = false
+          userInfoFetchPromise = null
+        })
+      
+      try {
+        await userInfoFetchPromise
+      } catch (error) {
+        next({
+          path: '/login',
+          query: { redirect: to.fullPath }
+        })
+        return
+      }
     }
   }
   

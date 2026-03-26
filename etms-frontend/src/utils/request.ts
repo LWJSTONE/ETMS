@@ -3,8 +3,34 @@ import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress'
 import { STORAGE_KEYS } from '@/constants/storage'
 
-// 401错误处理标志位，防止并发请求时重复跳转登录页
+// 401错误处理状态管理
 let isRedirecting = false
+let redirectTimer: ReturnType<typeof setTimeout> | null = null
+
+// 待重试的请求队列（用于token刷新后重试）
+interface PendingRequest {
+  config: AxiosRequestConfig
+  resolve: (value: any) => void
+  reject: (error: any) => void
+}
+const pendingRequests: PendingRequest[] = []
+
+/**
+ * 检查token是否即将过期（基于JWT解析）
+ * @param token JWT token
+ * @returns 是否即将过期（30分钟内）
+ */
+function isTokenExpiringSoon(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const exp = payload.exp * 1000 // 转换为毫秒
+    const now = Date.now()
+    const thirtyMinutes = 30 * 60 * 1000
+    return exp - now < thirtyMinutes
+  } catch {
+    return false // 无法解析时不过期
+  }
+}
 
 /**
  * 错误消息映射表 - HTTP 状态码
@@ -102,18 +128,37 @@ function getErrorMessage(error: AxiosError<any>): string {
 
 /**
  * 处理未授权错误
+ * 使用防抖机制避免并发请求时多次重定向
  */
 function handleUnauthorized(): void {
+  // 清除待重试队列中的请求
+  pendingRequests.length = 0
+  
   if (!isRedirecting) {
     isRedirecting = true
+    
+    // 清除定时器（如果存在）
+    if (redirectTimer) {
+      clearTimeout(redirectTimer)
+    }
+    
+    // 清除本地存储的认证信息
     localStorage.removeItem(STORAGE_KEYS.TOKEN)
     localStorage.removeItem(STORAGE_KEYS.USER_INFO)
+    
     ElMessage.error('登录已过期，请重新登录')
     
-    // 跳转登录页并传递当前路径作为重定向目标
-    const currentPath = window.location.pathname + window.location.search
-    const redirectPath = currentPath !== '/login' ? encodeURIComponent(currentPath) : ''
-    window.location.href = redirectPath ? `/login?redirect=${redirectPath}` : '/login'
+    // 使用setTimeout确保消息显示后再跳转
+    redirectTimer = setTimeout(() => {
+      // 跳转登录页并传递当前路径作为重定向目标
+      const currentPath = window.location.pathname + window.location.search
+      const redirectPath = currentPath !== '/login' ? encodeURIComponent(currentPath) : ''
+      window.location.href = redirectPath ? `/login?redirect=${redirectPath}` : '/login'
+      
+      // 重置标志位（在页面跳转后）
+      isRedirecting = false
+      redirectTimer = null
+    }, 100)
   }
 }
 
@@ -132,6 +177,12 @@ service.interceptors.request.use(
     NProgress.start()
     const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
     if (token) {
+      // 检查token是否即将过期
+      if (isTokenExpiringSoon(token)) {
+        // Token即将过期，提示用户
+        console.warn('Token即将过期，建议重新登录')
+        // 注意：这里不自动登出，让用户继续使用直到后端返回401
+      }
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
