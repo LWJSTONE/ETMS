@@ -79,9 +79,9 @@ public class PositionController {
     @PreAuthorize("hasAuthority('system:position:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        // 修复：删除岗位前检查是否有用户关联
+        // 修复：删除岗位前检查是否有用户关联，统一使用BusinessException
         if (positionService.hasUsers(id)) {
-            return Result.error("该岗位已分配给用户，无法删除");
+            throw new BusinessException("该岗位已分配给用户，无法删除");
         }
         positionService.deletePosition(id);
         return Result.success();

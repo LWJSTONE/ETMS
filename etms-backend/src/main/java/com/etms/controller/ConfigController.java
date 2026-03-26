@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.Config;
+import com.etms.exception.BusinessException;
 import com.etms.service.ConfigService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -12,6 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -38,8 +41,8 @@ public class ConfigController {
     @PreAuthorize("hasAuthority('system:config:list')")
     @GetMapping
     public Result<PageResult<Config>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) String configName,
             @RequestParam(required = false) String configKey,
             @RequestParam(required = false) Integer status) {
@@ -57,7 +60,7 @@ public class ConfigController {
     public Result<Config> get(@PathVariable Long id) {
         Config config = configService.getConfigDetail(id);
         if (config == null) {
-            return Result.error("配置不存在");
+            throw new BusinessException("配置不存在");
         }
         return Result.success(config);
     }

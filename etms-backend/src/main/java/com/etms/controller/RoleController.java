@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.Role;
+import com.etms.exception.BusinessException;
 import com.etms.service.RoleService;
 import com.etms.vo.RoleVO;
 import io.swagger.annotations.Api;
@@ -59,7 +60,7 @@ public class RoleController {
     public Result<RoleVO> get(@PathVariable Long id) {
         RoleVO vo = roleService.getRoleDetail(id);
         if (vo == null) {
-            return Result.error("角色不存在");
+            throw new BusinessException("角色不存在");
         }
         return Result.success(vo);
     }
@@ -85,9 +86,9 @@ public class RoleController {
     @PreAuthorize("hasAuthority('system:role:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        // 修复：删除角色前检查是否有用户关联
+        // 修复：删除角色前检查是否有用户关联，统一使用BusinessException
         if (roleService.hasUsers(id)) {
-            return Result.error("该角色已分配给用户，无法删除");
+            throw new BusinessException("该角色已分配给用户，无法删除");
         }
         roleService.deleteRole(id);
         return Result.success();

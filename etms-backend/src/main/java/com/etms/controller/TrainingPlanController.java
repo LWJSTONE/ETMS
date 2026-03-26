@@ -81,9 +81,9 @@ public class TrainingPlanController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> delete(@PathVariable Long id) {
-        // 修复：删除培训计划前检查是否有学员参与
+        // 修复：删除培训计划前检查是否有学员参与，统一使用BusinessException
         if (trainingPlanService.hasParticipants(id)) {
-            return Result.error("该培训计划已有学员参与，无法删除");
+            throw new BusinessException("该培训计划已有学员参与，无法删除");
         }
         trainingPlanService.deletePlan(id);
         return Result.success();
