@@ -66,7 +66,7 @@ public class Paper extends BaseEntity {
     /** 最大切屏次数 */
     private Integer maxSwitch;
     
-    /** 状态(0草稿 1已发布 2已停用) */
+    /** 状态(0草稿 1已发布 2已使用 3已停用) */
     private Integer status;
     
     /** 试卷描述 */

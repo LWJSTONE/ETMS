@@ -80,7 +80,7 @@
             <el-table-column prop="totalScore" label="总分" width="80" align="center" />
             <el-table-column label="是否通过" width="90" align="center">
               <template #default="{ row }">
-                <template v-if="row.status === 2 || row.status === 3">
+                <template v-if="row.status === 1 || row.status === 2 || row.status === 3">
                   <el-tag :type="(row.userScore ?? 0) >= (row.passScore ?? 0) ? 'success' : 'danger'" size="small">
                     {{ (row.userScore ?? 0) >= (row.passScore ?? 0) ? '通过' : '未通过' }}
                   </el-tag>
@@ -171,7 +171,7 @@
         <el-descriptions-item label="总分">{{ currentResult.totalScore }}分</el-descriptions-item>
         <el-descriptions-item label="及格分数">{{ currentResult.passScore }}分</el-descriptions-item>
         <el-descriptions-item label="是否通过">
-          <el-tag v-if="currentResult.status === 2 || currentResult.status === 3" :type="currentResult.userScore >= currentResult.passScore ? 'success' : 'danger'">
+          <el-tag v-if="currentResult.status === 1 || currentResult.status === 2 || currentResult.status === 3" :type="currentResult.userScore >= currentResult.passScore ? 'success' : 'danger'">
             {{ currentResult.userScore >= currentResult.passScore ? '通过' : '未通过' }}
           </el-tag>
           <span v-else>-</span>
@@ -288,7 +288,7 @@ const canStartExam = (exam: any) => {
   
   // 修复：检查是否有进行中的考试记录
   const hasOngoingExam = historyRecords.value.some(record => 
-    record.paperId === exam.id && record.status === 1
+    record.paperId === exam.id && record.status === 0
   )
   if (hasOngoingExam) {
     return false
@@ -315,11 +315,10 @@ const getStartButtonText = (exam: any) => {
 // 获取记录状态类型
 const getRecordStatusType = (status: number) => {
   const types: Record<number, string> = {
-    0: 'warning', // 未开始
-    1: 'primary', // 进行中
-    2: 'success', // 已完成
-    3: 'danger',  // 已超时
-    4: 'info'     // 已放弃
+    0: 'warning', // 考试中
+    1: 'success', // 已提交
+    2: 'danger',  // 超时
+    3: 'info'     // 已批阅
   }
   return types[status] || 'info'
 }
@@ -327,11 +326,10 @@ const getRecordStatusType = (status: number) => {
 // 获取记录状态文本
 const getRecordStatusText = (status: number) => {
   const texts: Record<number, string> = {
-    0: '未开始',
-    1: '进行中',
-    2: '已完成',
-    3: '已超时',
-    4: '已放弃'
+    0: '考试中',
+    1: '已提交',
+    2: '超时',
+    3: '已批阅'
   }
   return texts[status] || '未知'
 }
@@ -432,9 +430,9 @@ const handleViewResult = async (record: any) => {
 }
 
 // 初始化
-onMounted(() => {
-  fetchAvailableExams()
-  getHistoryRecords()
+onMounted(async () => {
+  await getHistoryRecords() // 先获取历史记录
+  fetchAvailableExams() // 再获取可参加考试
 })
 </script>
 

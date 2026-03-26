@@ -289,12 +289,12 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             throw new BusinessException("考试已结束");
         }
         
-        // 检查是否已有进行中的考试
+        // 检查是否已有进行中的考试（状态0表示考试中）
         Long count = baseMapper.selectCount(
             new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getUserId, currentUser.getId())
                 .eq(ExamRecord::getPaperId, paperId)
-                .eq(ExamRecord::getStatus, 1)
+                .eq(ExamRecord::getStatus, 0)
         );
         if (count > 0) {
             throw new BusinessException("您已有进行中的考试，请先完成");
@@ -304,14 +304,14 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         if (planId != null) {
             TrainingPlan plan = trainingPlanMapper.selectById(planId);
             if (plan != null && plan.getMaxRetake() != null && plan.getMaxRetake() > 0) {
-                // 修复：统计用户已完成的考试次数，包括已完成(2)、已超时(3)、已放弃(4)状态
-                // 放弃状态也应计入考试次数，防止用户通过放弃来绕过次数限制
+                // 修复：统计用户已完成的考试次数，包括已提交(1)、超时(2)、已批阅(3)状态
+                // 注意：状态定义：0-考试中 1-已提交 2-超时 3-已批阅
                 Long totalAttempts = baseMapper.selectCount(
                     new LambdaQueryWrapper<ExamRecord>()
                         .eq(ExamRecord::getUserId, currentUser.getId())
                         .eq(ExamRecord::getPaperId, paperId)
                         .eq(ExamRecord::getPlanId, planId)
-                        .in(ExamRecord::getStatus, 2, 3, 4) // 已完成、已超时、已放弃
+                        .in(ExamRecord::getStatus, 1, 2, 3) // 已提交、超时、已批阅
                 );
                 if (totalAttempts >= plan.getMaxRetake()) {
                     throw new BusinessException("您已达到最大考试次数限制（" + plan.getMaxRetake() + "次）");
@@ -324,7 +324,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         record.setUserId(currentUser.getId());
         record.setPaperId(paperId);
         record.setPlanId(planId);
-        record.setStatus(1); // 进行中
+        record.setStatus(0); // 考试中
         record.setTotalScore(paper.getTotalScore());
         record.setStartTime(LocalDateTime.now());
         
@@ -341,8 +341,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             throw new BusinessException("考试记录不存在");
         }
         
-        // 验证考试状态
-        if (record.getStatus() != 1) {
+        // 验证考试状态（状态0表示考试中）
+        if (record.getStatus() != 0) {
             throw new BusinessException("考试已结束");
         }
         
@@ -364,8 +364,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             if (minutesUsed > paper.getExamDuration()) {
                 // 修复问题：超时提交时不抛出异常，而是返回正常结果，让用户能看到分数
                 int userScore = calculateScore(record.getPaperId(), answers);
-                // 标记为超时并保存完整数据
-                record.setStatus(3); // 已超时
+                // 标记为超时并保存完整数据（状态2表示超时）
+                record.setStatus(2); // 超时
                 record.setUserScore(userScore);
                 record.setPassed(userScore >= paper.getPassScore() ? 1 : 0);
                 record.setAnswerDetail(answers); // 保存答题详情
@@ -379,8 +379,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         }
         
         // 修复并发问题：使用乐观锁方式更新状态
-        // 先尝试将状态从1（进行中）更新为2（已完成），如果更新失败说明已被其他线程处理
-        int updateCount = baseMapper.updateStatusToSubmitted(recordId, 1, 2);
+        // 先尝试将状态从0（考试中）更新为1（已提交），如果更新失败说明已被其他线程处理
+        int updateCount = baseMapper.updateStatusToSubmitted(recordId, 0, 1);
         if (updateCount == 0) {
             throw new BusinessException("考试已提交，请勿重复提交");
         }
@@ -416,8 +416,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             throw new BusinessException("考试记录不存在");
         }
         
-        // 验证考试状态
-        if (record.getStatus() != 1) {
+        // 验证考试状态（状态0表示考试中）
+        if (record.getStatus() != 0) {
             throw new BusinessException("考试已结束，无法放弃");
         }
         
@@ -427,9 +427,10 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             throw new BusinessException("无权操作此考试");
         }
         
-        // 更新考试记录状态为已放弃（使用状态4表示放弃）
+        // 更新考试记录状态为已提交（状态1表示已提交，作为放弃处理）
         // 修复并发问题：使用乐观锁方式更新状态
-        int updateCount = baseMapper.updateStatusToSubmitted(recordId, 1, 4);
+        // 注意：数据库状态定义中没有专门的放弃状态，放弃的考试标记为已提交状态
+        int updateCount = baseMapper.updateStatusToSubmitted(recordId, 0, 1);
         if (updateCount == 0) {
             throw new BusinessException("考试状态已变更，无法放弃");
         }
@@ -647,8 +648,9 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         Page<ExamRecord> page = new Page<>(current, size);
         
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
-        // 修复：查询已完成(2)和已超时(3)状态的考试记录，因为超时提交的记录也应该统计成绩
-        wrapper.in(ExamRecord::getStatus, 2, 3)
+        // 修复：查询已提交(1)、超时(2)和已批阅(3)状态的考试记录
+        // 状态定义：0-考试中 1-已提交 2-超时 3-已批阅
+        wrapper.in(ExamRecord::getStatus, 1, 2, 3)
                .eq(paperId != null, ExamRecord::getPaperId, paperId)
                .eq(userId != null, ExamRecord::getUserId, userId)
                .eq(passed != null, ExamRecord::getPassed, passed)
@@ -779,8 +781,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     @Override
     public ExamResultVO getResultDetail(Long id) {
         ExamRecord record = baseMapper.selectById(id);
-        // 修复：支持已完成(2)和已超时(3)状态的记录
-        if (record == null || (record.getStatus() != 2 && record.getStatus() != 3)) {
+        // 修复：支持已提交(1)、超时(2)和已批阅(3)状态的记录
+        if (record == null || (record.getStatus() != 1 && record.getStatus() != 2 && record.getStatus() != 3)) {
             return null;
         }
         
@@ -829,8 +831,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         ExamResultStatsVO stats = new ExamResultStatsVO();
         
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
-        // 修复：统计已完成(2)和已超时(3)状态的考试
-        wrapper.in(ExamRecord::getStatus, 2, 3);
+        // 修复：统计已提交(1)、超时(2)和已批阅(3)状态的考试
+        wrapper.in(ExamRecord::getStatus, 1, 2, 3);
         
         // 时间范围过滤
         if (startTime != null && !startTime.isEmpty()) {
@@ -854,7 +856,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         
         // 统计通过人数
         LambdaQueryWrapper<ExamRecord> passWrapper = new LambdaQueryWrapper<>();
-        passWrapper.in(ExamRecord::getStatus, 2, 3)
+        passWrapper.in(ExamRecord::getStatus, 1, 2, 3)
                    .eq(ExamRecord::getPassed, 1);
         if (startTime != null && !startTime.isEmpty()) {
             passWrapper.ge(ExamRecord::getSubmitTime, LocalDateTime.parse(startTime + "T00:00:00"));

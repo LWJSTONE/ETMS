@@ -285,7 +285,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { 
@@ -440,6 +440,10 @@ const handleSignIn = () => {
   signDialogTitle.value = '签到'
   Object.assign(signForm, { planId: null, signMethod: 1, location: '' })
   signDialogVisible.value = true
+  // 使用nextTick确保对话框打开后再重置表单验证状态
+  nextTick(() => {
+    signFormRef.value?.clearValidate()
+  })
 }
 
 // 签退
@@ -448,6 +452,10 @@ const handleSignOut = () => {
   signDialogTitle.value = '签退'
   Object.assign(signForm, { planId: null, signMethod: 1, location: '' })
   signDialogVisible.value = true
+  // 使用nextTick确保对话框打开后再重置表单验证状态
+  nextTick(() => {
+    signFormRef.value?.clearValidate()
+  })
 }
 
 // 提交签到/签退
@@ -489,6 +497,10 @@ const handleAudit = (row: any) => {
   currentRecord.value = row
   Object.assign(auditForm, { auditStatus: 1, auditRemark: '' })
   auditDialogVisible.value = true
+  // 使用nextTick确保对话框打开后再重置表单验证状态
+  nextTick(() => {
+    auditFormRef.value?.clearValidate()
+  })
 }
 
 // 提交审核

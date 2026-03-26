@@ -61,6 +61,12 @@ public class QuestionVO implements Serializable {
     /** 关联课程ID */
     private Long courseId;
     
+    /** 题目分类ID */
+    private Long categoryId;
+    
+    /** 标签ID集合 */
+    private String tagIds;
+    
     /** 状态 */
     private Integer status;
     

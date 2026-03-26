@@ -72,6 +72,9 @@ public class TrainingPlanVO implements Serializable {
     /** 最低学习时长(分钟) */
     private Integer minStudyTime;
     
+    /** 最低完成进度(%) */
+    private Integer minProgress;
+    
     /** 是否需要考试 */
     private Integer needExam;
     

@@ -4,6 +4,9 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { STORAGE_KEYS } from '@/constants/storage'
 
+// 安全重定向路径（所有登录用户都可以访问）
+const SAFE_REDIRECT_PATH = '/dashboard'
+
 // 白名单路由（无需登录即可访问）
 const whiteList = ['/login', '/404']
 
@@ -402,8 +405,16 @@ router.beforeEach(async (to, from, next) => {
   // 细粒度权限检查
   if (!hasPermission(userPermissions, requiredPermission, isAdmin)) {
     ElMessage.warning('您没有权限访问该页面')
-    // 普通用户重定向到我的培训
-    next({ path: '/my/course' })
+    // 如果目标路径是/my路径下的页面，重定向到首页避免循环
+    // 因为/my下的页面不需要特定权限，所以如果用户无法访问某个有权限要求的页面，
+    // 重定向到/my/course是安全的。但为了防止意外情况，检查是否已经是/my路径
+    if (to.path.startsWith('/my')) {
+      // 如果已经是/my路径但权限检查失败，说明是其他问题，重定向到首页
+      next({ path: SAFE_REDIRECT_PATH })
+    } else {
+      // 普通用户重定向到我的培训
+      next({ path: '/my/course' })
+    }
     return
   }
   

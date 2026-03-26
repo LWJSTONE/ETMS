@@ -576,8 +576,13 @@ const handleSubmit = () => {
 
 // 确认提交
 const confirmSubmit = async (isAutoSubmit = false) => {
-  // 防止重复提交
+  // 防止重复提交 - 使用更可靠的检查
   if (submitting.value) {
+    if (isAutoSubmit) {
+      // 自动提交时如果已在提交中，直接返回
+      return
+    }
+    ElMessage.warning('正在提交中，请稍候...')
     return
   }
   submitting.value = true

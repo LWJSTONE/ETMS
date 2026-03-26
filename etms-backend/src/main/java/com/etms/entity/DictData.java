@@ -26,7 +26,4 @@ public class DictData extends BaseEntity {
     
     /** 状态(0禁用 1启用) */
     private Integer status;
-    
-    /** 备注 */
-    private String remark;
 }
