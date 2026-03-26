@@ -976,10 +976,10 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     private String getStatusName(Integer status) {
         if (status == null) return "未知";
         switch (status) {
-            case 0: return "未开始";
-            case 1: return "进行中";
-            case 2: return "已完成";
-            case 3: return "已超时";
+            case 0: return "考试中";
+            case 1: return "已提交";
+            case 2: return "超时";
+            case 3: return "已批阅";
             case 4: return "已放弃";
             default: return "未知";
         }
@@ -1037,9 +1037,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 deptMapper.selectBatchIds(deptIds).stream()
                         .collect(java.util.stream.Collectors.toMap(Dept::getId, Dept::getDeptName));
         
-        // 使用Apache POI导出Excel
-        try {
-            org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+        // 使用Apache POI导出Excel（使用try-with-resources确保资源正确释放）
+        try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
             org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("成绩报表");
             
             // 创建表头
@@ -1091,7 +1090,6 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             
             // 写入输出流
             workbook.write(outputStream);
-            workbook.close();
         } catch (Exception e) {
             throw new BusinessException("导出失败：" + e.getMessage());
         }

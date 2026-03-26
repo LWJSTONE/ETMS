@@ -6,11 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HashMap;
@@ -22,6 +17,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 /**
  * 验证码服务实现类
+ * 使用SVG格式生成验证码，不依赖系统图形库
  */
 @Slf4j
 @Service
@@ -45,6 +41,11 @@ public class CaptchaServiceImpl implements CaptchaService {
     
     // 使用 SecureRandom 替代 Random，提高安全性
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    
+    // 颜色数组，用于生成随机颜色
+    private static final String[] COLORS = {
+        "#1a1a1a", "#2d5a87", "#8b4513", "#006400", "#4b0082", "#8b0000", "#2f4f4f", "#191970"
+    };
     
     @Override
     public Map<String, String> generateCaptcha() {
@@ -77,8 +78,8 @@ public class CaptchaServiceImpl implements CaptchaService {
                 System.currentTimeMillis() + CAPTCHA_EXPIRE_MINUTES * 60 * 1000));
         }
         
-        // 生成验证码图片
-        String captchaImage = generateCaptchaImage(captchaText);
+        // 生成SVG验证码图片
+        String captchaImage = generateSvgCaptcha(captchaText);
         
         Map<String, String> result = new HashMap<>();
         result.put("captchaKey", captchaKey);
@@ -178,54 +179,60 @@ public class CaptchaServiceImpl implements CaptchaService {
     }
     
     /**
-     * 生成验证码图片（Base64格式）
+     * 生成SVG格式验证码图片
+     * 不依赖系统图形库，纯文本SVG实现
      */
-    private String generateCaptchaImage(String text) {
-        BufferedImage image = new BufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = image.createGraphics();
+    private String generateSvgCaptcha(String text) {
+        StringBuilder svg = new StringBuilder();
+        svg.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        svg.append("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"").append(IMAGE_WIDTH)
+           .append("\" height=\"").append(IMAGE_HEIGHT).append("\" viewBox=\"0 0 ")
+           .append(IMAGE_WIDTH).append(" ").append(IMAGE_HEIGHT).append("\">");
         
-        // 设置抗锯齿
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        // 背景
+        svg.append("<rect width=\"100%\" height=\"100%\" fill=\"#f0f0f0\"/>");
         
-        // 填充背景色
-        g.setColor(Color.WHITE);
-        g.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-        
-        // 绘制干扰线
+        // 干扰线
         for (int i = 0; i < 6; i++) {
-            g.setColor(new Color(SECURE_RANDOM.nextInt(200), SECURE_RANDOM.nextInt(200), SECURE_RANDOM.nextInt(200)));
-            g.drawLine(SECURE_RANDOM.nextInt(IMAGE_WIDTH), SECURE_RANDOM.nextInt(IMAGE_HEIGHT),
-                      SECURE_RANDOM.nextInt(IMAGE_WIDTH), SECURE_RANDOM.nextInt(IMAGE_HEIGHT));
+            String color = COLORS[SECURE_RANDOM.nextInt(COLORS.length)];
+            int x1 = SECURE_RANDOM.nextInt(IMAGE_WIDTH);
+            int y1 = SECURE_RANDOM.nextInt(IMAGE_HEIGHT);
+            int x2 = SECURE_RANDOM.nextInt(IMAGE_WIDTH);
+            int y2 = SECURE_RANDOM.nextInt(IMAGE_HEIGHT);
+            svg.append("<line x1=\"").append(x1).append("\" y1=\"").append(y1)
+               .append("\" x2=\"").append(x2).append("\" y2=\"").append(y2)
+               .append("\" stroke=\"").append(color).append("\" stroke-width=\"1\" opacity=\"0.5\"/>");
         }
         
-        // 绘制干扰点
-        for (int i = 0; i < 40; i++) {
-            g.setColor(new Color(SECURE_RANDOM.nextInt(255), SECURE_RANDOM.nextInt(255), SECURE_RANDOM.nextInt(255)));
-            g.fillOval(SECURE_RANDOM.nextInt(IMAGE_WIDTH), SECURE_RANDOM.nextInt(IMAGE_HEIGHT), 2, 2);
+        // 干扰点
+        for (int i = 0; i < 30; i++) {
+            String color = COLORS[SECURE_RANDOM.nextInt(COLORS.length)];
+            int cx = SECURE_RANDOM.nextInt(IMAGE_WIDTH);
+            int cy = SECURE_RANDOM.nextInt(IMAGE_HEIGHT);
+            svg.append("<circle cx=\"").append(cx).append("\" cy=\"").append(cy)
+               .append("\" r=\"1\" fill=\"").append(color).append("\" opacity=\"0.6\"/>");
         }
         
-        // 绘制验证码文本
-        g.setFont(new Font("Arial", Font.BOLD, 28));
-        int x = 10;
+        // 验证码文本
+        int x = 15;
         for (int i = 0; i < text.length(); i++) {
-            // 随机颜色
-            g.setColor(new Color(SECURE_RANDOM.nextInt(100), SECURE_RANDOM.nextInt(100), SECURE_RANDOM.nextInt(100)));
-            // 随机角度旋转
-            double angle = (SECURE_RANDOM.nextDouble() - 0.5) * 0.4;
-            g.rotate(angle, x + 15, 28);
-            g.drawString(String.valueOf(text.charAt(i)), x, 30);
-            g.rotate(-angle, x + 15, 28);
-            x += 26;
+            String color = COLORS[SECURE_RANDOM.nextInt(COLORS.length)];
+            int rotation = SECURE_RANDOM.nextInt(31) - 15; // -15到15度的随机旋转
+            int y = 28 + SECURE_RANDOM.nextInt(6) - 3; // Y轴微调
+            
+            svg.append("<text x=\"").append(x).append("\" y=\"").append(y)
+               .append("\" font-family=\"Arial, sans-serif\" font-size=\"24\" font-weight=\"bold\" ")
+               .append("fill=\"").append(color).append("\" ")
+               .append("transform=\"rotate(").append(rotation).append(" ").append(x).append(" ").append(y).append(")\">")
+               .append(text.charAt(i)).append("</text>");
+            
+            x += 25;
         }
         
-        g.dispose();
+        svg.append("</svg>");
         
-        // 转换为Base64
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            ImageIO.write(image, "png", baos);
-            return "data:image/png;base64," + Base64.getEncoder().encodeToString(baos.toByteArray());
-        } catch (IOException e) {
-            throw new RuntimeException("生成验证码图片失败", e);
-        }
+        // 返回data URI格式的SVG
+        String svgContent = svg.toString();
+        return "data:image/svg+xml;base64," + Base64.getEncoder().encodeToString(svgContent.getBytes());
     }
 }

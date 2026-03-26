@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class EtmsApplication {
     
     public static void main(String[] args) {
+        // 设置headless模式，解决服务器环境无图形界面导致的验证码生成问题
+        System.setProperty("java.awt.headless", "true");
         SpringApplication.run(EtmsApplication.class, args);
         System.out.println("======================================");
         System.out.println("  企业员工培训管理系统启动成功!");
