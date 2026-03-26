@@ -20,7 +20,5 @@ public class DictType extends BaseEntity {
     
     /** 状态(0禁用 1启用) */
     private Integer status;
-    
-    /** 备注 */
-    private String remark;
+    // 注：remark字段已在BaseEntity中定义，无需重复声明
 }

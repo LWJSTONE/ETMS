@@ -59,6 +59,7 @@ public class DictItemController {
     
     @ApiOperation(value = "根据字典类型ID获取字典数据列表")
     @GetMapping("/type/{dictTypeId}")
+    @PreAuthorize("isAuthenticated()")
     public Result<List<DictData>> getByTypeId(@PathVariable Long dictTypeId) {
         List<DictData> list = dictService.getDictDataList(dictTypeId);
         return Result.success(list);
@@ -66,6 +67,7 @@ public class DictItemController {
     
     @ApiOperation(value = "根据字典类型编码获取字典数据列表")
     @GetMapping("/code/{dictType}")
+    @PreAuthorize("isAuthenticated()")
     public Result<List<DictData>> getByTypeCode(@PathVariable String dictType) {
         List<DictData> list = dictService.getDictDataByType(dictType);
         return Result.success(list);

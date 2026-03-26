@@ -49,6 +49,14 @@ public class TrainingPlanVO implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
     
+    /** 签到开始时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime signStartTime;
+    
+    /** 签到结束时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime signEndTime;
+    
     /** 目标类型 */
     private Integer targetType;
     

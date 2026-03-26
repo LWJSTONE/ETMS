@@ -177,6 +177,9 @@ import { getRoleListAll } from '@/api/role'
 import { getDeptTree } from '@/api/dept'
 import { getPositionList } from '@/api/position'
 import type { Dept } from '@/api/types'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const searchForm = reactive({ username: '', realName: '', status: null as number | null })
 const tableData = ref<any[]>([])
@@ -357,6 +360,11 @@ const handleDelete = async (row: any) => {
     ElMessage.warning('admin账户不能删除')
     return
   }
+  // 禁止删除当前登录用户
+  if (row.id === userStore.userInfo?.id) {
+    ElMessage.warning('不能删除当前登录用户')
+    return
+  }
   try {
     await ElMessageBox.confirm('确定要删除该用户吗？', '提示', { type: 'warning' })
     await deleteUser(row.id)
@@ -491,7 +499,8 @@ const handleExport = async () => {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `用户数据_${new Date().toISOString().slice(0, 10)}.csv`
+    // 修复：后端导出的是Excel格式，使用xlsx扩展名
+    link.download = `用户数据_${new Date().toISOString().slice(0, 10)}.xlsx`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

@@ -66,6 +66,7 @@ public class AttendanceApplyController {
     
     @ApiOperation(value = "提交补签申请")
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public Result<Void> apply(@Valid @RequestBody SupplementaryDTO supplementaryDTO) {
         attendanceRecordService.applySupplementary(
             supplementaryDTO.getPlanId(), 
@@ -79,6 +80,7 @@ public class AttendanceApplyController {
     
     @ApiOperation(value = "撤销补签申请")
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Result<Void> cancel(@PathVariable Long id) {
         // 获取当前用户
         User currentUser = userService.getCurrentUser();
@@ -105,6 +107,7 @@ public class AttendanceApplyController {
     
     @ApiOperation(value = "获取我的补签申请列表")
     @GetMapping("/my")
+    @PreAuthorize("isAuthenticated()")
     public Result<PageResult<AttendanceRecordVO>> myApplies(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,

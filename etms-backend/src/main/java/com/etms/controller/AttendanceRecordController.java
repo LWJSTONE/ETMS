@@ -55,6 +55,7 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "签到/签退")
     @PostMapping("/sign")
+    @PreAuthorize("isAuthenticated()")
     public Result<Void> signIn(@Valid @RequestBody SignInDTO signInDTO, HttpServletRequest request) {
         // 修复问题5：获取客户端IP和设备信息
         String ipAddress = getClientIp(request);
@@ -73,6 +74,7 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "补签申请")
     @PostMapping("/supplementary")
+    @PreAuthorize("isAuthenticated()")
     public Result<Void> applySupplementary(@Valid @RequestBody SupplementaryDTO supplementaryDTO) {
         attendanceRecordService.applySupplementary(
             supplementaryDTO.getPlanId(), 
@@ -86,6 +88,7 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "撤销补签申请")
     @DeleteMapping("/supplementary/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Result<Void> cancelSupplementary(@PathVariable Long id) {
         // 修复：添加权限验证，确保用户只能撤销自己的补签申请
         User currentUser = userService.getCurrentUser();
@@ -112,6 +115,7 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "获取个人签到统计")
     @GetMapping("/stats/personal")
+    @PreAuthorize("isAuthenticated()")
     public Result<?> getPersonalStats() {
         // 修复越权问题：只能查询自己的统计
         User currentUser = userService.getCurrentUser();

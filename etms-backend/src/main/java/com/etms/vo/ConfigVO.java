@@ -25,8 +25,8 @@ public class ConfigVO implements Serializable {
     /** 配置键值 */
     private String configValue;
     
-    /** 系统内置(Y是 N否) */
-    private String configType;
+    /** 系统内置(1系统 2业务) */
+    private Integer configType;
     
     /** 状态(0禁用 1启用) */
     private Integer status;
