@@ -546,9 +546,24 @@ const handleApply = () => {
 }
 
 // 禁用未来日期和过早日期能补签最近30天）
+// 修复：同时考虑培训计划的实际时间范围
 const disabledDate = (time: Date) => {
   const now = Date.now()
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
+  
+  // 如果选择了培训计划，进一步限制在计划时间范围内
+  if (applyForm.planId) {
+    const selectedPlan = planList.value.find(p => p.id === applyForm.planId)
+    if (selectedPlan) {
+      const planStart = selectedPlan.startDate ? new Date(selectedPlan.startDate).getTime() : thirtyDaysAgo
+      const planEnd = selectedPlan.endDate ? new Date(selectedPlan.endDate).getTime() : now
+      // 不能早于计划开始时间，不能晚于计划结束时间或当前时间
+      const minTime = Math.max(thirtyDaysAgo, planStart)
+      const maxTime = Math.min(now, planEnd)
+      return time.getTime() > maxTime || time.getTime() < minTime
+    }
+  }
+  
   return time.getTime() > now || time.getTime() < thirtyDaysAgo
 }
 

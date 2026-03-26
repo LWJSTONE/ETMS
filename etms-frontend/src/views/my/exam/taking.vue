@@ -380,10 +380,21 @@ const restoreAnswersFromLocal = () => {
             // 多选题需要确保答案是数组格式
             if (question.questionType === 2) {
               if (Array.isArray(savedAnswer)) {
-                answers[questionId] = savedAnswer
+                // 确保数组元素是字符串类型
+                answers[questionId] = savedAnswer.map(String)
               } else if (savedAnswer !== null && savedAnswer !== undefined && savedAnswer !== '') {
-                // 如果保存的是字符串，转换为数组
-                answers[questionId] = String(savedAnswer).split(',').filter(s => s.trim())
+                // 修复：支持多种分隔符格式，将字符串转换为数组
+                const str = String(savedAnswer)
+                if (str.includes(',')) {
+                  // 逗号分隔格式：A,B,C
+                  answers[questionId] = str.split(',').map(s => s.trim()).filter(s => s)
+                } else if (str.includes(' ')) {
+                  // 空格分隔格式：A B C
+                  answers[questionId] = str.split(' ').map(s => s.trim()).filter(s => s)
+                } else {
+                  // 无分隔符格式：ABC（每个字符是一个选项）
+                  answers[questionId] = str.split('').filter(s => /[A-H]/i.test(s)).map(s => s.toUpperCase())
+                }
               } else {
                 answers[questionId] = []
               }

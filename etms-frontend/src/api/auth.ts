@@ -21,6 +21,7 @@ export function getUserInfo(): Promise<UserInfo> {
 }
 
 // 获取验证码
-export function getCaptcha(): Promise<{ captchaKey: string; captchaImage: string }> {
-  return request.post('/auth/captcha')
+// 修复：支持传递signal参数以取消请求，避免并发请求问题
+export function getCaptcha(signal?: AbortSignal): Promise<{ captchaKey: string; captchaImage: string }> {
+  return request.post('/auth/captcha', undefined, signal ? { signal } : undefined)
 }

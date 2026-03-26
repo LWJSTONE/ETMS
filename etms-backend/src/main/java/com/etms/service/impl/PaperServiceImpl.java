@@ -215,13 +215,14 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         }
         
         // 检查考试次数限制
+        // 修复：统计考试次数时应包含已放弃(4)状态，防止用户通过放弃来绕过次数限制
         if (plan.getMaxRetake() != null && plan.getMaxRetake() > 0) {
             Long completedAttempts = examRecordMapper.selectCount(
                 new LambdaQueryWrapper<ExamRecord>()
                     .eq(ExamRecord::getUserId, currentUser.getId())
                     .eq(ExamRecord::getPaperId, paper.getId())
                     .eq(ExamRecord::getPlanId, planId)
-                    .in(ExamRecord::getStatus, 2, 3)
+                    .in(ExamRecord::getStatus, 2, 3, 4) // 已完成(2)、已超时(3)、已放弃(4)
             );
             if (completedAttempts >= plan.getMaxRetake()) {
                 throw new BusinessException("您已达到最大考试次数限制");

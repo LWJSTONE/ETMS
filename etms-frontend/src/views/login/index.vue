@@ -85,6 +85,8 @@ const captchaImage = ref('')
 const captchaKey = ref('')
 const captchaRetryCount = ref(0)
 const MAX_CAPTCHA_RETRY = 3
+// 修复：添加验证码请求的AbortController，避免并发请求
+let captchaAbortController: AbortController | null = null
 
 const loginForm = reactive({
   username: '',
@@ -120,13 +122,24 @@ const loginRules: FormRules = {
 }
 
 // 获取验证码（带自动重试机制）
+// 修复：使用AbortController避免并发请求问题
 const refreshCaptcha = async () => {
+  // 取消之前的请求
+  if (captchaAbortController) {
+    captchaAbortController.abort()
+  }
+  captchaAbortController = new AbortController()
+  
   try {
-    const res = await getCaptcha()
+    const res = await getCaptcha(captchaAbortController.signal)
     captchaImage.value = res.captchaImage
     captchaKey.value = res.captchaKey
     captchaRetryCount.value = 0 // 成功后重置计数器
-  } catch (error) {
+  } catch (error: any) {
+    // 忽略取消的请求
+    if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+      return
+    }
     captchaRetryCount.value++
     if (captchaRetryCount.value < MAX_CAPTCHA_RETRY) {
       // 自动重试
@@ -137,6 +150,8 @@ const refreshCaptcha = async () => {
       // 重置计数器，允许用户手动重试
       captchaRetryCount.value = 0
     }
+  } finally {
+    captchaAbortController = null
   }
 }
 

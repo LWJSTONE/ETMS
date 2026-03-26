@@ -506,9 +506,16 @@ const handleExport = async () => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
     ElMessage.success('导出成功')
-  } catch (error) {
+  } catch (error: any) {
     console.error('导出失败:', error)
-    ElMessage.error('导出失败')
+    // 修复：提供更详细的错误信息
+    if (error.response?.status === 403) {
+      ElMessage.error('您没有导出用户的权限')
+    } else if (error.code === 'ECONNABORTED') {
+      ElMessage.error('导出超时，数据量较大，请缩小导出范围后重试')
+    } else {
+      ElMessage.error(error.message || '导出失败')
+    }
   }
 }
 

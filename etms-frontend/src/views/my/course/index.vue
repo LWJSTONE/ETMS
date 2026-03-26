@@ -386,11 +386,12 @@ const handleReset = () => {
 
 // 开始学习
 const handleStartLearning = (course: any) => {
-  // 跳转到学习页面
+  // 修复：优先使用已映射的courseId字段，确保路由跳转参数正确
+  const courseId = course.courseId || course.course?.id || course.id
   router.push({
     path: '/my/learning',
     query: {
-      courseId: course.courseId || course.id,
+      courseId: courseId,
       progressId: course.id,
       planId: course.planId
     }

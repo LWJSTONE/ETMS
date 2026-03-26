@@ -267,6 +267,7 @@ const getExamStatusText = (exam: any) => {
 }
 
 // 判断是否可以开始考试
+// 修复：考虑用户已有进行中考试的情况
 const canStartExam = (exam: any) => {
   const now = new Date().getTime()
   const startTime = exam.startTime ? new Date(exam.startTime).getTime() : null
@@ -281,7 +282,19 @@ const canStartExam = (exam: any) => {
     return false
   }
   // 试卷必须是已发布状态
-  return exam.status === 1
+  if (exam.status !== 1) {
+    return false
+  }
+  
+  // 修复：检查是否有进行中的考试记录
+  const hasOngoingExam = historyRecords.value.some(record => 
+    record.paperId === exam.id && record.status === 1
+  )
+  if (hasOngoingExam) {
+    return false
+  }
+  
+  return true
 }
 
 // 获取开始按钮文本

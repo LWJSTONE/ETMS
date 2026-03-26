@@ -395,6 +395,17 @@ const handleViewDetail = async (row: ProgressItem) => {
   }
 }
 
+// CSV字段转义处理，防止CSV注入和格式错误
+const escapeCSVField = (value: any): string => {
+  if (value === null || value === undefined) return '""'
+  const str = String(value)
+  // 如果包含逗号、双引号或换行符，需要用双引号包围并转义内部双引号
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return `"${str.replace(/"/g, '""')}"`
+  }
+  return `"${str}"`
+}
+
 // 导出
 const handleExport = async () => {
   // 权限检查
@@ -423,9 +434,10 @@ const handleExport = async () => {
     // 使用第三方库或原生方式导出Excel
     // 这里使用简单的CSV导出
     const headers = Object.keys(exportData[0] || {})
+    // 修复：使用escapeCSVField处理特殊字符，避免CSV格式错误
     const csvContent = [
       headers.join(','),
-      ...exportData.map(row => headers.map(h => `"${row[h as keyof typeof row] || ''}"`).join(','))
+      ...exportData.map(row => headers.map(h => escapeCSVField(row[h as keyof typeof row])).join(','))
     ].join('\n')
     
     // 添加BOM以支持中文

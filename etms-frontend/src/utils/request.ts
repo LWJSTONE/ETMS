@@ -218,7 +218,11 @@ service.interceptors.response.use(
       const message = BUSINESS_ERROR_MESSAGES[res.code] || res.message || '操作失败'
       ElMessage.error(message)
       
-      return Promise.reject(new Error(message))
+      // 修复：创建包含更多错误信息的错误对象，便于调用方获取详细错误信息
+      const error = new Error(message) as any
+      error.code = res.code
+      error.data = res.data
+      return Promise.reject(error)
     }
     
     // 返回数据部分，而不是整个响应体

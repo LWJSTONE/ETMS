@@ -346,13 +346,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         vo.setGenderName(getGenderName(user.getGender()));
         vo.setStatusName(getStatusName(user.getStatus()));
         
-        // 查询并设置角色名称列表
-        List<String> roles = baseMapper.selectRolesByUserId(id);
-        vo.setRoleNames(roles);
-        
-        // 查询并设置角色详情列表（包含id等信息）
+        // 修复：合并角色查询，避免冗余数据库访问
+        // 只调用一次selectRoleDetailsByUserId，同时获取角色名称和角色详情
         List<Role> roleEntities = baseMapper.selectRoleDetailsByUserId(id);
         if (roleEntities != null && !roleEntities.isEmpty()) {
+            // 设置角色名称列表
+            List<String> roleNames = roleEntities.stream()
+                .map(Role::getRoleName)
+                .collect(Collectors.toList());
+            vo.setRoleNames(roleNames);
+            
+            // 设置角色详情列表
             List<RoleVO> roleVOList = roleEntities.stream().map(role -> {
                 RoleVO roleVO = new RoleVO();
                 BeanUtils.copyProperties(role, roleVO);
