@@ -17,6 +17,7 @@ import com.etms.mapper.TrainingPlanMapper;
 import com.etms.mapper.CourseMapper;
 import com.etms.mapper.DeptMapper;
 import com.etms.service.LearningProgressService;
+import com.etms.util.JsonArrayUtils;
 import com.etms.vo.LearningProgressVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -506,7 +507,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
                         return false;
                     }
                     // 使用JSON解析精确匹配部门ID
-                    return isIdInJsonArray(targetDeptIds, user.getDeptId());
+                    return JsonArrayUtils.containsId(targetDeptIds, user.getDeptId());
                     
                 case 2: // 岗位
                     String targetPositionIds = plan.getTargetPositionIds();
@@ -517,7 +518,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
                         return false;
                     }
                     // 使用JSON解析精确匹配岗位ID
-                    return isIdInJsonArray(targetPositionIds, user.getPositionId());
+                    return JsonArrayUtils.containsId(targetPositionIds, user.getPositionId());
                     
                 case 3: // 个人
                     String targetUserIds = plan.getTargetUserIds();
@@ -525,7 +526,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
                         return true;
                     }
                     // 使用JSON解析精确匹配用户ID
-                    return isIdInJsonArray(targetUserIds, user.getId());
+                    return JsonArrayUtils.containsId(targetUserIds, user.getId());
                     
                 default:
                     return true;
@@ -536,42 +537,7 @@ public class LearningProgressServiceImpl extends ServiceImpl<UserPlanMapper, Use
         }
     }
     
-    /**
-     * 检查ID是否在JSON数组字符串中
-     * 使用JSON解析器进行精确匹配，避免边界问题
-     * @param jsonArrayStr JSON数组字符串，如 "[1, 2, 3]" 或 ["1","2","3"]
-     * @param targetId 要查找的ID
-     * @return 是否包含该ID
-     */
-    private boolean isIdInJsonArray(String jsonArrayStr, Long targetId) {
-        if (jsonArrayStr == null || jsonArrayStr.trim().isEmpty()) {
-            return false;
-        }
-        
-        try {
-            // 使用JSON解析器进行精确匹配
-            JSONArray jsonArray = JSON.parseArray(jsonArrayStr);
-            if (jsonArray == null || jsonArray.isEmpty()) {
-                return false;
-            }
-            
-            String targetIdStr = String.valueOf(targetId);
-            for (int i = 0; i < jsonArray.size(); i++) {
-                Object item = jsonArray.get(i);
-                String itemIdStr = item != null ? item.toString().trim() : "";
-                if (targetIdStr.equals(itemIdStr)) {
-                    return true;
-                }
-            }
-        } catch (Exception e) {
-            // JSON解析失败时，使用备用方法：正则表达式精确匹配
-            log.warn("JSON解析失败，使用备用方法: {}", e.getMessage());
-            // 使用正则表达式精确匹配数字ID
-            String pattern = "(^|[,\\[\\]\\s])" + targetId + "([,\\[\\]\\s]|$)";
-            return jsonArrayStr.matches(".*" + pattern + ".*");
-        }
-        return false;
-    }
+
     
     @Override
     public LearningProgressVO getProgressDetail(Long id) {

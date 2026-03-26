@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.OperationLog;
+import com.etms.exception.BusinessException;
 import com.etms.service.LogService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -54,7 +55,7 @@ public class LogController {
     public Result<OperationLog> get(@PathVariable Long id) {
         OperationLog log = logService.getLogDetail(id);
         if (log == null) {
-            return Result.error("日志不存在");
+            throw new BusinessException("日志不存在");
         }
         return Result.success(log);
     }

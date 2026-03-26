@@ -422,11 +422,15 @@ watch(answers, () => {
 // 防作弊：监听页面可见性变化
 const handleVisibilityChange = () => {
   if (document.hidden) {
+    // 仅在页面变为隐藏时记录时间，避免误判
     hiddenTime.value = Date.now()
   } else {
-    // 页面重新可见
+    // 页面重新可见时，检查是否之前记录了隐藏时间
     if (hiddenTime.value > 0) {
       switchCount.value++
+      const recordedTime = hiddenTime.value
+      hiddenTime.value = 0 // 重置时间，确保每次切屏只计数一次
+      
       if (switchCount.value >= MAX_SWITCH_COUNT) {
         // 超过最大切屏次数，强制提交
         ElMessage.error('切屏次数过多，系统将自动提交试卷！')

@@ -228,10 +228,28 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
                 throw new BusinessException("存在无效的权限ID: " + invalidIds + "，请刷新页面后重试");
             }
             
-            // 自动补充父权限
+            // 自动补充父权限（修复N+1查询问题）
             Set<Long> allPermissionIds = new HashSet<>(permissionIds);
+            
+            // 查询所有权限，在内存中构建关系树，避免递归查询数据库
+            List<Permission> allPermissions = permissionMapper.selectList(null);
+            Map<Long, Permission> permissionMap = allPermissions.stream()
+                .collect(Collectors.toMap(Permission::getId, p -> p));
+            
+            // 遍历查找所有父权限
             for (Long permissionId : permissionIds) {
-                addParentPermissions(permissionId, allPermissionIds);
+                Long currentId = permissionId;
+                while (currentId != null) {
+                    Permission permission = permissionMap.get(currentId);
+                    if (permission == null || permission.getParentId() == null || permission.getParentId() == 0) {
+                        break;
+                    }
+                    Long parentId = permission.getParentId();
+                    if (!allPermissionIds.contains(parentId)) {
+                        allPermissionIds.add(parentId);
+                    }
+                    currentId = parentId;
+                }
             }
             
             List<RolePermission> rolePermissions = new ArrayList<>();
@@ -246,23 +264,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         }
     }
     
-    /**
-     * 递归添加父权限
-     * @param permissionId 当前权限ID
-     * @param allPermissionIds 所有权限ID集合
-     */
-    private void addParentPermissions(Long permissionId, Set<Long> allPermissionIds) {
-        Permission permission = permissionMapper.selectById(permissionId);
-        if (permission == null || permission.getParentId() == null || permission.getParentId() == 0) {
-            return;
-        }
-        Long parentId = permission.getParentId();
-        if (!allPermissionIds.contains(parentId)) {
-            allPermissionIds.add(parentId);
-            // 递归查找父权限的父权限
-            addParentPermissions(parentId, allPermissionIds);
-        }
-    }
+
 
     @Override
     public List<Long> getPermissionIdsByRoleId(Long roleId) {

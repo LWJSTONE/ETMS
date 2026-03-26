@@ -40,6 +40,27 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ * 分数计算结果内部类
+ */
+class ScoreResult {
+    private final int score;
+    private final boolean needManualScore;
+    
+    public ScoreResult(int score, boolean needManualScore) {
+        this.score = score;
+        this.needManualScore = needManualScore;
+    }
+    
+    public int getScore() {
+        return score;
+    }
+    
+    public boolean isNeedManualScore() {
+        return needManualScore;
+    }
+}
+
+/**
  * 考试记录服务实现类
  */
 @Slf4j
@@ -438,15 +459,26 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     }
     
     /**
-     * 计算考试分数
+     * 计算考试分数（保持原有接口兼容性）
      * @param paperId 试卷ID
      * @param answers 用户答案（JSON格式）
      * @return 用户得分
      */
     @Override
     public int calculateScore(Long paperId, String answers) {
+        ScoreResult result = calculateScoreWithFlag(paperId, answers);
+        return result.getScore();
+    }
+    
+    /**
+     * 计算考试分数并返回是否需要人工评分标记
+     * @param paperId 试卷ID
+     * @param answers 用户答案（JSON格式）
+     * @return 分数计算结果（包含分数和待人工评分标记）
+     */
+    public ScoreResult calculateScoreWithFlag(Long paperId, String answers) {
         if (answers == null || answers.isEmpty()) {
-            return 0;
+            return new ScoreResult(0, false);
         }
         
         try {
@@ -455,7 +487,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 objectMapper.getTypeFactory().constructCollectionType(List.class, Map.class));
             
             if (answerList.isEmpty()) {
-                return 0;
+                return new ScoreResult(0, false);
             }
             
             // 获取试卷关联的题目
@@ -466,7 +498,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             );
             
             if (paperQuestions.isEmpty()) {
-                return 0;
+                return new ScoreResult(0, false);
             }
             
             // 获取所有题目ID
@@ -485,6 +517,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             
             // 计算总分
             int totalScore = 0;
+            boolean hasEssayQuestion = false; // 简答题标记
             for (Map<String, Object> answer : answerList) {
                 // 空值检查
                 Object questionIdObj = answer.get("questionId");
@@ -552,8 +585,9 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 if (question.getQuestionType() == 5) {
                     // 简答题需要人工评分，默认给0分，记录日志提示管理员进行人工评分
                     log.info("简答题[ID:{}]需要人工评分，用户答案: {}", questionId, userAnswer);
+                    // 标记有简答题需要人工评分
+                    hasEssayQuestion = true;
                     // 简答题默认给0分，后续由管理员手动评分
-                    // 可以在此处添加逻辑：将简答题ID和用户答案保存到待评分队列
                     continue;
                 }
                 
@@ -564,7 +598,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 }
             }
             
-            return totalScore;
+            return new ScoreResult(totalScore, hasEssayQuestion);
         } catch (BusinessException e) {
             // 业务异常直接抛出
             throw e;

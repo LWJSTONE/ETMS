@@ -441,8 +441,8 @@ export interface ExamRecord {
   correctCount?: number  // 正确题数
   totalCount?: number  // 总题数
   answers?: ExamAnswer[]
-  questions?: any[]  // 题目列表
-  paperQuestions?: any[]  // 试卷题目列表
+  questions?: ExamRecordQuestion[]  // 题目列表
+  paperQuestions?: ExamRecordQuestion[]  // 试卷题目列表
   createTime?: string
   updateTime?: string
 }
@@ -454,6 +454,28 @@ export interface ExamAnswer {
   userAnswer: string
   isCorrect?: boolean
   score?: number
+}
+
+/**
+ * 考试记录中的题目类型（用于questions和paperQuestions字段）
+ */
+export interface ExamRecordQuestion {
+  questionId: number
+  questionType: number
+  questionContent: string
+  optionA?: string
+  optionB?: string
+  optionC?: string
+  optionD?: string
+  optionE?: string
+  answer?: string
+  answerAnalysis?: string
+  difficulty?: number
+  score: number
+  sortOrder?: number
+  userAnswer?: string
+  isCorrect?: boolean
+  userScore?: number
 }
 
 export interface ExamSubmitParams {
@@ -756,4 +778,43 @@ export interface UserPlan {
   endDate?: string
   createTime?: string
   updateTime?: string
+}
+
+/**
+ * 成绩统计类型
+ */
+export interface ResultStats {
+  totalCount: number   // 总考试次数
+  passCount: number    // 通过次数
+  failCount: number    // 未通过次数
+  passRate: number     // 通过率(百分比)
+  avgScore: number     // 平均分
+}
+
+/**
+ * 试卷题目关联类型（用于组卷）
+ */
+export interface PaperQuestionItem {
+  questionId: number
+  score: number
+  sortOrder: number
+}
+
+/**
+ * 试卷题目详情类型
+ */
+export interface PaperQuestionDetail {
+  questionId: number
+  questionType: number
+  questionContent: string
+  optionA?: string
+  optionB?: string
+  optionC?: string
+  optionD?: string
+  optionE?: string
+  answer?: string
+  answerAnalysis?: string
+  difficulty?: number
+  score: number
+  sortOrder: number
 }

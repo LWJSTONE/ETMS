@@ -272,10 +272,32 @@ const request = {
         params,
         responseType: 'blob'
       })
+      
       // 拦截器返回完整response对象，需要提取data
-      return response.data
+      const blob = response.data
+      
+      // 检查响应是否为JSON格式的错误信息（服务器返回错误时可能返回JSON）
+      const contentType = response.headers['content-type'] || ''
+      if (contentType.includes('application/json')) {
+        // 尝试解析JSON错误信息
+        const text = await blob.text()
+        try {
+          const errorData = JSON.parse(text)
+          // 如果是业务错误，显示错误信息并抛出异常
+          if (errorData.code && errorData.code !== 200) {
+            const message = errorData.message || '操作失败'
+            ElMessage.error(message)
+            throw new Error(message)
+          }
+        } catch (parseError) {
+          // 如果解析失败，说明不是有效的JSON，继续返回blob
+          return new Blob([text], { type: blob.type })
+        }
+      }
+      
+      return blob
     } catch (error) {
-      // 错误已在拦截器中处理
+      // 错误已在拦截器中处理或上面已处理
       throw error
     }
   }

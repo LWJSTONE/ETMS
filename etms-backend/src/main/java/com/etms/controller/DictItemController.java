@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
 import com.etms.entity.DictData;
+import com.etms.exception.BusinessException;
 import com.etms.service.DictService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -12,6 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import java.util.List;
 
 /**
@@ -31,8 +34,8 @@ public class DictItemController {
     @PreAuthorize("hasAuthority('system:dict:list')")
     @GetMapping("/page")
     public Result<PageResult<DictData>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) Long dictTypeId,
             @RequestParam(required = false) String dictLabel,
             @RequestParam(required = false) Integer status) {
@@ -52,7 +55,7 @@ public class DictItemController {
     public Result<DictData> getById(@PathVariable Long id) {
         DictData dictData = dictService.getDictDataById(id);
         if (dictData == null) {
-            return Result.error(404, "字典数据不存在");
+            throw new BusinessException(404, "字典数据不存在");
         }
         return Result.success(dictData);
     }

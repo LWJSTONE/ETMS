@@ -2,11 +2,11 @@ package com.etms.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.etms.dto.PaperQuestionDTO;
 import com.etms.entity.Paper;
 import com.etms.vo.PaperVO;
 import com.etms.vo.PaperQuestionVO;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 试卷服务接口
@@ -86,9 +86,9 @@ public interface PaperService extends IService<Paper> {
     /**
      * 批量添加题目到试卷
      * @param paperId 试卷ID
-     * @param questions 题目列表（包含questionId, score, sortOrder）
+     * @param questions 题目DTO列表
      */
-    void batchAddQuestions(Long paperId, List<Map<String, Object>> questions);
+    void batchAddQuestions(Long paperId, List<PaperQuestionDTO> questions);
     
     /**
      * 从试卷移除单个题目

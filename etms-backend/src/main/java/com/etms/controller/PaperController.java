@@ -3,8 +3,8 @@ package com.etms.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etms.common.PageResult;
 import com.etms.common.Result;
+import com.etms.dto.PaperQuestionDTO;
 import com.etms.entity.Paper;
-import com.etms.entity.PaperQuestion;
 import com.etms.exception.BusinessException;
 import com.etms.service.PaperService;
 import com.etms.vo.PaperQuestionVO;
@@ -19,7 +19,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 试卷管理控制器
@@ -148,7 +147,7 @@ public class PaperController {
     @ApiOperation(value = "批量添加题目到试卷")
     @PostMapping("/{id}/questions")
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
-    public Result<Void> addQuestions(@PathVariable Long id, @RequestBody List<Map<String, Object>> questions) {
+    public Result<Void> addQuestions(@PathVariable Long id, @Valid @RequestBody List<@Valid PaperQuestionDTO> questions) {
         paperService.batchAddQuestions(id, questions);
         return Result.success();
     }

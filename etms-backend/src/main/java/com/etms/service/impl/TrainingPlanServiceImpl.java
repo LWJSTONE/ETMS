@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * 培训计划服务实现类
@@ -31,6 +32,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, TrainingPlan> implements TrainingPlanService {
+    
+    // 修复：将ObjectMapper声明为静态常量，避免每次调用都创建新实例，提升性能
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     
     private final UserPlanMapper userPlanMapper;
     private final CourseMapper courseMapper;
@@ -369,9 +373,8 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         }
         
         try {
-            // 修复：使用JSON解析器正确解析JSON数组，避免字符串分割导致的错误匹配
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            java.util.List<?> list = objectMapper.readValue(jsonArrayStr, java.util.List.class);
+            // 修复：使用静态常量OBJECT_MAPPER解析JSON数组，避免每次创建新实例
+            java.util.List<?> list = OBJECT_MAPPER.readValue(jsonArrayStr, java.util.List.class);
             
             for (Object item : list) {
                 if (item == null) continue;

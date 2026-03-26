@@ -34,6 +34,9 @@ public class CaptchaServiceImpl implements CaptchaService {
     // 内存缓存，用于Redis不可用时存储验证码
     private final Map<String, CaptchaEntry> memoryCache = new ConcurrentHashMap<>();
     
+    // 内存缓存最大容量限制，防止内存溢出
+    private static final int MAX_CACHE_SIZE = 10000;
+    
     private static final String CAPTCHA_PREFIX = "captcha:";
     private static final int CAPTCHA_EXPIRE_MINUTES = 5;
     private static final int CAPTCHA_LENGTH = 4;
@@ -62,6 +65,14 @@ public class CaptchaServiceImpl implements CaptchaService {
             );
         } else {
             // 使用内存缓存
+            // 检查缓存大小，如果超过限制则清理过期条目
+            if (memoryCache.size() >= MAX_CACHE_SIZE) {
+                cleanExpiredCache();
+                // 如果清理后仍超过限制，拒绝生成新验证码
+                if (memoryCache.size() >= MAX_CACHE_SIZE) {
+                    throw new RuntimeException("验证码服务繁忙，请稍后重试");
+                }
+            }
             memoryCache.put(captchaKey, new CaptchaEntry(captchaText.toLowerCase(), 
                 System.currentTimeMillis() + CAPTCHA_EXPIRE_MINUTES * 60 * 1000));
         }

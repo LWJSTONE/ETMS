@@ -3,6 +3,7 @@ package com.etms.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.etms.dto.PaperQuestionDTO;
 import com.etms.entity.ExamRecord;
 import com.etms.entity.Paper;
 import com.etms.entity.PaperQuestion;
@@ -17,6 +18,7 @@ import com.etms.mapper.QuestionMapper;
 import com.etms.mapper.TrainingPlanMapper;
 import com.etms.service.PaperService;
 import com.etms.service.UserService;
+import com.etms.util.JsonArrayUtils;
 import com.etms.vo.PaperQuestionVO;
 import com.etms.vo.PaperVO;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -235,7 +236,7 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
                     if (user.getDeptId() == null) {
                         return false;
                     }
-                    return isIdInJsonArray(targetDeptIds, user.getDeptId());
+                    return JsonArrayUtils.containsId(targetDeptIds, user.getDeptId());
                     
                 case 2: // 岗位
                     String targetPositionIds = plan.getTargetPositionIds();
@@ -245,14 +246,14 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
                     if (user.getPositionId() == null) {
                         return false;
                     }
-                    return isIdInJsonArray(targetPositionIds, user.getPositionId());
+                    return JsonArrayUtils.containsId(targetPositionIds, user.getPositionId());
                     
                 case 3: // 个人
                     String targetUserIds = plan.getTargetUserIds();
                     if (targetUserIds == null || targetUserIds.trim().isEmpty()) {
                         return true;
                     }
-                    return isIdInJsonArray(targetUserIds, user.getId());
+                    return JsonArrayUtils.containsId(targetUserIds, user.getId());
                     
                 default:
                     return true;
@@ -262,54 +263,7 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         }
     }
     
-    /**
-     * 检查ID是否在JSON数组字符串中
-     */
-    private boolean isIdInJsonArray(String jsonArrayStr, Long targetId) {
-        if (jsonArrayStr == null || jsonArrayStr.trim().isEmpty()) {
-            return false;
-        }
-        
-        try {
-            // 修复：使用JSON解析器正确解析JSON数组，避免字符串分割导致的错误匹配
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            java.util.List<?> list = objectMapper.readValue(jsonArrayStr, java.util.List.class);
-            
-            for (Object item : list) {
-                if (item == null) continue;
-                // 支持数字类型和字符串类型
-                Long itemId = null;
-                if (item instanceof Number) {
-                    itemId = ((Number) item).longValue();
-                } else if (item instanceof String) {
-                    try {
-                        itemId = Long.parseLong((String) item);
-                    } catch (NumberFormatException e) {
-                        continue;
-                    }
-                }
-                if (itemId != null && itemId.equals(targetId)) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (Exception e) {
-            // JSON解析失败时回退到简单字符串匹配
-            String str = jsonArrayStr.trim();
-            if (str.startsWith("[") && str.endsWith("]")) {
-                str = str.substring(1, str.length() - 1);
-            }
-            
-            String[] parts = str.split(",");
-            for (String part : parts) {
-                String idStr = part.trim().replace("\"", "");
-                if (idStr.equals(String.valueOf(targetId))) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -600,7 +554,7 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void batchAddQuestions(Long paperId, List<Map<String, Object>> questions) {
+    public void batchAddQuestions(Long paperId, List<PaperQuestionDTO> questions) {
         // 验证试卷是否存在
         Paper paper = baseMapper.selectById(paperId);
         if (paper == null) {
@@ -623,31 +577,17 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         
         // 批量添加题目
         int sortOrder = 1;
-        for (Map<String, Object> item : questions) {
-            // 安全获取questionId，防止空指针
-            Object questionIdObj = item.get("questionId");
-            if (questionIdObj == null) {
+        for (PaperQuestionDTO item : questions) {
+            // 验证题目ID
+            if (item.getQuestionId() == null) {
                 throw new BusinessException("题目ID不能为空");
             }
-            Long questionId;
-            try {
-                questionId = Long.valueOf(questionIdObj.toString());
-            } catch (NumberFormatException e) {
-                throw new BusinessException("题目ID格式错误: " + questionIdObj);
-            }
+            Long questionId = item.getQuestionId();
             
-            // 安全获取分数，默认为1，且不能为负数
-            Object scoreObj = item.get("score");
-            Integer score = 1;
-            if (scoreObj != null) {
-                try {
-                    score = Integer.valueOf(scoreObj.toString());
-                    if (score < 0) {
-                        throw new BusinessException("题目分数不能为负数");
-                    }
-                } catch (NumberFormatException e) {
-                    throw new BusinessException("分数格式错误: " + scoreObj);
-                }
+            // 获取分数，默认为1
+            Integer score = item.getScore() != null ? item.getScore() : 1;
+            if (score < 0) {
+                throw new BusinessException("题目分数不能为负数");
             }
             
             // 验证题目是否存在
@@ -661,7 +601,7 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             paperQuestion.setPaperId(paperId);
             paperQuestion.setQuestionId(questionId);
             paperQuestion.setScore(score);
-            paperQuestion.setSortOrder(sortOrder);
+            paperQuestion.setSortOrder(item.getSortOrder() != null ? item.getSortOrder() : sortOrder);
             paperQuestionMapper.insert(paperQuestion);
             
             sortOrder++;

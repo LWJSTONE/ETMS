@@ -12,7 +12,10 @@ import type {
   PaperUpdateParams,
   ExamRecord,
   ExamSubmitParams,
-  ExamResult
+  ExamResult,
+  ResultStats,
+  PaperQuestionItem,
+  PaperQuestionDetail
 } from './types'
 
 /**
@@ -186,42 +189,9 @@ export function exportResults(params?: {
   return request.getBlob('/exam/results/export', params)
 }
 
-// 成绩统计类型
-export interface ResultStats {
-  totalCount: number
-  passCount: number
-  failCount: number
-  passRate: number
-  avgScore: number
-}
-
 /**
  * 组卷管理API
  */
-
-// 试卷题目关联类型
-export interface PaperQuestionItem {
-  questionId: number
-  score: number
-  sortOrder: number
-}
-
-// 试卷题目详情类型
-export interface PaperQuestionDetail {
-  questionId: number
-  questionType: number
-  questionContent: string
-  optionA?: string
-  optionB?: string
-  optionC?: string
-  optionD?: string
-  optionE?: string
-  answer?: string
-  answerAnalysis?: string
-  difficulty?: number
-  score: number
-  sortOrder: number
-}
 
 // 获取试卷题目列表
 export function getPaperQuestions(paperId: number): Promise<PaperQuestionDetail[]> {
