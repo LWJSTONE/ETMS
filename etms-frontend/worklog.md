@@ -395,3 +395,160 @@ export const lazy: Directive = {
 ---
 *报告生成时间: 2025-01-21*
 *审查人: Claude AI Assistant*
+
+---
+
+## 八、按钮点击错误专项审查
+
+### 审查日期: 2025-01-21
+### 审查范围: 所有Vue组件中的按钮事件处理
+
+### 8.1 审查结果汇总
+
+| 页面 | 按钮/事件 | 处理函数存在 | API调用正确 | 错误处理完善 | 表单验证正确 | 状态 |
+|------|----------|-------------|------------|-------------|-------------|------|
+| login/index.vue | 登录按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| dashboard/index.vue | 查看更多按钮 | ✓ | N/A | ✓ | N/A | 通过 |
+| system/user/index.vue | CRUD按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| system/role/index.vue | CRUD按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| system/dept/index.vue | CRUD按钮 | ✓ | ✓ | ⚠️ | ✓ | 需改进 |
+| system/position/index.vue | CRUD按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| system/config/index.vue | CRUD按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| system/dict/index.vue | CRUD按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| training/course/index.vue | 审核按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| training/plan/index.vue | 发布/归档按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| training/progress/index.vue | 导出按钮 | ✓ | ✓ | ✓ | N/A | 通过 |
+| exam/question/index.vue | CRUD按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| exam/paper/index.vue | 组卷/发布按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| exam/record/index.vue | 导出按钮 | ✓ | ⚠️ | ✓ | N/A | 需改进 |
+| attendance/record/index.vue | 签到/审核按钮 | ✓ | ✓ | ✓ | ✓ | 通过 |
+| my/exam/index.vue | 开始考试按钮 | ✓ | ✓ | ✓ | N/A | 通过 |
+| my/exam/taking.vue | 提交/放弃按钮 | ✓ | ✓ | ✓ | N/A | 通过 |
+
+### 8.2 发现的问题详情
+
+#### 8.2.1 【中等问题】部门管理表单验证缺少try-catch
+**文件**: `src/views/system/dept/index.vue`
+**问题描述**: handleSubmit函数中调用formRef.value?.validate()时没有使用try-catch包裹，当验证失败时会抛出异常。
+
+**当前代码** (第401-403行):
+```typescript
+const handleSubmit = async () => {
+  const valid = await formRef.value?.validate()
+  if (!valid) return
+```
+
+**建议修复**:
+```typescript
+const handleSubmit = async () => {
+  try {
+    const valid = await formRef.value?.validate()
+    if (!valid) return
+  } catch {
+    return
+  }
+```
+
+**状态**: 已修复 ✓
+
+---
+
+#### 8.2.2 【轻微问题】考试记录导出文件扩展名不一致
+**文件**: `src/views/exam/record/index.vue`
+**问题描述**: 导出文件使用.xlsx扩展名，但实际API返回的可能是其他格式（如CSV）。
+
+**当前代码** (第355行):
+```typescript
+link.download = `考试记录_${new Date().toISOString().slice(0, 10)}.xlsx`
+```
+
+**建议**: 确认后端返回的实际文件格式，如果是Excel则保持.xlsx，如果是CSV则改为.csv。或根据响应Content-Type动态确定扩展名。
+
+**状态**: 建议改进
+
+---
+
+### 8.3 良好实践记录
+
+#### 8.3.1 登录页面 - 完善的错误处理
+**文件**: `src/views/login/index.vue`
+**优点**:
+- 验证码获取失败有自动重试机制
+- 登录失败有友好的错误消息提示
+- 登录失败后自动清空密码和验证码（安全考虑）
+- 使用了表单验证
+
+```typescript
+const handleLogin = async () => {
+  try {
+    const valid = await loginFormRef.value?.validate()
+    if (!valid) return
+  } catch {
+    return
+  }
+  // ... 登录逻辑
+  } catch (error: any) {
+    const errorMessage = getErrorMessage(error)
+    ElMessage.error(errorMessage)
+    loginForm.password = ''
+    loginForm.captcha = ''
+    refreshCaptcha()
+  }
+}
+```
+
+#### 8.3.2 用户管理 - 完善的CRUD实现
+**文件**: `src/views/system/user/index.vue`
+**优点**:
+- 删除前检查是否为admin账户或当前用户
+- 重置密码后显示新密码给管理员
+- 分配角色时获取用户详情以获取当前角色
+- 导出功能限制了最大导出数量避免超时
+
+#### 8.3.3 考试页面 - 完善的答题状态管理
+**文件**: `src/views/my/exam/taking.vue`
+**优点**:
+- 答案自动保存到本地存储防止意外丢失
+- 防作弊切屏检测
+- 时间到自动提交
+- 提交失败时保留本地存储允许重试
+
+### 8.4 修复记录
+
+#### 修复1: 部门管理表单验证
+**文件**: `src/views/system/dept/index.vue`
+**修复内容**: 为handleSubmit函数添加try-catch包裹表单验证
+
+**修复后代码**:
+```typescript
+const handleSubmit = async () => {
+  try {
+    const valid = await formRef.value?.validate()
+    if (!valid) return
+  } catch {
+    return
+  }
+
+  submitLoading.value = true
+  // ... 后续处理
+}
+```
+
+### 8.5 审查结论
+
+**整体评估**: 项目代码质量良好，按钮事件处理函数完整存在且正确实现。
+
+**主要发现**:
+1. 所有按钮的点击事件处理函数都已正确实现
+2. API调用参数传递正确，返回值处理合理
+3. 错误处理普遍较完善，使用了try-catch和用户友好提示
+4. 表单验证规则完整，包含必填项、格式校验等
+5. 条件渲染逻辑正确，按钮状态控制合理
+
+**改进建议**:
+1. 统一表单验证的错误处理模式（使用try-catch包裹validate调用）
+2. 导出功能应根据实际文件格式确定扩展名
+3. 考虑为异步操作添加防抖/节流处理
+
+---
+*按钮审查完成时间: 2025-01-21*
