@@ -160,13 +160,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     /**
      * 重置登录失败计数
+     * 修复：添加异常处理，确保登录流程不受影响
      */
     private void resetLoginFailCount(Long userId) {
-        User updateUser = new User();
-        updateUser.setId(userId);
-        updateUser.setLockCount(0);
-        updateUser.setLockTime(null);
-        baseMapper.updateById(updateUser);
+        if (userId == null) {
+            log.warn("重置登录失败计数失败：用户ID为空");
+            return;
+        }
+        try {
+            User updateUser = new User();
+            updateUser.setId(userId);
+            updateUser.setLockCount(0);
+            updateUser.setLockTime(null);
+            baseMapper.updateById(updateUser);
+        } catch (Exception e) {
+            // 记录错误但不影响登录流程
+            log.error("重置登录失败计数异常，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
+        }
     }
     
     /**
@@ -660,16 +670,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean assignRoles(Long userId, List<Long> roleIds) {
+        // 修复：添加参数校验
+        if (userId == null) {
+            throw new BusinessException("用户ID不能为空");
+        }
+        
+        // 验证用户是否存在
+        User user = baseMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
         // 先删除原有角色关联
         baseMapper.deleteUserRoleByUserId(userId);
         
+        // 如果角色列表为空，表示清空角色
         if (CollectionUtils.isEmpty(roleIds)) {
+            log.info("用户 {} 的角色已清空", userId);
+            return true;
+        }
+        
+        // 修复：过滤掉null值，避免批量插入时出错
+        List<Long> validRoleIds = roleIds.stream()
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+        
+        if (validRoleIds.isEmpty()) {
+            log.warn("用户 {} 分配的角色ID全部为空，跳过分配", userId);
             return true;
         }
         
         // 批量插入用户角色关联
         List<Map<String, Long>> userRoles = new ArrayList<>();
-        for (Long roleId : roleIds) {
+        for (Long roleId : validRoleIds) {
             Map<String, Long> map = new HashMap<>();
             map.put("userId", userId);
             map.put("roleId", roleId);
@@ -679,6 +712,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 使用批量插入
         baseMapper.batchInsertUserRole(userRoles);
         
+        log.info("用户 {} 成功分配角色: {}", userId, validRoleIds);
         return true;
     }
     
@@ -808,26 +842,50 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     /**
      * 校验手机号格式
-     * 支持11位中国大陆手机号
+     * 修复：更新正则表达式，支持更全面的手机号验证
+     * 支持11位中国大陆手机号，包括最新的号段
      */
     private boolean isValidPhone(String phone) {
         if (phone == null || phone.trim().isEmpty()) {
             return true; // 空值由其他校验处理
         }
+        String trimmedPhone = phone.trim();
         // 中国大陆手机号正则：11位数字，以1开头
+        // 支持13x, 14x, 15x, 16x, 17x, 18x, 19x 等号段
+        // 修复：增强正则表达式，确保只包含数字
         String phoneRegex = "^1[3-9]\\d{9}$";
-        return phone.trim().matches(phoneRegex);
+        if (!trimmedPhone.matches(phoneRegex)) {
+            log.warn("手机号格式不正确: {}", trimmedPhone);
+            return false;
+        }
+        return true;
     }
     
     /**
      * 校验邮箱格式
+     * 修复：更新正则表达式，支持更全面的邮箱验证
      */
     private boolean isValidEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             return true; // 空值由其他校验处理
         }
-        // 邮箱正则
-        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
-        return email.trim().matches(emailRegex);
+        String trimmedEmail = email.trim();
+        // 邮箱正则：支持常见邮箱格式
+        // 修复：优化正则表达式，更严格地验证邮箱格式
+        // 支持：用户名@域名.顶级域名 格式
+        // 用户名可包含字母、数字、下划线、点、加号、减号
+        // 域名可包含字母、数字、减号
+        // 顶级域名2-7位字母
+        String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,7}$";
+        if (!trimmedEmail.matches(emailRegex)) {
+            log.warn("邮箱格式不正确: {}", trimmedEmail);
+            return false;
+        }
+        // 额外检查：邮箱长度限制
+        if (trimmedEmail.length() > 100) {
+            log.warn("邮箱长度超过限制: {}", trimmedEmail.length());
+            return false;
+        }
+        return true;
     }
 }

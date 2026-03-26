@@ -71,7 +71,7 @@ public class ConfigController {
     public Result<String> getConfigValue(@PathVariable String configKey) {
         // 安全检查：禁止获取敏感配置
         if (isSensitiveConfig(configKey)) {
-            return Result.error("无权获取该配置项");
+            throw new BusinessException("无权获取该配置项");
         }
         String value = configService.getConfigValue(configKey);
         return Result.success(value);

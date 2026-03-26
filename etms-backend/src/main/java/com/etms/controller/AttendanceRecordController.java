@@ -7,6 +7,7 @@ import com.etms.dto.SignInDTO;
 import com.etms.dto.SupplementaryDTO;
 import com.etms.dto.AttendanceAuditDTO;
 import com.etms.entity.AttendanceRecord;
+import com.etms.exception.BusinessException;
 import com.etms.service.AttendanceRecordService;
 import com.etms.vo.AttendanceRecordVO;
 import com.etms.service.UserService;
@@ -93,12 +94,12 @@ public class AttendanceRecordController {
         // 修复：添加权限验证，确保用户只能撤销自己的补签申请
         User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
-            return Result.error("用户未登录");
+            throw new BusinessException("用户未登录");
         }
         
         // 验证补签记录是否属于当前用户
         if (!attendanceRecordService.isOwner(id, currentUser.getId())) {
-            return Result.error("无权撤销他人的补签申请");
+            throw new BusinessException("无权撤销他人的补签申请");
         }
         
         attendanceRecordService.cancelSupplementary(id);
@@ -120,7 +121,7 @@ public class AttendanceRecordController {
         // 修复越权问题：只能查询自己的统计
         User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
-            return Result.error("用户未登录");
+            throw new BusinessException("用户未登录");
         }
         return Result.success(attendanceRecordService.getPersonalStats(currentUser.getId()));
     }

@@ -248,6 +248,26 @@ import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
+// 获取友好的错误提示信息
+const getFriendlyErrorMessage = (error: any, defaultMsg: string): string => {
+  if (error.response?.data?.message) {
+    return error.response.data.message
+  }
+  if (error.response?.data?.msg) {
+    return error.response.data.msg
+  }
+  if (error.message) {
+    if (error.message.includes('timeout')) {
+      return '请求超时，请稍后重试'
+    }
+    if (error.message.includes('Network Error')) {
+      return '网络连接失败，请检查网络设置'
+    }
+    return error.message
+  }
+  return defaultMsg
+}
+
 // 权限检查计算属性
 const canAdd = computed(() => userStore.hasPermission('training:course:add'))
 const canEdit = computed(() => userStore.hasPermission('training:course:edit'))
@@ -387,7 +407,7 @@ const getList = async () => {
     pagination.total = res.total || 0
   } catch (error: any) {
     console.error('获取课程列表失败:', error)
-    ElMessage.error(error.message || '获取课程列表失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '获取课程列表失败'))
   } finally {
     loading.value = false
   }
@@ -465,7 +485,7 @@ const handleEdit = async (row: any) => {
     })
   } catch (error: any) {
     console.error('获取课程详情失败:', error)
-    ElMessage.error(error.message || '获取课程详情失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '获取课程详情失败'))
   }
 }
 
@@ -491,7 +511,7 @@ const handleSubmit = async () => {
     getList()
   } catch (error: any) {
     console.error('保存失败:', error)
-    ElMessage.error(error.message || '保存失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '保存课程失败'))
   } finally {
     submitLoading.value = false
   }
@@ -507,7 +527,7 @@ const handleDelete = async (row: any) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('删除失败:', error)
-      ElMessage.error(error.message || '删除失败')
+      ElMessage.error(getFriendlyErrorMessage(error, '删除课程失败'))
     }
   }
 }
@@ -522,7 +542,7 @@ const handleSubmitAudit = async (row: any) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('提交审核失败:', error)
-      ElMessage.error(error.message || '提交审核失败')
+      ElMessage.error(getFriendlyErrorMessage(error, '提交审核失败'))
     }
   }
 }
@@ -546,7 +566,7 @@ const handleAudit = async (row: any, status: number) => {
     } catch (error: any) {
       if (error !== 'cancel') {
         console.error('审核失败:', error)
-        ElMessage.error(error.message || '审核失败')
+        ElMessage.error(getFriendlyErrorMessage(error, '审核操作失败'))
       }
     }
   }
@@ -594,7 +614,7 @@ const confirmAudit = async () => {
     getList()
   } catch (error: any) {
     console.error('审核失败:', error)
-    ElMessage.error(error.message || '审核失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '审核驳回失败'))
   } finally {
     auditLoading.value = false
   }
@@ -610,7 +630,7 @@ const handlePublish = async (row: any) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('上架失败:', error)
-      ElMessage.error(error.message || '上架失败')
+      ElMessage.error(getFriendlyErrorMessage(error, '上架课程失败'))
     }
   }
 }
@@ -625,7 +645,7 @@ const handleUnpublish = async (row: any) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('下架失败:', error)
-      ElMessage.error(error.message || '下架失败')
+      ElMessage.error(getFriendlyErrorMessage(error, '下架课程失败'))
     }
   }
 }
@@ -641,7 +661,7 @@ const getCategoryTreeData = async () => {
     ] as Category[]
   } catch (error: any) {
     console.error('获取分类树失败:', error)
-    ElMessage.error(error.message || '获取分类树失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '获取分类树失败'))
   }
 }
 

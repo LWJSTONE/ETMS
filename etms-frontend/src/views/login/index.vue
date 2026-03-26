@@ -117,7 +117,7 @@ const loginRules: FormRules = {
   ],
   captcha: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
-    { len: 4, message: '验证码为4位字符', trigger: 'blur' }
+    { min: 4, max: 6, message: '验证码为4-6位字符', trigger: 'blur' }
   ]
 }
 

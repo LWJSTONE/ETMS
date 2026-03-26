@@ -31,6 +31,7 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
     
     /**
      * 递归构建权限树
+     * 修复：添加ID空值检查，防止递归时出现空指针异常
      * @param allPermissions 所有权限列表
      * @param parentId 父ID
      * @return 权限树
@@ -38,9 +39,19 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
     private List<Permission> buildPermissionTree(List<Permission> allPermissions, Long parentId) {
         List<Permission> tree = new ArrayList<>();
         
+        if (allPermissions == null || allPermissions.isEmpty()) {
+            return tree;
+        }
+        
         for (Permission permission : allPermissions) {
+            // 修复：检查权限对象的ID是否为空，避免递归时传入null
+            if (permission.getId() == null) {
+                continue;
+            }
+            
             if ((parentId == null && permission.getParentId() == null) ||
                 (parentId != null && parentId.equals(permission.getParentId()))) {
+                // 递归构建子节点，此时permission.getId()一定不为null
                 permission.setChildren(buildPermissionTree(allPermissions, permission.getId()));
                 tree.add(permission);
             }

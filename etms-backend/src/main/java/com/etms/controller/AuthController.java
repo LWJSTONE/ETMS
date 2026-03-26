@@ -4,6 +4,7 @@ import com.etms.annotation.RateLimiter;
 import com.etms.common.Result;
 import com.etms.dto.LoginDTO;
 import com.etms.entity.User;
+import com.etms.exception.BusinessException;
 import com.etms.service.CaptchaService;
 import com.etms.service.UserService;
 import com.etms.vo.LoginVO;
@@ -59,11 +60,11 @@ public class AuthController {
         User user = userService.getCurrentUser();
         if (user == null) {
             // 修复：返回未登录状态码，前端会根据此跳转到登录页
-            return Result.error(401, "未登录");
+            throw new BusinessException(401, "未登录");
         }
         UserVO vo = userService.getUserDetail(user.getId());
         if (vo == null) {
-            return Result.error(404, "用户信息不存在");
+            throw new BusinessException(404, "用户信息不存在");
         }
         return Result.success(vo);
     }

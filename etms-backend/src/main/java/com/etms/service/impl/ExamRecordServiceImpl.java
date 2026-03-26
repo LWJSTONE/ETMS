@@ -188,9 +188,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         User currentUser = userService.getCurrentUser();
         if (currentUser != null && !record.getUserId().equals(currentUser.getId())) {
             // 检查是否是管理员或培训管理员
-            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
-                .anyMatch(r -> "ADMIN".equals(r.getRoleCode()) || "TRAINING_MANAGER".equals(r.getRoleCode()));
-            if (!isAdmin) {
+            if (!hasAdminRole(currentUser)) {
                 throw new BusinessException("无权查看此考试记录");
             }
         }
@@ -231,10 +229,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         }
         
         // 权限校验：用户只能查看自己的考试记录，管理员可以查看所有
-        boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
-            .anyMatch(r -> "ADMIN".equals(r.getRoleCode()) || "TRAINING_MANAGER".equals(r.getRoleCode()));
-        
-        if (!isAdmin && !record.getUserId().equals(currentUser.getId())) {
+        if (!hasAdminRole(currentUser) && !record.getUserId().equals(currentUser.getId())) {
             throw new BusinessException("无权查看此考试记录");
         }
         
@@ -789,9 +784,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         User currentUser = userService.getCurrentUser();
         if (currentUser != null && !record.getUserId().equals(currentUser.getId())) {
             // 检查是否是管理员
-            boolean isAdmin = currentUser.getRoles() != null && currentUser.getRoles().stream()
-                .anyMatch(r -> "ADMIN".equals(r.getRoleCode()));
-            if (!isAdmin) {
+            if (!hasAdminRole(currentUser)) {
                 throw new BusinessException("无权查看他人成绩详情");
             }
         }
@@ -1162,5 +1155,24 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 }
             }
         }
+    }
+    
+    /**
+     * 检查用户是否具有管理员或培训管理员角色
+     * 修复：统一权限检查逻辑，避免空指针异常
+     * @param user 用户对象
+     * @return 是否具有管理员权限
+     */
+    private boolean hasAdminRole(User user) {
+        if (user == null) {
+            return false;
+        }
+        // 安全检查：getRoles()可能返回null
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            return false;
+        }
+        return user.getRoles().stream()
+            .anyMatch(r -> r != null && r.getRoleCode() != null && 
+                ("ADMIN".equals(r.getRoleCode()) || "TRAINING_MANAGER".equals(r.getRoleCode())));
     }
 }

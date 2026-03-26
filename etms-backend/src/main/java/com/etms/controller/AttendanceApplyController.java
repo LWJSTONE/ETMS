@@ -7,6 +7,7 @@ import com.etms.dto.SupplementaryDTO;
 import com.etms.dto.AttendanceAuditDTO;
 import com.etms.entity.AttendanceRecord;
 import com.etms.entity.User;
+import com.etms.exception.BusinessException;
 import com.etms.service.AttendanceRecordService;
 import com.etms.service.UserService;
 import com.etms.vo.AttendanceRecordVO;
@@ -87,12 +88,12 @@ public class AttendanceApplyController {
         // 获取当前用户
         User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
-            return Result.error("用户未登录");
+            throw new BusinessException("用户未登录");
         }
         
         // 验证补签记录是否属于当前用户
         if (!attendanceRecordService.isOwner(id, currentUser.getId())) {
-            return Result.error("无权撤销他人的补签申请");
+            throw new BusinessException("无权撤销他人的补签申请");
         }
         
         attendanceRecordService.cancelSupplementary(id);
@@ -117,7 +118,7 @@ public class AttendanceApplyController {
         
         User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
-            return Result.error("用户未登录");
+            throw new BusinessException("用户未登录");
         }
         
         Page<AttendanceRecord> page = new Page<>(current, size);
@@ -145,7 +146,7 @@ public class AttendanceApplyController {
         // 根据用户名获取用户
         User user = userService.getByUsername(username);
         if (user == null) {
-            return Result.error("用户不存在");
+            throw new BusinessException("用户不存在");
         }
         
         Page<AttendanceRecord> page = new Page<>(current, size);

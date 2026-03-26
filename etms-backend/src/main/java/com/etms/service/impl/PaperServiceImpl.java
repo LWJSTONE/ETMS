@@ -22,6 +22,7 @@ import com.etms.util.JsonArrayUtils;
 import com.etms.vo.PaperQuestionVO;
 import com.etms.vo.PaperVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 /**
  * 试卷服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements PaperService {
@@ -233,6 +235,7 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     
     /**
      * 检查用户是否在培训计划目标范围内
+     * 修复：增强JSON解析异常处理，记录详细错误日志
      */
     private boolean isUserInPlanTarget(User user, TrainingPlan plan) {
         Integer targetType = plan.getTargetType();
@@ -273,6 +276,9 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
                     return true;
             }
         } catch (Exception e) {
+            // 修复：记录详细的错误日志，便于排查问题
+            log.error("解析培训计划目标范围JSON失败，计划ID: {}, 目标类型: {}, 错误信息: {}", 
+                plan.getId(), targetType, e.getMessage(), e);
             return false;
         }
     }

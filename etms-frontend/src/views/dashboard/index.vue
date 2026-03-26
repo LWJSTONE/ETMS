@@ -167,7 +167,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import * as echarts from 'echarts'
@@ -372,9 +372,11 @@ const getStatistics = async () => {
 
 onMounted(async () => {
   await getStatistics()
-  // 初始化图表（数据加载完成后）
-  initProgressChart()
-  initPassRateChart()
+  // 使用 nextTick 确保 DOM 渲染完成后再初始化图表
+  nextTick(() => {
+    initProgressChart()
+    initPassRateChart()
+  })
   // 添加 resize 事件监听
   window.addEventListener('resize', handleResize)
 })

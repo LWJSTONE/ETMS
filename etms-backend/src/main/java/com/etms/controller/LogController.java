@@ -70,7 +70,7 @@ public class LogController {
         // 安全检查：清空全部日志时需要确认参数
         if (startTime == null && endTime == null) {
             if (confirm == null || !confirm) {
-                return Result.error("清空全部日志是危险操作，请传入confirm=true参数进行确认");
+                throw new BusinessException("清空全部日志是危险操作，请传入confirm=true参数进行确认");
             }
         }
         logService.clearLogs(startTime, endTime);

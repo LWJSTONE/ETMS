@@ -181,6 +181,26 @@ import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
+// 获取友好的错误提示信息
+const getFriendlyErrorMessage = (error: any, defaultMsg: string): string => {
+  if (error.response?.data?.message) {
+    return error.response.data.message
+  }
+  if (error.response?.data?.msg) {
+    return error.response.data.msg
+  }
+  if (error.message) {
+    if (error.message.includes('timeout')) {
+      return '请求超时，请稍后重试'
+    }
+    if (error.message.includes('Network Error')) {
+      return '网络连接失败，请检查网络设置'
+    }
+    return error.message
+  }
+  return defaultMsg
+}
+
 const searchForm = reactive({ username: '', realName: '', status: null as number | null })
 const tableData = ref<any[]>([])
 const loading = ref(false)
@@ -272,7 +292,7 @@ const getList = async () => {
     pagination.total = res.total || 0
   } catch (error: any) {
     console.error('获取用户列表失败:', error)
-    ElMessage.error(error.message || '获取用户列表失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '获取用户列表失败'))
   } finally {
     loading.value = false
   }
@@ -284,7 +304,7 @@ const getRoleList = async () => {
     roleList.value = res || []
   } catch (error: any) {
     console.error('获取角色列表失败:', error)
-    ElMessage.error(error.message || '获取角色列表失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '获取角色列表失败'))
   }
 }
 
@@ -294,7 +314,7 @@ const getDeptTreeData = async () => {
     deptTree.value = res || []
   } catch (error: any) {
     console.error('获取部门树失败:', error)
-    ElMessage.error(error.message || '获取部门树失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '获取部门树失败'))
   }
 }
 
@@ -304,7 +324,7 @@ const getPositionListData = async () => {
     positionList.value = res.records || []
   } catch (error: any) {
     console.error('获取职位列表失败:', error)
-    ElMessage.error(error.message || '获取职位列表失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '获取职位列表失败'))
   }
 }
 
@@ -373,7 +393,7 @@ const handleDelete = async (row: any) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error(error)
-      ElMessage.error(error.message || '删除失败')
+      ElMessage.error(getFriendlyErrorMessage(error, '删除用户失败'))
     }
   }
 }
@@ -395,7 +415,7 @@ const handleResetPassword = async (row: any) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('重置密码失败:', error)
-      ElMessage.error(error.message || '重置密码失败')
+      ElMessage.error(getFriendlyErrorMessage(error, '重置密码失败'))
     }
   }
 }
@@ -433,7 +453,7 @@ const handleSubmitRole = async () => {
     getList()
   } catch (error: any) {
     console.error('角色分配失败:', error)
-    ElMessage.error(error.message || '角色分配失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '角色分配失败'))
   }
 }
 
@@ -482,7 +502,7 @@ const handleSubmit = async () => {
     getList()
   } catch (error: any) { 
     console.error(error)
-    ElMessage.error(error.message || '操作失败')
+    ElMessage.error(getFriendlyErrorMessage(error, '操作失败'))
   }
 }
 

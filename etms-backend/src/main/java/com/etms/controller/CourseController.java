@@ -31,6 +31,7 @@ public class CourseController {
     
     @ApiOperation(value = "分页查询课程列表")
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public Result<PageResult<CourseVO>> page(
             @RequestParam(defaultValue = "1") @javax.validation.constraints.Min(value = 1, message = "页码最小为1") Long current,
             @RequestParam(defaultValue = "10") @javax.validation.constraints.Min(value = 1, message = "每页条数最小为1") @javax.validation.constraints.Max(value = 100, message = "每页条数最大为100") Long size,
@@ -139,6 +140,7 @@ public class CourseController {
     
     @ApiOperation(value = "获取课程列表(不分页)")
     @GetMapping("/all")
+    @PreAuthorize("isAuthenticated()")
     public Result<List<CourseVO>> list(@RequestParam(required = false) Long categoryId) {
         // 修复：根据用户权限过滤课程数据
         // 未登录或普通用户只能查看已发布的课程

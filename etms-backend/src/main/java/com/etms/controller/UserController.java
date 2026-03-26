@@ -7,6 +7,7 @@ import com.etms.dto.PasswordDTO;
 import com.etms.dto.StatusDTO;
 import com.etms.dto.UserDTO;
 import com.etms.entity.User;
+import com.etms.exception.BusinessException;
 import com.etms.service.UserService;
 import com.etms.vo.UserVO;
 import io.swagger.annotations.Api;
@@ -58,7 +59,7 @@ public class UserController {
         // 权限校验：管理员或用户本人可查看
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            return Result.error("未登录");
+            throw new BusinessException("未登录");
         }
         
         String currentUsername = authentication.getName();
@@ -68,12 +69,12 @@ public class UserController {
         
         UserVO vo = userService.getUserDetail(id);
         if (vo == null) {
-            return Result.error("用户不存在");
+            throw new BusinessException("用户不存在");
         }
         
         // 非管理员只能查看自己的信息
         if (!isAdmin && !currentUsername.equals(vo.getUsername())) {
-            return Result.error("无权限查看该用户信息");
+            throw new BusinessException("无权限查看该用户信息");
         }
         
         return Result.success(vo);
@@ -93,7 +94,7 @@ public class UserController {
         // 权限校验：管理员可修改所有，普通用户只能修改自己的基本信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            return Result.error("未登录");
+            throw new BusinessException("未登录");
         }
         
         String currentUsername = authentication.getName();
@@ -104,13 +105,13 @@ public class UserController {
         // 获取目标用户信息
         User targetUser = userService.getById(id);
         if (targetUser == null) {
-            return Result.error("用户不存在");
+            throw new BusinessException("用户不存在");
         }
         
         // 非管理员只能修改自己的信息，且不能修改角色、状态等敏感字段
         if (!isAdmin) {
             if (!currentUsername.equals(targetUser.getUsername())) {
-                return Result.error("无权限修改其他用户信息");
+                throw new BusinessException("无权限修改其他用户信息");
             }
             // 普通用户不能修改角色和状态
             userDTO.setRoleIds(null);
@@ -129,7 +130,7 @@ public class UserController {
         // 获取当前登录用户信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            return Result.error("未登录");
+            throw new BusinessException("未登录");
         }
         
         String currentUsername = authentication.getName();
@@ -137,17 +138,17 @@ public class UserController {
         // 获取目标用户信息
         User targetUser = userService.getById(id);
         if (targetUser == null) {
-            return Result.error("用户不存在");
+            throw new BusinessException("用户不存在");
         }
         
         // 安全检查：不能删除当前登录用户自己
         if (currentUsername.equals(targetUser.getUsername())) {
-            return Result.error("不能删除当前登录用户");
+            throw new BusinessException("不能删除当前登录用户");
         }
         
         // 安全检查：禁止删除admin账户
         if ("admin".equals(targetUser.getUsername())) {
-            return Result.error("admin账户不能删除");
+            throw new BusinessException("admin账户不能删除");
         }
         
         userService.deleteUser(id);
@@ -162,7 +163,7 @@ public class UserController {
         // 权限校验：只能修改自己的密码，或需要管理员权限
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            return Result.error("未登录");
+            throw new BusinessException("未登录");
         }
         
         // 获取当前登录用户名
@@ -176,12 +177,12 @@ public class UserController {
         // 获取目标用户信息
         User targetUser = userService.getById(id);
         if (targetUser == null) {
-            return Result.error("用户不存在");
+            throw new BusinessException("用户不存在");
         }
         
         // 非管理员只能修改自己的密码
         if (!isAdmin && !currentUsername.equals(targetUser.getUsername())) {
-            return Result.error("无权限修改他人密码");
+            throw new BusinessException("无权限修改他人密码");
         }
         
         userService.updatePassword(id, passwordDTO.getOldPassword(), passwordDTO.getNewPassword());
@@ -214,7 +215,7 @@ public class UserController {
             if (targetUser != null && currentUsername.equals(targetUser.getUsername())) {
                 // 管理员不能禁用自己
                 if (status == 0) {
-                    return Result.error("不能禁用自己的账户");
+                    throw new BusinessException("不能禁用自己的账户");
                 }
             }
         }
