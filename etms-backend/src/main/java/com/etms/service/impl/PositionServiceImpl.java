@@ -145,6 +145,26 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
+    public void updateStatus(Long id, Integer status) {
+        // 检查岗位是否存在
+        Position position = baseMapper.selectById(id);
+        if (position == null) {
+            throw new BusinessException("岗位不存在");
+        }
+        
+        // 验证状态值有效性
+        if (status != null && status != 0 && status != 1) {
+            throw new BusinessException("状态值无效，必须为0(禁用)或1(正常)");
+        }
+        
+        Position updatePosition = new Position();
+        updatePosition.setId(id);
+        updatePosition.setStatus(status);
+        baseMapper.updateById(updatePosition);
+    }
+
+    @Override
     public void exportPositions(String positionName, String positionCode, Integer status, HttpServletResponse response) {
         // 查询所有符合条件的岗位
         LambdaQueryWrapper<Position> wrapper = new LambdaQueryWrapper<>();
@@ -153,6 +173,12 @@ public class PositionServiceImpl extends ServiceImpl<PositionMapper, Position> i
                .eq(status != null, Position::getStatus, status)
                .orderByAsc(Position::getSortOrder)
                .orderByDesc(Position::getCreateTime);
+        
+        // 修复：添加数据量限制，防止大量数据导出导致内存溢出
+        Long totalCount = baseMapper.selectCount(wrapper);
+        if (totalCount > 10000) {
+            throw new BusinessException("导出数据量过大(超过10000条)，请缩小查询范围后重试");
+        }
         
         List<Position> positions = baseMapper.selectList(wrapper);
         

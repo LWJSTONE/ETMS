@@ -13,6 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import java.util.List;
 
 /**
@@ -20,6 +22,7 @@ import java.util.List;
  */
 @Api(tags = "字典管理")
 @RestController
+@RequestMapping("/system/dict")
 @RequiredArgsConstructor
 @Validated
 public class DictController {
@@ -30,10 +33,10 @@ public class DictController {
     
     @ApiOperation(value = "分页查询字典类型列表")
     @PreAuthorize("hasAuthority('system:dict:list')")
-    @GetMapping("/system/dict/types")
+    @GetMapping("/types")
     public Result<PageResult<DictType>> pageDictTypes(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) String dictName,
             @RequestParam(required = false) String dictType,
             @RequestParam(required = false) Integer status) {
@@ -47,7 +50,7 @@ public class DictController {
     
     @ApiOperation(value = "获取字典类型详情")
     @PreAuthorize("hasAuthority('system:dict:query')")
-    @GetMapping("/system/dict/types/{id}")
+    @GetMapping("/types/{id}")
     public Result<DictType> getDictType(@PathVariable Long id) {
         DictType type = dictService.getDictTypeDetail(id);
         if (type == null) {
@@ -58,7 +61,7 @@ public class DictController {
     
     @ApiOperation(value = "新增字典类型")
     @PreAuthorize("hasAuthority('system:dict:add')")
-    @PostMapping("/system/dict/types")
+    @PostMapping("/types")
     public Result<Void> addDictType(@Valid @RequestBody DictType dictType) {
         dictService.addDictType(dictType);
         return Result.success();
@@ -66,7 +69,7 @@ public class DictController {
     
     @ApiOperation(value = "更新字典类型")
     @PreAuthorize("hasAuthority('system:dict:edit')")
-    @PutMapping("/system/dict/types/{id}")
+    @PutMapping("/types/{id}")
     public Result<Void> updateDictType(@PathVariable Long id, @Valid @RequestBody DictType dictType) {
         dictType.setId(id);
         dictService.updateDictType(dictType);
@@ -75,7 +78,7 @@ public class DictController {
     
     @ApiOperation(value = "删除字典类型")
     @PreAuthorize("hasAuthority('system:dict:delete')")
-    @DeleteMapping("/system/dict/types/{id}")
+    @DeleteMapping("/types/{id}")
     public Result<Void> deleteDictType(@PathVariable Long id) {
         // 修复：删除字典类型前检查是否有关联的字典数据
         if (dictService.hasDictData(id)) {
@@ -89,14 +92,15 @@ public class DictController {
     
     @ApiOperation(value = "获取字典数据列表")
     @PreAuthorize("hasAuthority('system:dict:list')")
-    @GetMapping("/system/dict/data/{dictTypeId}")
+    @GetMapping("/data/{dictTypeId}")
     public Result<List<DictData>> getDictDataList(@PathVariable Long dictTypeId) {
         List<DictData> list = dictService.getDictDataList(dictTypeId);
         return Result.success(list);
     }
     
     @ApiOperation(value = "根据字典类型获取字典数据")
-    @GetMapping("/system/dict/data/type/{dictType}")
+    @GetMapping("/data/type/{dictType}")
+    @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制，登录用户可访问
     public Result<List<DictData>> getDictDataByType(@PathVariable String dictType) {
         List<DictData> list = dictService.getDictDataByType(dictType);
         return Result.success(list);
@@ -104,7 +108,7 @@ public class DictController {
     
     @ApiOperation(value = "新增字典数据")
     @PreAuthorize("hasAuthority('system:dict:add')")
-    @PostMapping("/system/dict/data")
+    @PostMapping("/data")
     public Result<Void> addDictData(@Valid @RequestBody DictData dictData) {
         dictService.addDictData(dictData);
         return Result.success();
@@ -112,7 +116,7 @@ public class DictController {
     
     @ApiOperation(value = "更新字典数据")
     @PreAuthorize("hasAuthority('system:dict:edit')")
-    @PutMapping("/system/dict/data/{id}")
+    @PutMapping("/data/{id}")
     public Result<Void> updateDictData(@PathVariable Long id, @Valid @RequestBody DictData dictData) {
         dictData.setId(id);
         dictService.updateDictData(dictData);
@@ -121,7 +125,7 @@ public class DictController {
     
     @ApiOperation(value = "删除字典数据")
     @PreAuthorize("hasAuthority('system:dict:delete')")
-    @DeleteMapping("/system/dict/data/{id}")
+    @DeleteMapping("/data/{id}")
     public Result<Void> deleteDictData(@PathVariable Long id) {
         dictService.deleteDictData(id);
         return Result.success();
@@ -131,7 +135,7 @@ public class DictController {
     
     @ApiOperation(value = "刷新字典缓存")
     @PreAuthorize("hasAuthority('system:dict:cache')")
-    @PostMapping("/system/dict/cache/refresh")
+    @PostMapping("/cache/refresh")
     public Result<Void> refreshCache() {
         dictService.refreshCache();
         return Result.success();

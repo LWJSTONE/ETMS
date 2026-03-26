@@ -121,6 +121,12 @@ public class LogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog
             wrapper.between(OperationLog::getCreateTime, start, end);
         }
 
+        // 修复：添加数据量限制，防止大量数据导出导致内存溢出
+        Long totalCount = baseMapper.selectCount(wrapper);
+        if (totalCount > 10000) {
+            throw new BusinessException("导出数据量过大(超过10000条)，请缩小查询范围后重试");
+        }
+
         List<OperationLog> logs = baseMapper.selectList(wrapper);
 
         // 创建Excel

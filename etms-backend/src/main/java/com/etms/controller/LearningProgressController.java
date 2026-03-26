@@ -16,6 +16,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 
 /**
  * 学习进度控制器
@@ -33,8 +35,8 @@ public class LearningProgressController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
     public Result<PageResult<LearningProgressVO>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) Long planId,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Integer status,
@@ -51,9 +53,10 @@ public class LearningProgressController {
     
     @ApiOperation(value = "获取我的学习进度")
     @GetMapping("/my")
+    @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制
     public Result<PageResult<LearningProgressVO>> myProgress(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long planId) {
@@ -66,12 +69,18 @@ public class LearningProgressController {
     
     @ApiOperation(value = "更新学习进度")
     @PutMapping
+    @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制
     public Result<Void> updateProgress(@Valid @RequestBody ProgressDTO progressDTO) {
         // 修复：验证用户只能更新自己的学习进度
         org.springframework.security.core.Authentication auth = 
             org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
             throw new BusinessException("用户未登录");
+        }
+        
+        // 修复：添加进度值范围验证
+        if (progressDTO.getProgress() == null || progressDTO.getProgress() < 0 || progressDTO.getProgress() > 100) {
+            throw new BusinessException("进度值必须在0-100之间");
         }
         
         learningProgressService.updateProgress(

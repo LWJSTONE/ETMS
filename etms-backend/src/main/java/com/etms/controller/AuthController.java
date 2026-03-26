@@ -58,9 +58,13 @@ public class AuthController {
     public Result<UserVO> info() {
         User user = userService.getCurrentUser();
         if (user == null) {
+            // 修复：返回未登录状态码，前端会根据此跳转到登录页
             return Result.error(401, "未登录");
         }
         UserVO vo = userService.getUserDetail(user.getId());
+        if (vo == null) {
+            return Result.error(404, "用户信息不存在");
+        }
         return Result.success(vo);
     }
 }

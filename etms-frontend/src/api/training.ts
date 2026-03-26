@@ -58,21 +58,25 @@ export function endPlan(id: number): Promise<void> {
  */
 
 // 获取学习进度列表
+// @requires ADMIN 或 TRAINING_MANAGER 或 DEPT_MANAGER 权限
 export function getProgressList(params: PageParams): Promise<PageResult<LearningProgress>> {
   return request.get('/training/progress', params)
 }
 
 // 更新学习进度
+// @requires 已登录用户，只能更新自己的学习进度
 export function updateProgress(data: LearningProgressUpdateParams): Promise<void> {
   return request.put('/training/progress', data)
 }
 
 // 获取我的学习进度
+// @requires 已登录用户
 export function getMyProgress(params: PageParams): Promise<PageResult<LearningProgress>> {
   return request.get('/training/progress/my', params)
 }
 
 // 获取学习进度详情
+// @requires ADMIN 或 TRAINING_MANAGER 或 DEPT_MANAGER 权限
 export function getProgressDetail(id: number): Promise<LearningProgress> {
   return request.get(`/training/progress/${id}`)
 }

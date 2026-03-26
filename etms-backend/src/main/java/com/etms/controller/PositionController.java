@@ -15,6 +15,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 
 /**
  * 岗位管理控制器
@@ -32,8 +34,8 @@ public class PositionController {
     @PreAuthorize("hasAuthority('system:position:list')")
     @GetMapping
     public Result<PageResult<Position>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) String positionName,
             @RequestParam(required = false) String positionCode,
             @RequestParam(required = false) Integer status) {
@@ -89,10 +91,8 @@ public class PositionController {
     @PreAuthorize("hasAuthority('system:position:edit')")
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusDTO statusDTO) {
-        Position updatePosition = new Position();
-        updatePosition.setId(id);
-        updatePosition.setStatus(statusDTO.getStatus());
-        positionService.updateById(updatePosition);
+        // 修复：调用Service层的业务方法而非直接更新
+        positionService.updateStatus(id, statusDTO.getStatus());
         return Result.success();
     }
 

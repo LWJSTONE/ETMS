@@ -43,6 +43,13 @@ public interface PositionService extends IService<Position> {
     boolean hasUsers(Long positionId);
 
     /**
+     * 更新岗位状态
+     * @param id 岗位ID
+     * @param status 状态值
+     */
+    void updateStatus(Long id, Integer status);
+
+    /**
      * 导出岗位
      */
     void exportPositions(String positionName, String positionCode, Integer status, HttpServletResponse response);

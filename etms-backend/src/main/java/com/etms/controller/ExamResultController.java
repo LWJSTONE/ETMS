@@ -15,6 +15,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -34,8 +36,8 @@ public class ExamResultController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
     public Result<PageResult<ExamResultVO>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) Long paperId,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Integer passed,
@@ -52,9 +54,10 @@ public class ExamResultController {
     
     @ApiOperation(value = "获取我的成绩")
     @GetMapping("/my")
+    @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制
     public Result<PageResult<ExamResultVO>> myResults(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) Integer passed,
             @RequestParam(required = false) String paperName,
             @RequestParam(required = false) String examStartTime,
@@ -68,9 +71,13 @@ public class ExamResultController {
     
     @ApiOperation(value = "获取成绩详情")
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制
     public Result<ExamResultVO> get(@PathVariable Long id) {
         // 权限验证在Service层处理：用户只能查看自己的成绩，管理员可以查看所有成绩
         ExamResultVO vo = examRecordService.getResultDetail(id);
+        if (vo == null) {
+            throw new BusinessException("成绩记录不存在");
+        }
         return Result.success(vo);
     }
     
