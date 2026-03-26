@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -208,7 +209,8 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
         // 先从缓存获取
         List<DictData> cachedData = dictCache.get(dictType);
         if (cachedData != null) {
-            return cachedData;
+            // 修复：返回缓存数据的副本，防止外部修改影响缓存
+            return new ArrayList<>(cachedData);
         }
         
         // 缓存中没有，从数据库查询
@@ -222,7 +224,8 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
         
         // 放入缓存
         dictCache.put(dictType, dataList);
-        return dataList;
+        // 返回副本，防止外部修改
+        return new ArrayList<>(dataList);
     }
     
     @Override

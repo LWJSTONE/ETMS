@@ -149,7 +149,10 @@ public class ConfigServiceImpl extends ServiceImpl<ConfigMapper, Config> impleme
             new LambdaQueryWrapper<Config>().eq(Config::getStatus, 1)
         );
         for (Config config : configs) {
-            configCache.put(config.getConfigKey(), config.getConfigValue());
+            // 修复空指针问题：只缓存非null值，避免缓存null导致问题
+            if (config.getConfigKey() != null && config.getConfigValue() != null) {
+                configCache.put(config.getConfigKey(), config.getConfigValue());
+            }
         }
     }
 }

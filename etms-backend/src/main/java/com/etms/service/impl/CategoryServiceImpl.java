@@ -313,7 +313,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         for (CategoryVO category : categories) {
             Long pid = category.getParentId() == null ? 0L : category.getParentId();
             if (pid.equals(parentId)) {
-                category.setChildren(groupMap.get(category.getId()));
+                // 修复空指针问题：groupMap.get可能返回null，需要检查
+                List<CategoryVO> children = groupMap.get(category.getId());
+                category.setChildren(children != null ? children : new ArrayList<>());
                 tree.add(category);
             }
         }
