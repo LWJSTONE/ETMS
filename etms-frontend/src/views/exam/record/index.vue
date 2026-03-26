@@ -15,6 +15,7 @@
             <el-option label="已提交" :value="1" />
             <el-option label="已超时" :value="2" />
             <el-option label="已批阅" :value="3" />
+            <el-option label="已放弃" :value="4" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -235,13 +236,14 @@ const detailLoading = ref(false)
 const detailData = ref<ExamRecord>({} as ExamRecord)
 
 // 获取状态类型 - 与后端状态定义一致
-// 后端状态定义: 0-考试中 1-已提交 2-已超时 3-已批阅
+// 后端状态定义: 0-考试中 1-已提交 2-已超时 3-已批阅 4-已放弃
 const getStatusType = (status: number) => {
   const types: Record<number, string> = {
     0: 'warning',   // 考试中
     1: 'info',      // 已提交
     2: 'danger',    // 已超时
-    3: 'success'    // 已批阅
+    3: 'success',   // 已批阅
+    4: 'info'       // 已放弃
   }
   return types[status] || 'info'
 }
@@ -252,7 +254,8 @@ const getStatusName = (status: number) => {
     0: '考试中',
     1: '已提交',
     2: '已超时',
-    3: '已批阅'
+    3: '已批阅',
+    4: '已放弃'
   }
   return names[status] || '未知'
 }
