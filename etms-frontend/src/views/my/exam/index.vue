@@ -81,8 +81,8 @@
             <el-table-column label="是否通过" width="90" align="center">
               <template #default="{ row }">
                 <template v-if="row.status === 2 || row.status === 3">
-                  <el-tag :type="row.userScore >= row.passScore ? 'success' : 'danger'" size="small">
-                    {{ row.userScore >= row.passScore ? '通过' : '未通过' }}
+                  <el-tag :type="(row.userScore ?? 0) >= (row.passScore ?? 0) ? 'success' : 'danger'" size="small">
+                    {{ (row.userScore ?? 0) >= (row.passScore ?? 0) ? '通过' : '未通过' }}
                   </el-tag>
                 </template>
                 <span v-else class="text-gray">-</span>

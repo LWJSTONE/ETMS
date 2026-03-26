@@ -170,7 +170,8 @@ const fetchCourseInfo = async () => {
     // 获取学习进度
     if (progressId.value) {
       const progressRes = await getMyProgress({ current: 1, size: 1000 })
-      const progressData = progressRes.data?.records?.find((r: any) => r.id === progressId.value)
+      // 修复：响应拦截器已解包，直接使用records
+      const progressData = progressRes.records?.find((r: any) => r.id === progressId.value)
       if (progressData) {
         progress.value = progressData.progress || 0
         // 从进度数据中获取 planId

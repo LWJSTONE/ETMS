@@ -499,8 +499,8 @@ const handleExport = async () => {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    // 修复：后端导出的是Excel格式，使用xlsx扩展名
-    link.download = `用户数据_${new Date().toISOString().slice(0, 10)}.xlsx`
+    // 修复：后端导出的是CSV格式，使用csv扩展名
+    link.download = `用户数据_${new Date().toISOString().slice(0, 10)}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

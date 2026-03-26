@@ -59,11 +59,11 @@
     <!-- 快捷操作区 -->
     <el-card shadow="never" class="action-card">
       <div class="action-buttons">
-        <el-button type="success" size="large" @click="handleSignIn">
+        <el-button type="success" size="large" @click="handleSignIn" :loading="signLoading && !isSignOut">
           <el-icon><CircleCheck /></el-icon>
           签到
         </el-button>
-        <el-button type="warning" size="large" @click="handleSignOut">
+        <el-button type="warning" size="large" @click="handleSignOut" :loading="signLoading && isSignOut">
           <el-icon><CircleClose /></el-icon>
           签退
         </el-button>
