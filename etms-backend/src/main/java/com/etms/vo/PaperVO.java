@@ -22,6 +22,21 @@ public class PaperVO implements Serializable {
     /** 试卷编码 */
     private String paperCode;
 
+    /** 关联培训计划ID */
+    private Long planId;
+
+    /** 关联培训计划名称 */
+    private String planName;
+
+    /** 关联课程ID */
+    private Long courseId;
+
+    /** 关联课程名称 */
+    private String courseName;
+
+    /** 试卷类型(1手动组卷 2随机组卷) */
+    private Integer paperType;
+
     /** 总分 */
     private Integer totalScore;
 

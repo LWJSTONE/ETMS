@@ -35,15 +35,15 @@ public class PaperController {
     @ApiOperation(value = "分页查询试卷列表")
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
-    public Result<PageResult<Paper>> page(
+    public Result<PageResult<PaperVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) String paperName,
             @RequestParam(required = false) String paperCode,
             @RequestParam(required = false) Integer status) {
         Page<Paper> page = new Page<>(current, size);
-        Page<Paper> voPage = paperService.pagePapers(page, paperName, paperCode, status);
-        PageResult<Paper> pageResult = new PageResult<>(
+        Page<PaperVO> voPage = paperService.pagePapers(page, paperName, paperCode, status);
+        PageResult<PaperVO> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );
         return Result.success(pageResult);
@@ -52,7 +52,7 @@ public class PaperController {
     @ApiOperation(value = "获取可参加的考试列表")
     @GetMapping("/available")
     @PreAuthorize("isAuthenticated()")
-    public Result<PageResult<Paper>> available(
+    public Result<PageResult<PaperVO>> available(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
             @RequestParam(required = false) Long planId) {
@@ -62,8 +62,8 @@ public class PaperController {
         }
         // 普通用户可访问，只返回已发布的试卷
         Page<Paper> page = new Page<>(current, size);
-        Page<Paper> voPage = paperService.pagePapers(page, null, null, 1);
-        PageResult<Paper> pageResult = new PageResult<>(
+        Page<PaperVO> voPage = paperService.pagePapers(page, null, null, 1);
+        PageResult<PaperVO> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );
         return Result.success(pageResult);

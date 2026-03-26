@@ -363,6 +363,7 @@ export interface Paper {
   status: number
   startTime?: string
   endTime?: string
+  description?: string  // 试卷说明
   createTime?: string
   updateTime?: string
   questions?: PaperQuestion[]
@@ -388,6 +389,7 @@ export interface PaperCreateParams {
   duration: number  // 考试时长(分钟)，后端通过@JsonProperty("duration")映射examDuration字段
   startTime?: string
   endTime?: string
+  description?: string  // 试卷说明
   questionCount?: number
   questionConfig?: string
   shuffleOption?: number
@@ -408,6 +410,7 @@ export interface PaperUpdateParams {
   duration?: number  // 考试时长(分钟)，后端通过@JsonProperty("duration")映射examDuration字段
   startTime?: string
   endTime?: string
+  description?: string  // 试卷说明
   questionCount?: number
   questionConfig?: string
   shuffleOption?: number

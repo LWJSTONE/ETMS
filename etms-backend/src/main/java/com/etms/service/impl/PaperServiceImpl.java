@@ -48,13 +48,24 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     private final UserService userService;
 
     @Override
-    public Page<Paper> pagePapers(Page<Paper> page, String paperName, String paperCode, Integer status) {
+    public Page<PaperVO> pagePapers(Page<Paper> page, String paperName, String paperCode, Integer status) {
         LambdaQueryWrapper<Paper> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(paperName), Paper::getPaperName, paperName)
                .like(StringUtils.hasText(paperCode), Paper::getPaperCode, paperCode)
                .eq(status != null, Paper::getStatus, status)
                .orderByDesc(Paper::getCreateTime);
-        return baseMapper.selectPage(page, wrapper);
+        Page<Paper> paperPage = baseMapper.selectPage(page, wrapper);
+        
+        // 转换为PaperVO分页结果
+        Page<PaperVO> voPage = new Page<>(paperPage.getCurrent(), paperPage.getSize(), paperPage.getTotal());
+        List<PaperVO> voList = paperPage.getRecords().stream().map(paper -> {
+            PaperVO vo = new PaperVO();
+            BeanUtils.copyProperties(paper, vo);
+            vo.setDuration(paper.getExamDuration());
+            return vo;
+        }).collect(Collectors.toList());
+        voPage.setRecords(voList);
+        return voPage;
     }
 
     @Override
