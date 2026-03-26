@@ -254,6 +254,23 @@
         </el-row>
         <el-row :gutter="20" v-if="form.needExam === 1">
           <el-col :span="12">
+            <el-form-item label="关联试卷" prop="paperId">
+              <el-select
+                v-model="form.paperId"
+                placeholder="请选择关联试卷"
+                filterable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="paper in paperList"
+                  :key="paper.id"
+                  :label="paper.paperName"
+                  :value="paper.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="及格分数" prop="passScore">
               <el-input-number
                 v-model="form.passScore"
@@ -264,6 +281,8 @@
               />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20" v-if="form.needExam === 1">
           <el-col :span="12">
             <el-form-item label="最大补考次数" prop="maxRetake">
               <el-input-number
@@ -343,6 +362,7 @@ import { getCourseListAll } from '@/api/course'
 import { getDeptTree } from '@/api/dept'
 import { getPositionListAll } from '@/api/position'
 import { getUserList } from '@/api/user'
+import { getPaperList } from '@/api/exam'
 
 // 搜索表单
 const searchForm = reactive({
@@ -374,6 +394,8 @@ const courseList = ref<any[]>([])
 const deptList = ref<any[]>([])
 const positionList = ref<any[]>([])
 const userList = ref<any[]>([])
+// 试卷列表
+const paperList = ref<any[]>([])
 
 // 表单数据
 const form = reactive({
@@ -388,6 +410,7 @@ const form = reactive({
   targetPositionIds: [] as number[],
   targetUserIds: [] as number[],
   needExam: 0 as number,
+  paperId: null as number | null,
   passScore: 60 as number,
   maxRetake: 3 as number,
   minStudyTime: 0 as number,
@@ -545,6 +568,7 @@ const resetForm = () => {
     targetPositionIds: [],
     targetUserIds: [],
     needExam: 0,
+    paperId: null,
     passScore: 60,
     maxRetake: 3,
     minStudyTime: 0,
@@ -598,6 +622,7 @@ const handleEdit = async (row: any) => {
       targetPositionIds,
       targetUserIds,
       needExam: data.needExam || 0,
+      paperId: data.paperId || null,
       passScore: data.passScore || 60,
       maxRetake: data.maxRetake || 3,
       minStudyTime: data.minStudyTime || 0,
@@ -781,6 +806,7 @@ const handleSubmit = async () => {
       targetPositionIds: form.targetPositionIds.length > 0 ? JSON.stringify(form.targetPositionIds) : null,
       targetUserIds: form.targetUserIds.length > 0 ? JSON.stringify(form.targetUserIds) : null,
       needExam: form.needExam,
+      paperId: form.needExam === 1 ? form.paperId : null,
       passScore: form.passScore,
       maxRetake: form.maxRetake,
       minStudyTime: form.minStudyTime,
@@ -849,12 +875,23 @@ watch(() => form.targetType, (newType, oldType) => {
   }
 })
 
+// 获取试卷列表
+const getPaperListData = async () => {
+  try {
+    const res = await getPaperList({ current: 1, size: 1000, status: 1 })
+    paperList.value = res.records || []
+  } catch (error: any) {
+    console.error(error)
+  }
+}
+
 onMounted(() => {
   getList()
   getCourseList()
   getDeptList()
   getPositionListData()
   getUserListAll()
+  getPaperListData()
 })
 </script>
 
