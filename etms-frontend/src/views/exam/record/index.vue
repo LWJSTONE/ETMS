@@ -11,10 +11,10 @@
         </el-form-item>
         <el-form-item label="考试状态">
           <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
-            <el-option label="未开始" :value="0" />
-            <el-option label="进行中" :value="1" />
-            <el-option label="已完成" :value="2" />
-            <el-option label="已超时" :value="3" />
+            <el-option label="考试中" :value="0" />
+            <el-option label="已提交" :value="1" />
+            <el-option label="已超时" :value="2" />
+            <el-option label="已批阅" :value="3" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -46,13 +46,13 @@
         </el-table-column>
         <el-table-column prop="totalScore" label="得分" width="100" align="center">
           <template #default="{ row }">
-            <span v-if="row.status === 2">{{ row.totalScore ?? '-' }}</span>
+            <span v-if="row.status >= 1">{{ row.userScore ?? row.totalScore ?? '-' }}</span>
             <span v-else class="text-gray">待完成</span>
           </template>
         </el-table-column>
         <el-table-column prop="passed" label="是否通过" width="100" align="center">
           <template #default="{ row }">
-            <template v-if="row.status === 2">
+            <template v-if="row.status >= 3">
               <el-tag :type="row.passed === 1 ? 'success' : 'danger'">
                 {{ row.passed === 1 ? '通过' : '未通过' }}
               </el-tag>
@@ -110,7 +110,7 @@
           <el-descriptions-item label="考试时长">{{ detailData.duration }}分钟</el-descriptions-item>
           <el-descriptions-item label="考试得分">{{ detailData.totalScore ?? '-' }}</el-descriptions-item>
           <el-descriptions-item label="是否通过">
-            <template v-if="detailData.status === 2">
+            <template v-if="detailData.status >= 3">
               <el-tag :type="detailData.passed === 1 ? 'success' : 'danger'">
                 {{ detailData.passed === 1 ? '通过' : '未通过' }}
               </el-tag>
@@ -234,24 +234,25 @@ const detailVisible = ref(false)
 const detailLoading = ref(false)
 const detailData = ref<ExamRecord>({} as ExamRecord)
 
-// 获取状态类型
+// 获取状态类型 - 与后端状态定义一致
+// 后端状态定义: 0-考试中 1-已提交 2-已超时 3-已批阅
 const getStatusType = (status: number) => {
   const types: Record<number, string> = {
-    0: 'info',
-    1: 'warning',
-    2: 'success',
-    3: 'danger'
+    0: 'warning',   // 考试中
+    1: 'info',      // 已提交
+    2: 'danger',    // 已超时
+    3: 'success'    // 已批阅
   }
   return types[status] || 'info'
 }
 
-// 获取状态名称
+// 获取状态名称 - 与后端状态定义一致
 const getStatusName = (status: number) => {
   const names: Record<number, string> = {
-    0: '未开始',
-    1: '进行中',
-    2: '已完成',
-    3: '已超时'
+    0: '考试中',
+    1: '已提交',
+    2: '已超时',
+    3: '已批阅'
   }
   return names[status] || '未知'
 }

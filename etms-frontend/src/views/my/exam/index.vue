@@ -80,7 +80,7 @@
             <el-table-column prop="totalScore" label="总分" width="80" align="center" />
             <el-table-column label="是否通过" width="90" align="center">
               <template #default="{ row }">
-                <template v-if="row.status === 1 || row.status === 2 || row.status === 3">
+                <template v-if="row.status >= 3">
                   <el-tag :type="(row.userScore ?? 0) >= (row.passScore ?? 0) ? 'success' : 'danger'" size="small">
                     {{ (row.userScore ?? 0) >= (row.passScore ?? 0) ? '通过' : '未通过' }}
                   </el-tag>
@@ -171,7 +171,7 @@
         <el-descriptions-item label="总分">{{ currentResult.totalScore }}分</el-descriptions-item>
         <el-descriptions-item label="及格分数">{{ currentResult.passScore }}分</el-descriptions-item>
         <el-descriptions-item label="是否通过">
-          <el-tag v-if="currentResult.status === 1 || currentResult.status === 2 || currentResult.status === 3" :type="currentResult.userScore >= currentResult.passScore ? 'success' : 'danger'">
+          <el-tag v-if="currentResult.status >= 3" :type="currentResult.userScore >= currentResult.passScore ? 'success' : 'danger'">
             {{ currentResult.userScore >= currentResult.passScore ? '通过' : '未通过' }}
           </el-tag>
           <span v-else>-</span>
@@ -312,23 +312,24 @@ const getStartButtonText = (exam: any) => {
   return '开始考试'
 }
 
-// 获取记录状态类型
+// 获取记录状态类型 - 与后端状态定义一致
+// 后端状态定义: 0-考试中 1-已提交 2-已超时 3-已批阅
 const getRecordStatusType = (status: number) => {
   const types: Record<number, string> = {
-    0: 'warning', // 考试中
-    1: 'success', // 已提交
-    2: 'danger',  // 超时
-    3: 'info'     // 已批阅
+    0: 'warning',   // 考试中
+    1: 'info',      // 已提交
+    2: 'danger',    // 已超时
+    3: 'success'    // 已批阅
   }
   return types[status] || 'info'
 }
 
-// 获取记录状态文本
+// 获取记录状态文本 - 与后端状态定义一致
 const getRecordStatusText = (status: number) => {
   const texts: Record<number, string> = {
     0: '考试中',
     1: '已提交',
-    2: '超时',
+    2: '已超时',
     3: '已批阅'
   }
   return texts[status] || '未知'
