@@ -5,6 +5,9 @@ import type {
   DeptUpdateParams
 } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { Dept }
+
 // 获取部门树形结构
 export function getDeptTree(): Promise<Dept[]> {
   return request.get('/system/depts/tree-structure')

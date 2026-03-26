@@ -30,6 +30,9 @@ export interface DictData {
   createTime: string
 }
 
+// 修复：重导出类型，方便其他模块使用
+export type { DictType, DictData }
+
 // 获取字典类型列表
 export function getDictTypeList(params: PageParams & { dictName?: string; dictType?: string; status?: number }): Promise<PageResult<DictType>> {
   return request.get('/system/dict/types', params)

@@ -5,6 +5,9 @@ import type {
   UserInfo
 } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { LoginParams, LoginResult, UserInfo }
+
 // 登录
 export function login(data: LoginParams): Promise<LoginResult> {
   return request.post('/auth/login', data)

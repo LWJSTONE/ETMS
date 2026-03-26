@@ -18,6 +18,9 @@ import type {
   PaperQuestionDetail
 } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { ResultStats, ExamResult, ExamRecord, Paper, Question }
+
 /**
  * 题库管理API
  * 注意：由于响应拦截器已解包返回response.data，所以API函数返回的实际数据类型为T，而非ApiResponse<T>

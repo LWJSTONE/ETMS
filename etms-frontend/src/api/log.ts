@@ -26,6 +26,9 @@ export interface LogItem {
   createTime: string
 }
 
+// 修复：重导出类型，方便其他模块使用
+export type { LogItem }
+
 // 日志搜索参数
 export interface LogSearchParams extends PageParams {
   module?: string

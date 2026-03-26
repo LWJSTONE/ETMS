@@ -204,11 +204,12 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         }
         
         // 检查是否已有进行中的考试
+        // 修复：状态0表示考试中，状态1表示已提交，之前错误地使用了状态1
         Long inProgressCount = examRecordMapper.selectCount(
             new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getUserId, currentUser.getId())
                 .eq(ExamRecord::getPaperId, paper.getId())
-                .eq(ExamRecord::getStatus, 1)
+                .eq(ExamRecord::getStatus, 0) // 状态0表示考试中
         );
         if (inProgressCount > 0) {
             throw new BusinessException("您已有进行中的考试，请先完成后再获取新试卷");
@@ -454,10 +455,11 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         }
         
         // 修复：检查是否有正在进行中的考试
+        // 状态定义：0-考试中 1-已提交 2-超时 3-已批阅 4-已放弃
         Long inProgressCount = examRecordMapper.selectCount(
             new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getPaperId, id)
-                .eq(ExamRecord::getStatus, 1) // 状态1表示考试进行中
+                .eq(ExamRecord::getStatus, 0) // 状态0表示考试中
         );
         if (inProgressCount != null && inProgressCount > 0) {
             throw new BusinessException("当前有" + inProgressCount + "人正在进行考试，请等待考试结束后再停用");

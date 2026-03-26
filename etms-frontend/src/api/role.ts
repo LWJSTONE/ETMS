@@ -7,6 +7,9 @@ import type {
   RoleUpdateParams
 } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { Role }
+
 // 获取角色列表
 export function getRoleList(params: PageParams): Promise<PageResult<Role>> {
   return request.get('/system/roles', params)

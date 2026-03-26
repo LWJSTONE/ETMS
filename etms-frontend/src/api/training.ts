@@ -9,6 +9,9 @@ import type {
   LearningProgressUpdateParams
 } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { TrainingPlan, LearningProgress }
+
 /**
  * 培训计划API
  */
@@ -48,6 +51,7 @@ export function archivePlan(id: number): Promise<void> {
   return request.post(`/training/plans/${id}/archive`)
 }
 
+// 修复：添加结束培训计划函数别名，保持向后兼容
 // 结束培训计划
 export function endPlan(id: number): Promise<void> {
   return request.post(`/training/plans/${id}/end`)

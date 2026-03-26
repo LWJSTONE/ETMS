@@ -5,6 +5,9 @@ import type {
   CategoryUpdateParams
 } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { Category }
+
 // 获取分类树形结构
 export function getCategoryTree(categoryType?: number): Promise<Category[]> {
   return request.get('/training/categories/tree', categoryType ? { categoryType } : undefined)

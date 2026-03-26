@@ -9,6 +9,9 @@ import type {
   AttendanceStats
 } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { AttendanceRecord, AttendanceStats }
+
 /**
  * 签到管理API
  */

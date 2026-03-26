@@ -13,6 +13,9 @@ export interface Config {
   createTime: string
 }
 
+// 修复：重导出类型，方便其他模块使用
+export type { Config }
+
 // 新增/更新配置参数类型
 export interface ConfigParams {
   configName: string

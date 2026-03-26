@@ -1134,11 +1134,12 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         }
         
         // 检查是否已有进行中的考试
+        // 修复：状态0表示考试中，状态1表示已提交，之前错误地使用了状态1
         Long count = baseMapper.selectCount(
             new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getUserId, userId)
                 .eq(ExamRecord::getPaperId, paperId)
-                .eq(ExamRecord::getStatus, 1)
+                .eq(ExamRecord::getStatus, 0) // 状态0表示考试中
         );
         if (count > 0) {
             throw new BusinessException("您已有进行中的考试，请先完成");
@@ -1148,12 +1149,13 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         if (planId != null) {
             TrainingPlan plan = trainingPlanMapper.selectById(planId);
             if (plan != null && plan.getMaxRetake() != null && plan.getMaxRetake() > 0) {
+                // 修复：统计已提交(1)、超时(2)、已批阅(3)、已放弃(4)状态的考试次数
                 Long totalAttempts = baseMapper.selectCount(
                     new LambdaQueryWrapper<ExamRecord>()
                         .eq(ExamRecord::getUserId, userId)
                         .eq(ExamRecord::getPaperId, paperId)
                         .eq(ExamRecord::getPlanId, planId)
-                        .in(ExamRecord::getStatus, 2, 3, 4)
+                        .in(ExamRecord::getStatus, 1, 2, 3, 4) // 已提交、超时、已批阅、已放弃
                 );
                 if (totalAttempts >= plan.getMaxRetake()) {
                     throw new BusinessException("您已达到最大考试次数限制（" + plan.getMaxRetake() + "次）");

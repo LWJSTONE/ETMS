@@ -22,9 +22,11 @@ import java.util.List;
  * 修复问题：超时未提交的考试记录缺少自动处理机制
  * 
  * 功能说明：
- * 1. 定时扫描进行中(状态1)的考试记录
+ * 1. 定时扫描进行中(状态0)的考试记录
  * 2. 检查是否超过试卷规定的考试时长
- * 3. 自动将超时考试标记为已超时(状态3)，并计算已提交答案的分数
+ * 3. 自动将超时考试标记为已超时(状态2)，并计算已提交答案的分数
+ * 
+ * 状态定义：0-考试中 1-已提交 2-超时 3-已批阅 4-已放弃
  */
 @Slf4j
 @Component
@@ -49,9 +51,10 @@ public class ExamTimeoutTask {
         
         try {
             // 1. 查询所有进行中的考试记录
+            // 修复：状态0表示考试中，状态1表示已提交，之前错误地使用了状态1
             List<ExamRecord> inProgressRecords = examRecordMapper.selectList(
                 new LambdaQueryWrapper<ExamRecord>()
-                    .eq(ExamRecord::getStatus, 1) // 进行中
+                    .eq(ExamRecord::getStatus, 0) // 状态0表示考试中
                     .isNotNull(ExamRecord::getStartTime) // 有开始时间
                     .isNotNull(ExamRecord::getPaperId) // 有试卷ID
             );
@@ -80,8 +83,9 @@ public class ExamTimeoutTask {
                     // 4. 检查是否超时（允许1分钟的缓冲时间）
                     if (minutesUsed > paper.getExamDuration() + 1) {
                         // 5. 使用乐观锁更新状态，避免与用户提交操作冲突
+                        // 修复：状态定义 0-考试中 1-已提交 2-超时 3-已批阅 4-已放弃
                         int updateCount = examRecordMapper.updateStatusToSubmitted(
-                            record.getId(), 1, 3 // 从进行中(1)更新为已超时(3)
+                            record.getId(), 0, 2 // 从考试中(0)更新为超时(2)
                         );
                         
                         if (updateCount > 0) {

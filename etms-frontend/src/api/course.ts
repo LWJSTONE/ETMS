@@ -8,6 +8,9 @@ import type {
   CourseAuditParams
 } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { Course }
+
 // 获取课程列表
 export function getCourseList(params: PageParams): Promise<PageResult<Course>> {
   return request.get('/training/courses', params)

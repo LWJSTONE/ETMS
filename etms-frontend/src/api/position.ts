@@ -1,6 +1,9 @@
 import request from '@/utils/request'
 import type { PageResult, PageParams } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { Position as PositionType }
+
 // 岗位类型定义
 export interface Position {
   id: number

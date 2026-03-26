@@ -7,6 +7,9 @@ import type {
   UserUpdateParams
 } from './types'
 
+// 修复：重导出类型，方便其他模块使用
+export type { User }
+
 // 用户查询参数类型
 export interface UserQueryParams extends PageParams {
   username?: string
