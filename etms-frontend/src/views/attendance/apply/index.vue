@@ -325,7 +325,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { 
@@ -543,6 +543,10 @@ const handleApply = () => {
     reason: ''
   })
   applyDialogVisible.value = true
+  // 对话框打开后清除验证状态
+  nextTick(() => {
+    applyFormRef.value?.clearValidate()
+  })
 }
 
 // 禁用未来日期和过早日期能补签最近30天）

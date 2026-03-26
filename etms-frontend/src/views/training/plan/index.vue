@@ -325,7 +325,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -553,6 +553,7 @@ const resetForm = () => {
     planObjective: ''
   })
   formRef.value?.resetFields()
+  formRef.value?.clearValidate()
 }
 
 // 新增
@@ -560,6 +561,10 @@ const handleAdd = () => {
   isEdit.value = false
   resetForm()
   dialogVisible.value = true
+  // 对话框打开后清除验证状态
+  nextTick(() => {
+    formRef.value?.clearValidate()
+  })
 }
 
 // 编辑
@@ -601,6 +606,10 @@ const handleEdit = async (row: any) => {
       planObjective: data.planObjective || ''
     })
     dialogVisible.value = true
+    // 对话框打开后清除验证状态
+    nextTick(() => {
+      formRef.value?.clearValidate()
+    })
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '获取培训计划详情失败')

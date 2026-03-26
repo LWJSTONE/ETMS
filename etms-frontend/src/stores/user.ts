@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { login, logout, getUserInfo } from '@/api/auth'
 import type { UserInfo } from '@/api/types'
 import { STORAGE_KEYS } from '@/constants/storage'
@@ -67,11 +67,45 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // 检查是否拥有指定权限
+  const hasPermission = (permission: string | string[]): boolean => {
+    if (!userInfo.value) return false
+    
+    const userPermissions = userInfo.value.permissions || []
+    const roleNames = userInfo.value.roleNames || []
+    
+    // 检查是否为管理员角色（管理员拥有所有权限）
+    const isAdmin = roleNames.some(name => 
+      name === '超级管理员' || name === '管理员' || name.toLowerCase() === 'admin'
+    )
+    
+    if (isAdmin) return true
+    
+    // 获取需要检查的权限列表
+    const requiredPermissions: string[] = Array.isArray(permission) ? permission : [permission]
+    
+    if (requiredPermissions.length === 0) return true
+    
+    // 检查用户是否拥有任一所需权限
+    return requiredPermissions.some(perm => {
+      return userPermissions.some(userPerm => {
+        if (userPerm === perm) return true
+        if (userPerm === '*') return true
+        if (userPerm.endsWith(':*')) {
+          const prefix = userPerm.slice(0, -1)
+          return perm.startsWith(prefix)
+        }
+        return false
+      })
+    })
+  }
+
   return {
     token,
     userInfo,
     loginAction,
     getUserInfoAction,
-    logoutAction
+    logoutAction,
+    hasPermission
   }
 })

@@ -123,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { 
@@ -252,6 +252,10 @@ const handleAdd = () => {
     status: 1 
   })
   dialogVisible.value = true
+  // 对话框打开后清除验证状态
+  nextTick(() => {
+    formRef.value?.clearValidate()
+  })
 }
 
 // 编辑
@@ -268,6 +272,10 @@ const handleEdit = (row: any) => {
     status: row.status
   })
   dialogVisible.value = true
+  // 对话框打开后清除验证状态
+  nextTick(() => {
+    formRef.value?.clearValidate()
+  })
 }
 
 // 删除

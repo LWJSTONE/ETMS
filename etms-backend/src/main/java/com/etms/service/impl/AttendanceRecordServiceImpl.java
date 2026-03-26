@@ -270,9 +270,24 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             throw new BusinessException("请提供补签时间");
         }
         
-        // 检查是否已有该时间段的签到记录
+        // 计算时间范围
         LocalDateTime dayStart = parsedSignTime.withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime dayEnd = dayStart.plusDays(1);
+        
+        // 修复：检查补签申请次数限制（同一时间段最多申请2次，包括已驳回的）
+        Long applyCount = baseMapper.selectCount(
+            new LambdaQueryWrapper<AttendanceRecord>()
+                .eq(AttendanceRecord::getUserId, currentUserId)
+                .eq(AttendanceRecord::getPlanId, planId)
+                .eq(signCategory != null, AttendanceRecord::getSignCategory, signCategory)
+                .between(AttendanceRecord::getSignTime, dayStart, dayEnd)
+                .in(AttendanceRecord::getStatus, 5, 6) // 补签(5)或补签驳回(6)
+        );
+        if (applyCount >= 2) {
+            throw new BusinessException("该时间段补签申请次数已达上限（最多2次）");
+        }
+        
+        // 检查是否已有该时间段的签到记录
         Long existCount = baseMapper.selectCount(
             new LambdaQueryWrapper<AttendanceRecord>()
                 .eq(AttendanceRecord::getUserId, currentUserId)

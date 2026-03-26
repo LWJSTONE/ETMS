@@ -37,7 +37,7 @@
       <template #header>
         <div class="card-header">
           <span>课程列表</span>
-          <el-button type="primary" @click="handleAdd">
+          <el-button v-if="canAdd" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>新增
           </el-button>
         </div>
@@ -76,28 +76,28 @@
           <template #default="{ row }">
             <!-- 草稿状态: 编辑、删除、提交审核 -->
             <template v-if="row.status === 0">
-              <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-              <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
-              <el-button type="warning" link @click="handleSubmitAudit(row)">提交审核</el-button>
+              <el-button v-if="canEdit" type="primary" link @click="handleEdit(row)">编辑</el-button>
+              <el-button v-if="canDelete" type="danger" link @click="handleDelete(row)">删除</el-button>
+              <el-button v-if="canEdit" type="warning" link @click="handleSubmitAudit(row)">提交审核</el-button>
             </template>
             <!-- 待审核状态: 审核通过、审核驳回 -->
             <template v-else-if="row.status === 1">
-              <el-button type="success" link @click="handleAudit(row, 2)">审核通过</el-button>
-              <el-button type="danger" link @click="handleAudit(row, 4)">审核驳回</el-button>
+              <el-button v-if="canAudit" type="success" link @click="handleAudit(row, 2)">审核通过</el-button>
+              <el-button v-if="canAudit" type="danger" link @click="handleAudit(row, 4)">审核驳回</el-button>
             </template>
             <!-- 已上架状态: 下架 -->
             <template v-else-if="row.status === 2">
-              <el-button type="warning" link @click="handleUnpublish(row)">下架</el-button>
+              <el-button v-if="canPublish" type="warning" link @click="handleUnpublish(row)">下架</el-button>
             </template>
             <!-- 已下架状态: 上架 -->
             <template v-else-if="row.status === 3">
-              <el-button type="success" link @click="handlePublish(row)">上架</el-button>
+              <el-button v-if="canPublish" type="success" link @click="handlePublish(row)">上架</el-button>
             </template>
             <!-- 审核驳回状态: 编辑、删除、重新提交审核 -->
             <template v-else-if="row.status === 4">
-              <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-              <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
-              <el-button type="warning" link @click="handleSubmitAudit(row)">重新提交</el-button>
+              <el-button v-if="canEdit" type="primary" link @click="handleEdit(row)">编辑</el-button>
+              <el-button v-if="canDelete" type="danger" link @click="handleDelete(row)">删除</el-button>
+              <el-button v-if="canEdit" type="warning" link @click="handleSubmitAudit(row)">重新提交</el-button>
             </template>
           </template>
         </el-table-column>
@@ -228,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -244,6 +244,16 @@ import {
   unpublishCourse
 } from '@/api/course'
 import { getCategoryTree, type Category } from '@/api/category'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+
+// 权限检查计算属性
+const canAdd = computed(() => userStore.hasPermission('training:course:add'))
+const canEdit = computed(() => userStore.hasPermission('training:course:edit'))
+const canDelete = computed(() => userStore.hasPermission('training:course:delete'))
+const canAudit = computed(() => userStore.hasPermission('training:course:audit'))
+const canPublish = computed(() => userStore.hasPermission('training:course:publish'))
 
 // 搜索表单
 const searchForm = reactive({
@@ -422,6 +432,10 @@ const handleAdd = () => {
   isEdit.value = false
   resetForm()
   dialogVisible.value = true
+  // 对话框打开后清除验证状态
+  nextTick(() => {
+    formRef.value?.clearValidate()
+  })
 }
 
 // 编辑
@@ -445,6 +459,10 @@ const handleEdit = async (row: any) => {
       credit: data.credit || 0
     })
     dialogVisible.value = true
+    // 对话框打开后清除验证状态
+    nextTick(() => {
+      formRef.value?.clearValidate()
+    })
   } catch (error: any) {
     console.error('获取课程详情失败:', error)
     ElMessage.error(error.message || '获取课程详情失败')

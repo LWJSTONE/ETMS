@@ -304,14 +304,14 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         if (planId != null) {
             TrainingPlan plan = trainingPlanMapper.selectById(planId);
             if (plan != null && plan.getMaxRetake() != null && plan.getMaxRetake() > 0) {
-                // 修复：统计用户已完成的考试次数，包括已提交(1)、超时(2)、已批阅(3)状态
-                // 注意：状态定义：0-考试中 1-已提交 2-超时 3-已批阅
+                // 修复：统计用户已完成的考试次数，包括已提交(1)、超时(2)、已批阅(3)、已放弃(4)状态
+                // 注意：状态定义：0-考试中 1-已提交 2-超时 3-已批阅 4-已放弃
                 Long totalAttempts = baseMapper.selectCount(
                     new LambdaQueryWrapper<ExamRecord>()
                         .eq(ExamRecord::getUserId, currentUser.getId())
                         .eq(ExamRecord::getPaperId, paperId)
                         .eq(ExamRecord::getPlanId, planId)
-                        .in(ExamRecord::getStatus, 1, 2, 3) // 已提交、超时、已批阅
+                        .in(ExamRecord::getStatus, 1, 2, 3, 4) // 已提交、超时、已批阅、已放弃
                 );
                 if (totalAttempts >= plan.getMaxRetake()) {
                     throw new BusinessException("您已达到最大考试次数限制（" + plan.getMaxRetake() + "次）");
@@ -427,10 +427,9 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             throw new BusinessException("无权操作此考试");
         }
         
-        // 更新考试记录状态为已提交（状态1表示已提交，作为放弃处理）
+        // 更新考试记录状态为已放弃（状态4表示已放弃）
         // 修复并发问题：使用乐观锁方式更新状态
-        // 注意：数据库状态定义中没有专门的放弃状态，放弃的考试标记为已提交状态
-        int updateCount = baseMapper.updateStatusToSubmitted(recordId, 0, 1);
+        int updateCount = baseMapper.updateStatusToSubmitted(recordId, 0, 4);
         if (updateCount == 0) {
             throw new BusinessException("考试状态已变更，无法放弃");
         }
@@ -648,9 +647,9 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         Page<ExamRecord> page = new Page<>(current, size);
         
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
-        // 修复：查询已提交(1)、超时(2)和已批阅(3)状态的考试记录
-        // 状态定义：0-考试中 1-已提交 2-超时 3-已批阅
-        wrapper.in(ExamRecord::getStatus, 1, 2, 3)
+        // 修复：查询已提交(1)、超时(2)、已批阅(3)和已放弃(4)状态的考试记录
+        // 状态定义：0-考试中 1-已提交 2-超时 3-已批阅 4-已放弃
+        wrapper.in(ExamRecord::getStatus, 1, 2, 3, 4)
                .eq(paperId != null, ExamRecord::getPaperId, paperId)
                .eq(userId != null, ExamRecord::getUserId, userId)
                .eq(passed != null, ExamRecord::getPassed, passed)
@@ -781,8 +780,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     @Override
     public ExamResultVO getResultDetail(Long id) {
         ExamRecord record = baseMapper.selectById(id);
-        // 修复：支持已提交(1)、超时(2)和已批阅(3)状态的记录
-        if (record == null || (record.getStatus() != 1 && record.getStatus() != 2 && record.getStatus() != 3)) {
+        // 修复：支持已提交(1)、超时(2)、已批阅(3)和已放弃(4)状态的记录
+        if (record == null || (record.getStatus() != 1 && record.getStatus() != 2 && record.getStatus() != 3 && record.getStatus() != 4)) {
             return null;
         }
         
@@ -831,8 +830,8 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         ExamResultStatsVO stats = new ExamResultStatsVO();
         
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
-        // 修复：统计已提交(1)、超时(2)和已批阅(3)状态的考试
-        wrapper.in(ExamRecord::getStatus, 1, 2, 3);
+        // 修复：统计已提交(1)、超时(2)、已批阅(3)和已放弃(4)状态的考试
+        wrapper.in(ExamRecord::getStatus, 1, 2, 3, 4);
         
         // 时间范围过滤
         if (startTime != null && !startTime.isEmpty()) {
@@ -856,7 +855,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         
         // 统计通过人数
         LambdaQueryWrapper<ExamRecord> passWrapper = new LambdaQueryWrapper<>();
-        passWrapper.in(ExamRecord::getStatus, 1, 2, 3)
+        passWrapper.in(ExamRecord::getStatus, 1, 2, 3, 4)
                    .eq(ExamRecord::getPassed, 1);
         if (startTime != null && !startTime.isEmpty()) {
             passWrapper.ge(ExamRecord::getSubmitTime, LocalDateTime.parse(startTime + "T00:00:00"));
