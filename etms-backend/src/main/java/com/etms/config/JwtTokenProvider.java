@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import javax.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.stream.Collectors;
@@ -25,6 +26,22 @@ public class JwtTokenProvider {
     
     @Value("${jwt.expiration}")
     private Long jwtExpiration;
+    
+    /**
+     * 修复：在应用启动时验证JWT密钥配置
+     * 避免运行时才发现密钥配置错误导致生产事故
+     */
+    @PostConstruct
+    public void validateConfiguration() {
+        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+            throw new IllegalStateException("JWT密钥未配置，请在配置文件中设置jwt.secret属性");
+        }
+        byte[] keyBytes = jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT密钥长度不足，必须至少32字节（256位），当前长度：" + keyBytes.length + "。请在配置文件中设置更长的jwt.secret值");
+        }
+        log.info("JWT配置验证通过，密钥长度: {}字节", keyBytes.length);
+    }
     
     private SecretKey getSigningKey() {
         byte[] keyBytes = jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);

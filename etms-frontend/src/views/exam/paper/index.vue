@@ -510,7 +510,7 @@ watch(() => form.totalScore, (newTotal) => {
 const validatePassScore = (rule: any, value: number, callback: any) => {
   if (value === undefined || value === null) {
     callback(new Error('请输入及格分数'))
-  } else if (value <= 0) {
+  } else if (value < 1) {  // 修复：及格分至少为1，不允许为0
     callback(new Error('及格分数必须大于0'))
   } else if (value > form.totalScore) {
     callback(new Error('及格分数不能大于总分'))

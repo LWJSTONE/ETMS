@@ -491,10 +491,11 @@ const fetchExamDetail = async () => {
       ElMessage.success('已恢复之前保存的答题进度')
     }
     
-    // 计算剩余时间
-    if (data.startTime && data.duration) {
+    // 修复：计算剩余时间时增加类型检查和默认值
+    const duration = Number(data.duration) || 60  // 默认60分钟
+    if (data.startTime && duration > 0) {
       const startTime = new Date(data.startTime).getTime()
-      const endTime = startTime + data.duration * 60 * 1000
+      const endTime = startTime + duration * 60 * 1000
       const now = Date.now()
       remainingTime.value = Math.max(0, Math.floor((endTime - now) / 1000))
       

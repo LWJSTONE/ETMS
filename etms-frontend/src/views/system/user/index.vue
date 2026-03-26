@@ -486,7 +486,7 @@ const handleSubmit = async () => {
       // 新增时传递所有字段
       const createData = {
         username: form.username,
-        password: form.password,
+        password: form.password || '123456',  // 修复：提供默认密码
         realName: form.realName,
         gender: form.gender,
         phone: form.phone,

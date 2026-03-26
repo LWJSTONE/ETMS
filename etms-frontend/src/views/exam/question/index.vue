@@ -358,10 +358,12 @@ watch(multiAnswer, (val) => {
 // 自定义验证函数：验证选项C
 const validateOptionC = (_rule: any, value: any, callback: (error?: Error) => void) => {
   if ((form.questionType === 1 || form.questionType === 2) && value) {
-    // 如果填了C，检查A和B是否已填
-    if (!form.optionA) {
+    // 修复：检查选项内容是否为空字符串
+    if (value.trim() === '') {
+      callback(new Error('选项C内容不能为空'));
+    } else if (!form.optionA || form.optionA.trim() === '') {
       callback(new Error('请先填写选项A'));
-    } else if (!form.optionB) {
+    } else if (!form.optionB || form.optionB.trim() === '') {
       callback(new Error('请先填写选项B'));
     } else {
       callback();
@@ -374,8 +376,10 @@ const validateOptionC = (_rule: any, value: any, callback: (error?: Error) => vo
 // 自定义验证函数：验证选项D
 const validateOptionD = (_rule: any, value: any, callback: (error?: Error) => void) => {
   if ((form.questionType === 1 || form.questionType === 2) && value) {
-    // 如果填了D，检查C是否已填
-    if (!form.optionC) {
+    // 修复：检查选项内容是否为空字符串
+    if (value.trim() === '') {
+      callback(new Error('选项D内容不能为空'));
+    } else if (!form.optionC || form.optionC.trim() === '') {
       callback(new Error('请先填写选项C'));
     } else {
       callback();

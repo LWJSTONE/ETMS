@@ -651,6 +651,12 @@ const handlePublish = async (row: any) => {
   if (!row.startDate || !row.endDate) {
     missingFields.push('培训日期')
   }
+  
+  // 修复：当需要考试时，验证是否已关联试卷
+  if (row.needExam === 1 && !row.paperId) {
+    missingFields.push('关联试卷（已设置需要考试）')
+  }
+  
   if (!row.targetType) {
     missingFields.push('目标类型')
   } else {

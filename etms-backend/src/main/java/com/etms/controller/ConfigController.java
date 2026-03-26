@@ -112,17 +112,39 @@ public class ConfigController {
     
     /**
      * 判断是否为敏感配置
+     * 修复：增强敏感配置检测，防止通过大小写混合或特殊字符绕过
      */
     private boolean isSensitiveConfig(String configKey) {
         if (configKey == null) {
             return false;
         }
-        String lowerKey = configKey.toLowerCase();
-        // 检查是否在敏感配置列表中
-        if (SENSITIVE_CONFIG_KEYS.contains(configKey)) {
+        // 修复：去除首尾空格并转小写后进行比较
+        String lowerKey = configKey.trim().toLowerCase();
+        
+        // 检查是否在敏感配置列表中（精确匹配）
+        for (String sensitiveKey : SENSITIVE_CONFIG_KEYS) {
+            if (lowerKey.equals(sensitiveKey.toLowerCase())) {
+                return true;
+            }
+        }
+        
+        // 修复：使用更严格的正则匹配敏感关键字
+        // 检查是否包含password、secret、key等敏感词（作为独立单词）
+        if (lowerKey.matches(".*[._-]?password[._-]?.*") ||
+            lowerKey.matches(".*[._-]?secret[._-]?.*") ||
+            lowerKey.matches(".*[._-]?private[_-]?key[._-]?.*") ||
+            lowerKey.matches(".*[._-]?api[_-]?key[._-]?.*") ||
+            lowerKey.matches(".*[._-]?access[_-]?key[._-]?.*") ||
+            lowerKey.matches(".*[._-]?credential[s]?[._-]?.*")) {
             return true;
         }
-        // 检查是否包含敏感关键字
-        return lowerKey.contains("password") || lowerKey.contains("secret") || lowerKey.contains("key");
+        
+        // 检查常见的敏感配置键名模式
+        if (lowerKey.contains("password") || lowerKey.contains("secret") || 
+            lowerKey.contains("privatekey") || lowerKey.contains("apikey")) {
+            return true;
+        }
+        
+        return false;
     }
 }

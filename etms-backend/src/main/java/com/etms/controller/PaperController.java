@@ -81,6 +81,19 @@ public class PaperController {
         if (forExam && planId == null) {
             throw new BusinessException("考试场景下必须提供培训计划ID");
         }
+        
+        // 修复：非考试场景(forExam=false)需要管理员权限，因为会返回答案
+        if (!forExam) {
+            org.springframework.security.core.Authentication auth = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || 
+                              "ROLE_TRAINING_MANAGER".equals(a.getAuthority()));
+            if (!isAdmin) {
+                throw new BusinessException("您无权查看试卷详情，请联系管理员");
+            }
+        }
+        
         // 当forExam=true且planId不为空时，会验证用户是否有考试资格
         PaperVO vo = paperService.getPaperDetail(id, forExam, planId);
         if (vo == null) {

@@ -66,12 +66,25 @@ public class CourseController {
     
     @ApiOperation(value = "获取课程详情")
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制，确保只有登录用户可访问
     public Result<CourseVO> get(@PathVariable Long id) {
         CourseVO vo = courseService.getCourseDetail(id);
         // 修复：课程不存在时抛出业务异常
         if (vo == null) {
             throw new BusinessException("课程不存在");
         }
+        
+        // 修复：权限校验 - 非管理员只能查看已上架的课程
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+            .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || 
+                          "ROLE_TRAINING_MANAGER".equals(a.getAuthority()));
+        
+        if (!isAdmin && vo.getStatus() != null && vo.getStatus() != 2) {
+            throw new BusinessException("您无权查看该课程");
+        }
+        
         return Result.success(vo);
     }
     
