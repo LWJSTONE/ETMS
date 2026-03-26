@@ -55,8 +55,9 @@ export function getLogDetail(id: number): Promise<LogItem> {
 
 // 清空日志参数
 export interface ClearLogsParams {
-  startTime: string
-  endTime: string
+  startTime?: string
+  endTime?: string
+  confirm?: boolean  // 修复：添加confirm参数，用于确认清空全部日志的危险操作
 }
 
 // 清空日志

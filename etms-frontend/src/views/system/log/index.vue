@@ -303,7 +303,8 @@ const handleClear = async () => {
 
     await clearLogs({
       startTime: searchForm.timeRange[0],
-      endTime: searchForm.timeRange[1]
+      endTime: searchForm.timeRange[1],
+      confirm: true  // 修复：添加confirm参数确认清空操作
     })
     ElMessage.success('日志已清空')
     getList()
