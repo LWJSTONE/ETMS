@@ -262,10 +262,12 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
             } catch (BusinessException e) {
                 throw e;
             } catch (Exception e) {
-                parsedSignTime = LocalDateTime.now();
+                // 修复问题：时间解析失败时应抛出明确的错误提示，而非静默使用当前时间
+                throw new BusinessException("补签时间格式错误，请使用正确的日期时间格式（如：2024-01-01 09:00:00）");
             }
         } else {
-            parsedSignTime = LocalDateTime.now();
+            // 补签时间为空时，提示用户必须提供补签时间
+            throw new BusinessException("请提供补签时间");
         }
         
         // 检查是否已有该时间段的签到记录

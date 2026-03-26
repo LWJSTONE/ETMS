@@ -397,15 +397,16 @@ const form = reactive({
 })
 
 // 日期范围验证器 - 结束日期必须大于开始日期
+// 注意：日期选择器已设置 value-format="YYYY-MM-DD"，日期格式为标准字符串
+// 直接比较字符串可避免 new Date() 解析带来的时区问题
 const validateDateRange = (_rule: any, value: string[], callback: (error?: Error) => void) => {
   if (!value || value.length === 0) {
     callback(new Error('请选择培训日期'))
     return
   }
   if (value[0] && value[1]) {
-    const startDate = new Date(value[0])
-    const endDate = new Date(value[1])
-    if (endDate <= startDate) {
+    // 直接比较 YYYY-MM-DD 格式的字符串，避免时区问题
+    if (value[1] <= value[0]) {
       callback(new Error('结束日期必须大于开始日期'))
       return
     }

@@ -416,8 +416,11 @@ const userStore = useUserStore()
 const hasPermission = (permission: string): boolean => {
   const permissions = userStore.userInfo?.permissions || []
   const roleNames = userStore.userInfo?.roleNames || []
-  // 管理员角色拥有所有权限（检查角色名称）
-  if (roleNames.some(name => name === '超级管理员' || name === '管理员' || name === 'admin' || name === 'ADMIN')) return true
+  // 管理员角色拥有所有权限（统一使用小写比较，避免大小写不一致问题）
+  if (roleNames.some(name => {
+    const lowerName = name.toLowerCase()
+    return lowerName === '超级管理员' || lowerName === '管理员' || lowerName === 'admin'
+  })) return true
   return permissions.includes(permission)
 }
 

@@ -341,7 +341,7 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         if (record.getStartTime() != null && paper.getExamDuration() != null) {
             long minutesUsed = Duration.between(record.getStartTime(), LocalDateTime.now()).toMinutes();
             if (minutesUsed > paper.getExamDuration()) {
-                // 修复问题：超时提交时需要保存答案和计算分数，避免数据丢失
+                // 修复问题：超时提交时不抛出异常，而是返回正常结果，让用户能看到分数
                 int userScore = calculateScore(record.getPaperId(), answers);
                 // 标记为超时并保存完整数据
                 record.setStatus(3); // 已超时
@@ -351,7 +351,9 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 record.setSubmitTime(LocalDateTime.now());
                 record.setDurationUsed((int) minutesUsed);
                 baseMapper.updateById(record);
-                throw new BusinessException("考试时间已超时，系统已自动提交");
+                // 不抛出异常，直接返回，让用户能看到自己的考试结果
+                // 前端可以根据status=3判断是超时自动提交
+                return;
             }
         }
         

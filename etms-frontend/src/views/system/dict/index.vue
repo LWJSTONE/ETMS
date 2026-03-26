@@ -372,23 +372,19 @@ const handleDeleteType = async (row: DictType) => {
       { type: 'warning' }
     )
     
-    const res = await deleteDictType(row.id)
-    if (res.code === 200) {
-      ElMessage.success('删除成功')
-      // 重新获取列表
-      await fetchTypeList()
-      // 清除当前选中
-      if (currentType.value?.id === row.id) {
-        currentType.value = null
-        dataList.value = []
-      }
-    } else {
-      ElMessage.error(res.message || '删除失败')
+    await deleteDictType(row.id)
+    ElMessage.success('删除成功')
+    // 重新获取列表
+    await fetchTypeList()
+    // 清除当前选中
+    if (currentType.value?.id === row.id) {
+      currentType.value = null
+      dataList.value = []
     }
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除字典类型失败:', error)
-      ElMessage.error('删除失败')
+      // 响应拦截器已处理错误消息，此处不再重复显示
     }
   }
 }
@@ -407,24 +403,19 @@ const handleTypeSubmit = async () => {
       remark: typeForm.remark
     }
     
-    let res
     if (isEditType.value) {
-      res = await updateDictType(typeForm.id!, data)
+      await updateDictType(typeForm.id!, data)
     } else {
-      res = await createDictType(data)
+      await createDictType(data)
     }
     
-    if (res.code === 200) {
-      ElMessage.success(isEditType.value ? '修改成功' : '新增成功')
-      typeDialogVisible.value = false
-      // 重新获取列表
-      await fetchTypeList()
-    } else {
-      ElMessage.error(res.message || '操作失败')
-    }
+    ElMessage.success(isEditType.value ? '修改成功' : '新增成功')
+    typeDialogVisible.value = false
+    // 重新获取列表
+    await fetchTypeList()
   } catch (error) {
     console.error('提交字典类型失败:', error)
-    ElMessage.error('操作失败')
+    // 响应拦截器已处理错误消息，此处不再重复显示
   } finally {
     submitLoading.value = false
   }
@@ -488,20 +479,16 @@ const handleDeleteData = async (row: DictData) => {
       { type: 'warning' }
     )
     
-    const res = await deleteDictData(row.id)
-    if (res.code === 200) {
-      ElMessage.success('删除成功')
-      // 重新获取当前类型的字典数据
-      if (currentType.value) {
-        await fetchDataList(currentType.value.id)
-      }
-    } else {
-      ElMessage.error(res.message || '删除失败')
+    await deleteDictData(row.id)
+    ElMessage.success('删除成功')
+    // 重新获取当前类型的字典数据
+    if (currentType.value) {
+      await fetchDataList(currentType.value.id)
     }
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除字典数据失败:', error)
-      ElMessage.error('删除失败')
+      // 响应拦截器已处理错误消息，此处不再重复显示
     }
   }
 }
@@ -522,26 +509,21 @@ const handleDataSubmit = async () => {
       remark: dataForm.remark
     }
     
-    let res
     if (isEditData.value) {
-      res = await updateDictData(dataForm.id!, data)
+      await updateDictData(dataForm.id!, data)
     } else {
-      res = await createDictData(data)
+      await createDictData(data)
     }
     
-    if (res.code === 200) {
-      ElMessage.success(isEditData.value ? '修改成功' : '新增成功')
-      dataDialogVisible.value = false
-      // 重新获取当前类型的字典数据
-      if (currentType.value) {
-        await fetchDataList(currentType.value.id)
-      }
-    } else {
-      ElMessage.error(res.message || '操作失败')
+    ElMessage.success(isEditData.value ? '修改成功' : '新增成功')
+    dataDialogVisible.value = false
+    // 重新获取当前类型的字典数据
+    if (currentType.value) {
+      await fetchDataList(currentType.value.id)
     }
   } catch (error) {
     console.error('提交字典数据失败:', error)
-    ElMessage.error('操作失败')
+    // 响应拦截器已处理错误消息，此处不再重复显示
   } finally {
     submitLoading.value = false
   }
@@ -551,15 +533,11 @@ const handleDataSubmit = async () => {
 const handleRefreshCache = async () => {
   cacheLoading.value = true
   try {
-    const res = await refreshDictCache()
-    if (res.code === 200) {
-      ElMessage.success('字典缓存刷新成功')
-    } else {
-      ElMessage.error(res.message || '刷新缓存失败')
-    }
+    await refreshDictCache()
+    ElMessage.success('字典缓存刷新成功')
   } catch (error) {
     console.error('刷新缓存失败:', error)
-    ElMessage.error('刷新缓存失败')
+    // 响应拦截器已处理错误消息，此处不再重复显示
   } finally {
     cacheLoading.value = false
   }

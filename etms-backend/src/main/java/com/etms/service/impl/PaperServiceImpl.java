@@ -355,6 +355,12 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             throw new BusinessException("试卷不存在");
         }
         
+        // 修复问题：检查试卷状态，已发布或已停用的试卷不允许直接修改
+        if (existingPaper.getStatus() != null && existingPaper.getStatus() != 0) {
+            String statusMsg = existingPaper.getStatus() == 1 ? "已发布" : "已停用";
+            throw new BusinessException(statusMsg + "的试卷不允许修改，如需修改请先撤回至草稿状态");
+        }
+        
         // 检查试卷编码是否重复（排除自身）
         Long count = baseMapper.selectCount(
             new LambdaQueryWrapper<Paper>()
