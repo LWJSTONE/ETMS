@@ -28,7 +28,7 @@ public class DeptController {
     private final DeptService deptService;
     
     @ApiOperation(value = "获取部门树形结构")
-    @PreAuthorize("hasAuthority('system:dept:list')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/tree-structure")
     public Result<List<Dept>> tree() {
         List<Dept> tree = deptService.getDeptTree();
@@ -52,7 +52,7 @@ public class DeptController {
     }
     
     @ApiOperation(value = "获取部门列表")
-    @PreAuthorize("hasAuthority('system:dept:list')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping
     public Result<List<Dept>> list(
             @RequestParam(required = false) Long parentId,
@@ -63,7 +63,7 @@ public class DeptController {
     }
     
     @ApiOperation(value = "获取部门详情")
-    @PreAuthorize("hasAuthority('system:dept:query')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/{id}")
     public Result<Dept> get(@PathVariable Long id) {
         Dept dept = deptService.getById(id);
@@ -74,7 +74,7 @@ public class DeptController {
     }
     
     @ApiOperation(value = "新增部门")
-    @PreAuthorize("hasAuthority('system:dept:add')")
+    @PreAuthorize("hasRole('admin')")
     @PostMapping
     public Result<Void> add(@Valid @RequestBody Dept dept) {
         deptService.addDept(dept);
@@ -82,7 +82,7 @@ public class DeptController {
     }
     
     @ApiOperation(value = "更新部门")
-    @PreAuthorize("hasAuthority('system:dept:edit')")
+    @PreAuthorize("hasRole('admin')")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Dept dept) {
         dept.setId(id);
@@ -91,7 +91,7 @@ public class DeptController {
     }
     
     @ApiOperation(value = "删除部门")
-    @PreAuthorize("hasAuthority('system:dept:delete')")
+    @PreAuthorize("hasRole('admin')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         // 检查是否有子部门

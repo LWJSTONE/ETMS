@@ -31,7 +31,7 @@ public class RoleController {
     private final RoleService roleService;
     
     @ApiOperation(value = "分页查询角色列表")
-    @PreAuthorize("hasAuthority('system:role:list')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping
     public Result<PageResult<RoleVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
@@ -47,7 +47,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "获取所有角色列表")
-    @PreAuthorize("hasAuthority('system:role:list')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/all")
     public Result<List<RoleVO>> list() {
         List<RoleVO> list = roleService.listRoles();
@@ -55,7 +55,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "获取角色详情")
-    @PreAuthorize("hasAuthority('system:role:query')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/{id}")
     public Result<RoleVO> get(@PathVariable Long id) {
         RoleVO vo = roleService.getRoleDetail(id);
@@ -66,7 +66,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "新增角色")
-    @PreAuthorize("hasAuthority('system:role:add')")
+    @PreAuthorize("hasRole('admin')")
     @PostMapping
     public Result<Void> add(@Valid @RequestBody Role role) {
         roleService.addRole(role);
@@ -74,7 +74,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "更新角色")
-    @PreAuthorize("hasAuthority('system:role:edit')")
+    @PreAuthorize("hasRole('admin')")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Role role) {
         role.setId(id);
@@ -83,7 +83,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "删除角色")
-    @PreAuthorize("hasAuthority('system:role:delete')")
+    @PreAuthorize("hasRole('admin')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         // 修复：删除角色前检查是否有用户关联，统一使用BusinessException
@@ -95,7 +95,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "分配权限")
-    @PreAuthorize("hasAuthority('system:role:permission')")
+    @PreAuthorize("hasRole('admin')")
     @PutMapping("/{id}/permissions")
     public Result<Void> assignPermissions(@PathVariable Long id, @Valid @RequestBody List<Long> permissionIds) {
         roleService.assignPermissions(id, permissionIds);
@@ -103,7 +103,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "获取角色权限ID列表")
-    @PreAuthorize("hasAuthority('system:role:query')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/{id}/permissions")
     public Result<List<Long>> getPermissions(@PathVariable Long id) {
         List<Long> permissionIds = roleService.getPermissionIdsByRoleId(id);
@@ -111,7 +111,7 @@ public class RoleController {
     }
     
     @ApiOperation(value = "修改角色状态")
-    @PreAuthorize("hasAuthority('system:role:edit')")
+    @PreAuthorize("hasRole('admin')")
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody com.etms.dto.StatusDTO statusDTO) {
         roleService.updateStatus(id, statusDTO.getStatus());

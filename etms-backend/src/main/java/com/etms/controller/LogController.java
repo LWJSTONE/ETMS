@@ -28,7 +28,7 @@ public class LogController {
     private final LogService logService;
 
     @ApiOperation(value = "分页查询日志列表")
-    @PreAuthorize("hasAuthority('system:log:list')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping
     public Result<PageResult<OperationLog>> page(
             @RequestParam(defaultValue = "1") @javax.validation.constraints.Min(value = 1, message = "页码最小为1") Long current,
@@ -50,7 +50,7 @@ public class LogController {
     }
 
     @ApiOperation(value = "获取日志详情")
-    @PreAuthorize("hasAuthority('system:log:query')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/{id}")
     public Result<OperationLog> get(@PathVariable Long id) {
         OperationLog log = logService.getLogDetail(id);
@@ -61,7 +61,7 @@ public class LogController {
     }
 
     @ApiOperation(value = "清空日志")
-    @PreAuthorize("hasAuthority('system:log:clear')")
+    @PreAuthorize("hasRole('admin')")
     @DeleteMapping
     public Result<Void> clear(
             @RequestParam(required = false) String startTime,
@@ -78,7 +78,7 @@ public class LogController {
     }
 
     @ApiOperation(value = "导出日志")
-    @PreAuthorize("hasAuthority('system:log:export')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/export")
     public void export(
             @RequestParam(required = false) String module,

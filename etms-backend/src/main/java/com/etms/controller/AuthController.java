@@ -5,6 +5,7 @@ import com.etms.common.Result;
 import com.etms.dto.LoginDTO;
 import com.etms.entity.User;
 import com.etms.exception.BusinessException;
+import com.etms.security.LoginUser;
 import com.etms.service.CaptchaService;
 import com.etms.service.UserService;
 import com.etms.vo.LoginVO;
@@ -12,11 +13,18 @@ import com.etms.vo.UserVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 认证控制器
@@ -67,5 +75,36 @@ public class AuthController {
             throw new BusinessException(404, "用户信息不存在");
         }
         return Result.success(vo);
+    }
+    
+    @ApiOperation(value = "获取当前用户权限信息（调试用）")
+    @GetMapping("/debug/authorities")
+    public Result<Map<String, Object>> debugAuthorities() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            return Result.error(401, "未认证");
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("username", auth.getName());
+        result.put("principal", auth.getPrincipal().getClass().getSimpleName());
+        result.put("authorities", auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+        result.put("isAuthenticated", auth.isAuthenticated());
+        
+        // 检查角色
+        boolean hasAdminRole = auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_admin".equals(a.getAuthority()));
+        result.put("hasRoleAdmin", hasAdminRole);
+        
+        return Result.success(result);
+    }
+    
+    @ApiOperation(value = "测试管理员权限")
+    @GetMapping("/test/admin")
+    @PreAuthorize("hasRole('admin')")
+    public Result<String> testAdmin() {
+        return Result.success("您拥有管理员权限");
     }
 }

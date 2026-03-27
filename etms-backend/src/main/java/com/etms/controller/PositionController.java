@@ -31,7 +31,7 @@ public class PositionController {
     private final PositionService positionService;
     
     @ApiOperation(value = "分页查询岗位列表")
-    @PreAuthorize("hasAuthority('system:position:list')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping
     public Result<PageResult<Position>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
@@ -48,7 +48,7 @@ public class PositionController {
     }
     
     @ApiOperation(value = "获取岗位详情")
-    @PreAuthorize("hasAuthority('system:position:query')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/{id}")
     public Result<Position> get(@PathVariable Long id) {
         Position position = positionService.getPositionDetail(id);
@@ -59,7 +59,7 @@ public class PositionController {
     }
     
     @ApiOperation(value = "新增岗位")
-    @PreAuthorize("hasAuthority('system:position:add')")
+    @PreAuthorize("hasRole('admin')")
     @PostMapping
     public Result<Void> add(@Valid @RequestBody Position position) {
         positionService.addPosition(position);
@@ -67,7 +67,7 @@ public class PositionController {
     }
     
     @ApiOperation(value = "更新岗位")
-    @PreAuthorize("hasAuthority('system:position:edit')")
+    @PreAuthorize("hasRole('admin')")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Position position) {
         position.setId(id);
@@ -76,7 +76,7 @@ public class PositionController {
     }
     
     @ApiOperation(value = "删除岗位")
-    @PreAuthorize("hasAuthority('system:position:delete')")
+    @PreAuthorize("hasRole('admin')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         // 修复：删除岗位前检查是否有用户关联，统一使用BusinessException
@@ -88,7 +88,7 @@ public class PositionController {
     }
     
     @ApiOperation(value = "修改状态")
-    @PreAuthorize("hasAuthority('system:position:edit')")
+    @PreAuthorize("hasRole('admin')")
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusDTO statusDTO) {
         // 修复：调用Service层的业务方法而非直接更新
@@ -97,7 +97,7 @@ public class PositionController {
     }
 
     @ApiOperation(value = "导出岗位")
-    @PreAuthorize("hasAuthority('system:position:export')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/export")
     public void export(
             @RequestParam(required = false) String positionName,
@@ -109,7 +109,7 @@ public class PositionController {
     
     @ApiOperation(value = "获取所有岗位列表")
     @GetMapping("/all")
-    @PreAuthorize("hasAuthority('system:position:list')")
+    @PreAuthorize("hasRole('admin')")
     public Result<java.util.List<Position>> listAll() {
         java.util.List<Position> list = positionService.list(
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Position>()

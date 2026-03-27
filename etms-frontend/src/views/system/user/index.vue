@@ -73,6 +73,7 @@
       </el-table>
       
       <el-pagination
+        :page-sizes="[10, 20, 50, 100]"
         v-model:current-page="pagination.current"
         v-model:page-size="pagination.size"
         :total="pagination.total"

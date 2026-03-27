@@ -29,7 +29,7 @@ public class PermissionController {
      * @return 权限树列表
      */
     @ApiOperation(value = "获取权限树")
-    @PreAuthorize("hasAuthority('system:permission:list')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/tree")
     public Result<List<Permission>> getPermissionTree() {
         List<Permission> tree = permissionService.getPermissionTree();

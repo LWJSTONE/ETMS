@@ -38,7 +38,7 @@ public class ConfigController {
     ));
     
     @ApiOperation(value = "分页查询配置列表")
-    @PreAuthorize("hasAuthority('system:config:list')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping
     public Result<PageResult<Config>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
@@ -55,7 +55,7 @@ public class ConfigController {
     }
     
     @ApiOperation(value = "获取配置详情")
-    @PreAuthorize("hasAuthority('system:config:query')")
+    @PreAuthorize("hasRole('admin')")
     @GetMapping("/{id}")
     public Result<Config> get(@PathVariable Long id) {
         Config config = configService.getConfigDetail(id);
@@ -78,7 +78,7 @@ public class ConfigController {
     }
     
     @ApiOperation(value = "新增配置")
-    @PreAuthorize("hasAuthority('system:config:add')")
+    @PreAuthorize("hasRole('admin')")
     @PostMapping
     public Result<Void> add(@Valid @RequestBody Config config) {
         configService.addConfig(config);
@@ -86,7 +86,7 @@ public class ConfigController {
     }
     
     @ApiOperation(value = "更新配置")
-    @PreAuthorize("hasAuthority('system:config:edit')")
+    @PreAuthorize("hasRole('admin')")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Config config) {
         config.setId(id);
@@ -95,7 +95,7 @@ public class ConfigController {
     }
     
     @ApiOperation(value = "删除配置")
-    @PreAuthorize("hasAuthority('system:config:delete')")
+    @PreAuthorize("hasRole('admin')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         configService.deleteConfig(id);
@@ -103,7 +103,7 @@ public class ConfigController {
     }
     
     @ApiOperation(value = "刷新缓存")
-    @PreAuthorize("hasAuthority('system:config:cache')")
+    @PreAuthorize("hasRole('admin')")
     @PostMapping("/refresh-cache")
     public Result<Void> refreshCache() {
         configService.refreshCache();
