@@ -37,7 +37,7 @@ public class PaperController {
     @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<PageResult<PaperVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 10000, message = "每页数量不能超过10000") Long size,
             @RequestParam(required = false) String paperName,
             @RequestParam(required = false) String paperCode,
             @RequestParam(required = false) Integer status) {
@@ -54,7 +54,7 @@ public class PaperController {
     @PreAuthorize("isAuthenticated()")
     public Result<PageResult<PaperVO>> available(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 10000, message = "每页数量不能超过10000") Long size,
             @RequestParam(required = false) Long planId) {
         // 修复：当planId不为空时，验证用户是否属于该培训计划
         if (planId != null) {

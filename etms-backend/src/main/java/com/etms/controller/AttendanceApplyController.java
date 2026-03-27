@@ -40,7 +40,7 @@ public class AttendanceApplyController {
     @PreAuthorize("hasAnyRole('admin', 'train_admin', 'dept_manager')")
     public Result<PageResult<AttendanceRecordVO>> page(
             @RequestParam(defaultValue = "1") @javax.validation.constraints.Min(value = 1, message = "页码最小为1") Long current,
-            @RequestParam(defaultValue = "10") @javax.validation.constraints.Min(value = 1, message = "每页条数最小为1") @javax.validation.constraints.Max(value = 100, message = "每页条数最大为100") Long size,
+            @RequestParam(defaultValue = "10") @javax.validation.constraints.Min(value = 1, message = "每页条数最小为1") @javax.validation.constraints.Max(value = 10000, message = "每页条数最大为10000") Long size,
             @RequestParam(required = false) Long planId,
             @RequestParam(required = false) String username,
             @RequestParam(required = false) Integer auditStatus) {
@@ -113,7 +113,7 @@ public class AttendanceApplyController {
     @PreAuthorize("isAuthenticated()")
     public Result<PageResult<AttendanceRecordVO>> myApplies(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 10000, message = "每页数量不能超过10000") Long size,
             @RequestParam(required = false) Integer auditStatus) {
         
         User currentUser = userService.getCurrentUser();
@@ -140,7 +140,7 @@ public class AttendanceApplyController {
     public Result<PageResult<AttendanceRecordVO>> getByUsername(
             @PathVariable String username,
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 10000, message = "每页数量不能超过10000") Long size,
             @RequestParam(required = false) Integer auditStatus) {
         
         // 根据用户名获取用户

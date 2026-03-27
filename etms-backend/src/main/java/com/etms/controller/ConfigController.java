@@ -42,7 +42,7 @@ public class ConfigController {
     @GetMapping
     public Result<PageResult<Config>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 10000, message = "每页数量不能超过10000") Long size,
             @RequestParam(required = false) String configName,
             @RequestParam(required = false) String configKey,
             @RequestParam(required = false) Integer status) {

@@ -34,7 +34,7 @@ public class CourseController {
     @PreAuthorize("isAuthenticated()")
     public Result<PageResult<CourseVO>> page(
             @RequestParam(defaultValue = "1") @javax.validation.constraints.Min(value = 1, message = "页码最小为1") Long current,
-            @RequestParam(defaultValue = "10") @javax.validation.constraints.Min(value = 1, message = "每页条数最小为1") @javax.validation.constraints.Max(value = 100, message = "每页条数最大为100") Long size,
+            @RequestParam(defaultValue = "10") @javax.validation.constraints.Min(value = 1, message = "每页条数最小为1") @javax.validation.constraints.Max(value = 10000, message = "每页条数最大为10000") Long size,
             @RequestParam(required = false) String courseName,
             @RequestParam(required = false) String courseCode,
             @RequestParam(required = false) Long categoryId,
