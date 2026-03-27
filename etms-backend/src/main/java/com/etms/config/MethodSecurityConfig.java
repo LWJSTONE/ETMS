@@ -5,14 +5,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 
 /**
  * 方法安全配置类
  * 注册自定义权限评估器，使 hasPermission() 表达式生效
+ * 
+ * 注意：Spring Boot 2.7.x 使用 @EnableGlobalMethodSecurity
+ * Spring Boot 3.x 才使用 @EnableMethodSecurity
  */
 @Configuration
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class MethodSecurityConfig {
 

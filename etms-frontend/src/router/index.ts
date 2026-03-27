@@ -395,8 +395,10 @@ router.beforeEach(async (to, from, next) => {
   
   // 权限检查
   const userInfo = userStore.userInfo
-  // 检查是否为管理员（admin角色拥有所有权限）
-  const isAdmin = userInfo?.roleNames?.some(r => r.toLowerCase() === 'admin') ?? false
+  // 检查是否为管理员（检查角色名称是否包含"管理员"或"admin"，兼容中英文）
+  const isAdmin = userInfo?.roleNames?.some(r => 
+    r === '超级管理员' || r === '管理员' || r.toLowerCase() === 'admin'
+  ) ?? false
   // 获取用户权限列表
   const userPermissions = userInfo?.permissions || []
   // 获取路由所需权限
