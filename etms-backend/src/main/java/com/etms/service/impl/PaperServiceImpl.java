@@ -318,6 +318,12 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
         }
 
         paper.setStatus(0); // 草稿状态
+        
+        // 修复：设置题目数量默认值为0（数据库字段NOT NULL）
+        if (paper.getQuestionCount() == null) {
+            paper.setQuestionCount(0);
+        }
+        
         baseMapper.insert(paper);
     }
 
