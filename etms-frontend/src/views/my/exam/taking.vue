@@ -212,8 +212,20 @@ import { getExamRecordDetail, submitExam, giveUpExam } from '@/api/exam'
 const route = useRoute()
 const router = useRouter()
 
-// 考试记录ID
-const recordId = computed(() => Number(route.params.id))
+// 考试记录ID - 添加参数验证
+const recordId = computed(() => {
+  const id = route.params.id
+  if (!id) {
+    console.error('缺少考试记录ID参数')
+    return null
+  }
+  const numId = Number(id)
+  if (isNaN(numId) || numId <= 0) {
+    console.error('无效的考试记录ID:', id)
+    return null
+  }
+  return numId
+})
 
 // 本地存储key
 const STORAGE_KEY = computed(() => `exam_answers_${recordId.value}`)
@@ -462,6 +474,15 @@ const handleVisibilityChange = () => {
 
 // 获取考试详情
 const fetchExamDetail = async () => {
+  // 验证考试记录ID是否有效
+  if (!recordId.value) {
+    ElMessage.error('无效的考试记录，即将返回考试列表')
+    setTimeout(() => {
+      router.push('/my/exam')
+    }, 1500)
+    return
+  }
+  
   loading.value = true
   try {
     const res = await getExamRecordDetail(recordId.value)
@@ -511,7 +532,11 @@ const fetchExamDetail = async () => {
     }
   } catch (error: any) {
     console.error('获取考试详情失败:', error)
-    ElMessage.error(error.message || '获取考试详情失败')
+    ElMessage.error(error.message || '获取考试详情失败，即将返回考试列表')
+    // 延迟返回考试列表
+    setTimeout(() => {
+      router.push('/my/exam')
+    }, 1500)
   } finally {
     loading.value = false
   }
@@ -543,6 +568,13 @@ const startTimer = () => {
 
 // 放弃考试
 const handleGiveUp = async () => {
+  // 验证考试记录ID是否有效
+  if (!recordId.value) {
+    ElMessage.error('无效的考试记录')
+    router.push('/my/exam')
+    return
+  }
+  
   try {
     await ElMessageBox.confirm(
       '确定要放弃本次考试吗？放弃后将无法继续答题，已作答的内容将不会保存。',
@@ -584,6 +616,13 @@ const handleSubmit = () => {
 
 // 确认提交
 const confirmSubmit = async (isAutoSubmit = false) => {
+  // 验证考试记录ID是否有效
+  if (!recordId.value) {
+    ElMessage.error('无效的考试记录')
+    router.push('/my/exam')
+    return
+  }
+  
   // 防止重复提交 - 使用更可靠的检查
   if (submitting.value) {
     if (isAutoSubmit) {
@@ -645,6 +684,15 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 }
 
 onMounted(() => {
+  // 先验证参数有效性
+  if (!recordId.value) {
+    ElMessage.error('无效的考试记录，即将返回考试列表')
+    setTimeout(() => {
+      router.push('/my/exam')
+    }, 1500)
+    return
+  }
+  
   fetchExamDetail()
   window.addEventListener('beforeunload', handleBeforeUnload)
   // 添加防作弊监听
