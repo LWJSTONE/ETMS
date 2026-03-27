@@ -16,6 +16,16 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     
+    private final ObjectMapper objectMapper;
+    
+    /**
+     * 构造函数注入ObjectMapper
+     * 使用Spring容器中已配置好的ObjectMapper，它已经注册了JSR310模块支持Java 8日期时间类型
+     */
+    public JwtAuthenticationEntryPoint(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+    
     @Override
     public void commence(
             HttpServletRequest request,
@@ -28,7 +38,6 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         
         Result<Void> result = Result.error(401, "未授权访问，请先登录");
         
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(response.getOutputStream(), result);
+        objectMapper.writeValue(response.getOutputStream(), result);
     }
 }

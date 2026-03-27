@@ -98,4 +98,11 @@ public class ExamRecord extends BaseEntity {
      * 补考次数
      */
     private Integer retakeCount;
+    
+    /**
+     * 重写deleted字段，因为exam_record表没有deleted字段
+     * 标记为不存在于数据库表中，避免MyBatis-Plus自动添加deleted条件
+     */
+    @TableField(exist = false)
+    private Integer deleted;
 }
