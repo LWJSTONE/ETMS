@@ -95,7 +95,7 @@ public class QuestionController {
     public Result<List<QuestionVO>> randomQuestions(
             @RequestParam(required = false) Integer questionType,
             @RequestParam(required = false) Integer difficulty,
-            @RequestParam @javax.validation.constraints.Max(value = 100, message = "抽取题目数量不能超过100") Integer count,
+            @RequestParam @Min(value = 1, message = "抽取题目数量必须大于0") @Max(value = 100, message = "抽取题目数量不能超过100") Integer count,
             @RequestParam(required = false) Long courseId) {
         List<QuestionVO> list = questionService.randomQuestions(questionType, difficulty, count, courseId);
         return Result.success(list);
