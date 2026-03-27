@@ -336,7 +336,13 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
         if (record.getStatus() != 5 || record.getAuditStatus() != 0) {
             throw new BusinessException("只能撤销待审核的补签申请");
         }
-        return baseMapper.deleteById(id) > 0;
+        // 修复：使用逻辑删除而非物理删除，保留历史记录便于追溯
+        AttendanceRecord updateRecord = new AttendanceRecord();
+        updateRecord.setId(id);
+        updateRecord.setAuditStatus(2); // 设置为已撤销状态
+        updateRecord.setAuditRemark("用户主动撤销");
+        updateRecord.setAuditTime(LocalDateTime.now());
+        return baseMapper.updateById(updateRecord) > 0;
     }
     
     @Override

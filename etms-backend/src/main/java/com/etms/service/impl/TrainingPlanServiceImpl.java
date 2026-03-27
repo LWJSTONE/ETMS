@@ -23,6 +23,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -81,14 +83,31 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         Page<TrainingPlanVO> voPage = new Page<>();
         BeanUtils.copyProperties(planPage, voPage, "records");
         
+        // 修复：批量查询课程信息，避免N+1查询问题
+        List<Long> courseIds = planPage.getRecords().stream()
+            .map(TrainingPlan::getCourseId)
+            .filter(java.util.Objects::nonNull)
+            .distinct()
+            .collect(Collectors.toList());
+        
+        Map<Long, Course> courseMap = new HashMap<>();
+        if (!courseIds.isEmpty()) {
+            List<Course> courses = courseMapper.selectBatchIds(courseIds);
+            courseMap = courses.stream()
+                .collect(Collectors.toMap(Course::getId, c -> c));
+        }
+        
+        // 使用final变量在lambda中访问
+        final Map<Long, Course> finalCourseMap = courseMap;
+        
         List<TrainingPlanVO> voList = planPage.getRecords().stream().map(plan -> {
             TrainingPlanVO vo = new TrainingPlanVO();
             BeanUtils.copyProperties(plan, vo);
             vo.setPlanTypeName(getPlanTypeName(plan.getPlanType()));
             vo.setStatusName(getStatusName(plan.getStatus()));
-            // 设置课程名称
+            // 设置课程名称（从Map中获取，避免N+1查询）
             if (plan.getCourseId() != null) {
-                Course course = courseMapper.selectById(plan.getCourseId());
+                Course course = finalCourseMap.get(plan.getCourseId());
                 if (course != null) {
                     vo.setCourseName(course.getCourseName());
                 }

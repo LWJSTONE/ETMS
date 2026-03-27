@@ -215,13 +215,21 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             throw new BusinessException("审核状态无效，审核通过状态为2，审核驳回状态为4");
         }
         
+        // 获取当前审核人
+        Long auditBy = getCurrentUserId();
+        
+        // 修复：禁止审核自己创建的课程，避免权限滥用
+        if (auditBy != null && existingCourse.getCreateBy() != null 
+            && auditBy.equals(existingCourse.getCreateBy())) {
+            throw new BusinessException("不能审核自己创建的课程");
+        }
+        
         Course course = new Course();
         course.setId(id);
         course.setStatus(status);
         course.setAuditRemark(auditRemark);
         course.setAuditTime(LocalDateTime.now());
         // 修复：记录审核人ID
-        Long auditBy = getCurrentUserId();
         if (auditBy != null) {
             course.setAuditBy(auditBy);
         }

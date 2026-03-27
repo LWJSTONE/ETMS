@@ -597,13 +597,25 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getPaperId, paperId)
         );
         
+        // 修复：批量查询所有题目，避免N+1查询问题
+        List<Long> questionIds = questions.stream()
+            .map(PaperQuestionDTO::getQuestionId)
+            .filter(java.util.Objects::nonNull)
+            .collect(Collectors.toList());
+        
+        // 验证所有题目ID都不为空
+        if (questionIds.size() != questions.size()) {
+            throw new BusinessException("存在空的题目ID");
+        }
+        
+        // 批量查询题目，构建Map便于后续验证
+        List<Question> existingQuestions = questionMapper.selectBatchIds(questionIds);
+        Map<Long, Question> questionMap = existingQuestions.stream()
+            .collect(Collectors.toMap(Question::getId, q -> q));
+        
         // 批量添加题目
         int sortOrder = 1;
         for (PaperQuestionDTO item : questions) {
-            // 验证题目ID
-            if (item.getQuestionId() == null) {
-                throw new BusinessException("题目ID不能为空");
-            }
             Long questionId = item.getQuestionId();
             
             // 获取分数，默认为1
@@ -612,8 +624,8 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
                 throw new BusinessException("题目分数不能为负数");
             }
             
-            // 验证题目是否存在
-            Question question = questionMapper.selectById(questionId);
+            // 验证题目是否存在（从Map中获取，避免N+1查询）
+            Question question = questionMap.get(questionId);
             if (question == null) {
                 throw new BusinessException("题目ID " + questionId + " 不存在");
             }
