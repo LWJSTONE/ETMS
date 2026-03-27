@@ -212,3 +212,8 @@ INSERT INTO sys_config (config_name, config_key, config_value, config_type, is_e
 ('允许上传的文件类型', 'sys.file.allow.types', 'jpg,png,pdf,doc,docx,xls,xlsx,ppt,pptx,mp4', 1, 1, '允许上传的文件类型'),
 ('培训预警提前天数', 'train.warning.days', '3', 2, 1, '培训预警提前天数'),
 ('考试切屏最大次数', 'exam.switch.max.count', '3', 2, 1, '考试切屏最大次数');
+
+-- 初始化通知公告
+INSERT INTO sys_notice (notice_title, notice_type, notice_content, target_type, priority, is_top, status, publish_time, create_by) VALUES
+('系统上线通知', 1, '企业员工培训管理系统已正式上线，请各部门积极配合使用。如有问题请联系管理员。', 1, 2, 1, 1, CURRENT_TIMESTAMP, 1),
+('新员工培训须知', 2, '新入职员工需在入职后一周内完成《办公软件使用培训》和《公司规章制度培训》。', 1, 1, 0, 1, CURRENT_TIMESTAMP, 5);

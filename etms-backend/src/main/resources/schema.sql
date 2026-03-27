@@ -341,6 +341,21 @@ CREATE TABLE etms_plan_course (
     KEY idx_course_id (course_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='培训计划课程关联表';
 
+-- 12.2 用户培训计划关联表
+DROP TABLE IF EXISTS etms_user_plan;
+CREATE TABLE etms_user_plan (
+    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
+    user_id BIGINT(20) NOT NULL COMMENT '用户ID',
+    plan_id BIGINT(20) NOT NULL COMMENT '培训计划ID',
+    status TINYINT(1) DEFAULT 0 COMMENT '状态(0未开始 1进行中 2已完成)',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_user_plan (user_id, plan_id),
+    KEY idx_user_id (user_id),
+    KEY idx_plan_id (plan_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户培训计划关联表';
+
 -- 13. 学习进度表
 DROP TABLE IF EXISTS learning_progress;
 CREATE TABLE learning_progress (
