@@ -88,8 +88,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public LoginVO login(LoginDTO loginDTO, HttpServletRequest request) {
         // 验证验证码
         if (!captchaService.validateCaptcha(loginDTO.getCaptchaKey(), loginDTO.getCaptcha())) {
-            // 统一错误信息，避免信息泄露
-            throw new BusinessException("用户名或密码错误");
+            // 修复：返回明确的验证码错误提示，避免用户误解
+            throw new BusinessException("验证码错误或已过期");
         }
         
         // 获取用户信息

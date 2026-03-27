@@ -603,9 +603,22 @@ const handleEdit = async (row: any) => {
     let targetUserIds: number[] = []
     
     try {
-      if (data.targetDeptIds) targetDeptIds = JSON.parse(data.targetDeptIds)
-      if (data.targetPositionIds) targetPositionIds = JSON.parse(data.targetPositionIds)
-      if (data.targetUserIds) targetUserIds = JSON.parse(data.targetUserIds)
+      // 修复：判断数据类型，如果已经是数组则直接使用，否则解析JSON字符串
+      if (data.targetDeptIds) {
+        targetDeptIds = typeof data.targetDeptIds === 'string' 
+          ? JSON.parse(data.targetDeptIds) 
+          : data.targetDeptIds
+      }
+      if (data.targetPositionIds) {
+        targetPositionIds = typeof data.targetPositionIds === 'string' 
+          ? JSON.parse(data.targetPositionIds) 
+          : data.targetPositionIds
+      }
+      if (data.targetUserIds) {
+        targetUserIds = typeof data.targetUserIds === 'string' 
+          ? JSON.parse(data.targetUserIds) 
+          : data.targetUserIds
+      }
     } catch (e) {
       console.warn('解析目标ID失败', e)
     }

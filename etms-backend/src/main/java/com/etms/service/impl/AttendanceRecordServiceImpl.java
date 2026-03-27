@@ -136,7 +136,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
                 .eq(AttendanceRecord::getPlanId, planId)
                 .eq(signCategory != null, AttendanceRecord::getSignCategory, signCategory)
                 .between(AttendanceRecord::getSignTime, today, tomorrow)
-                .notIn(AttendanceRecord::getStatus, 4, 6) // 修复：排除缺勤(4)和补签驳回(6)状态
+                .notIn(AttendanceRecord::getStatus, java.util.Arrays.asList(4, 6)) // 修复：使用Arrays.asList传递多个参数，排除缺勤(4)和补签驳回(6)状态
         );
         if (count > 0) {
             throw new BusinessException("您今天已" + (signCategory != null && signCategory == 2 ? "签退" : "签到") + "，请勿重复操作");
@@ -151,7 +151,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
                     .eq(AttendanceRecord::getPlanId, planId)
                     .eq(AttendanceRecord::getSignCategory, 2) // 签退
                     .between(AttendanceRecord::getSignTime, today, tomorrow)
-                    .notIn(AttendanceRecord::getStatus, 4, 6) // 排除缺勤和补签驳回
+                    .notIn(AttendanceRecord::getStatus, java.util.Arrays.asList(4, 6)) // 修复：使用Arrays.asList，排除缺勤和补签驳回
             );
             if (signOutCount > 0) {
                 throw new BusinessException("您今天已签退，无法再签到");
@@ -166,7 +166,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
                     .eq(AttendanceRecord::getPlanId, planId)
                     .eq(AttendanceRecord::getSignCategory, 1) // 签到
                     .between(AttendanceRecord::getSignTime, today, tomorrow)
-                    .notIn(AttendanceRecord::getStatus, 4, 6) // 排除缺勤和补签驳回
+                    .notIn(AttendanceRecord::getStatus, java.util.Arrays.asList(4, 6)) // 修复：使用Arrays.asList，排除缺勤和补签驳回
             );
             if (signInCount == 0) {
                 throw new BusinessException("请先签到后再签退");
@@ -294,7 +294,7 @@ public class AttendanceRecordServiceImpl extends ServiceImpl<AttendanceRecordMap
                 .eq(AttendanceRecord::getPlanId, planId)
                 .eq(signCategory != null, AttendanceRecord::getSignCategory, signCategory)
                 .between(AttendanceRecord::getSignTime, dayStart, dayEnd)
-                .notIn(AttendanceRecord::getStatus, 4, 6) // 修复：排除缺勤(4)和补签驳回(6)状态
+                .notIn(AttendanceRecord::getStatus, java.util.Arrays.asList(4, 6)) // 修复：使用Arrays.asList，排除缺勤(4)和补签驳回(6)状态
         );
         if (existCount > 0) {
             throw new BusinessException("该时间段已有签到记录，无法重复补签");

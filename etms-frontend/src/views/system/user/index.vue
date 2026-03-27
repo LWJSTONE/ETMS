@@ -438,8 +438,9 @@ const handleAssignRole = async (row: any) => {
     selectedRoleIds.value = res.roles?.map((r: any) => r.id) || []
   } catch (error) {
     console.error('获取用户详情失败:', error)
-    // 如果获取失败，使用列表中的角色信息作为降级方案
-    selectedRoleIds.value = row.roles?.map((r: any) => r.id) || []
+    // 修复：获取用户详情失败时，提示用户而不是静默使用降级数据
+    ElMessage.error('获取用户角色信息失败，请重试')
+    return
   }
   
   roleDialogVisible.value = true

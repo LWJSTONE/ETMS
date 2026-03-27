@@ -386,14 +386,20 @@ const handleReset = () => {
 
 // 开始学习
 const handleStartLearning = (course: any) => {
-  // 修复：优先使用已映射的courseId字段，确保路由跳转参数正确
+  // 修复：正确获取courseId、progressId和planId
+  // courseId: 课程ID
+  // progressId: 学习进度记录ID（即UserPlan的id）
+  // planId: 培训计划ID
   const courseId = course.courseId || course.course?.id || course.id
+  const progressId = course.id  // 进度记录ID
+  const planId = course.planId
+  
   router.push({
     path: '/my/learning',
     query: {
-      courseId: courseId,
-      progressId: course.id,
-      planId: course.planId
+      courseId: String(courseId),
+      progressId: String(progressId),
+      planId: planId ? String(planId) : undefined
     }
   })
 }
