@@ -17,14 +17,14 @@
           active-text-color="#409EFF"
         >
           <template v-for="route in menuRoutes" :key="route.path">
-            <!-- 有子菜单 -->
-            <el-sub-menu v-if="route.children && route.children.length > 1" :index="route.path">
+            <!-- 有子菜单（多于1个可访问的子路由） -->
+            <el-sub-menu v-if="getAccessibleChildren(route).length > 1" :index="route.path">
               <template #title>
                 <el-icon><component :is="route.meta?.icon" /></el-icon>
                 <span>{{ route.meta?.title }}</span>
               </template>
               <el-menu-item
-                v-for="child in route.children"
+                v-for="child in getAccessibleChildren(route)"
                 :key="child.path"
                 :index="`${route.path}/${child.path}`"
               >
@@ -32,10 +32,10 @@
                 <span>{{ child.meta?.title }}</span>
               </el-menu-item>
             </el-sub-menu>
-            <!-- 无子菜单 -->
-            <el-menu-item v-else :index="getFullPath(route.path, route.children?.[0]?.path)">
-              <el-icon><component :is="route.meta?.icon || route.children?.[0]?.meta?.icon" /></el-icon>
-              <span>{{ route.meta?.title || route.children?.[0]?.meta?.title }}</span>
+            <!-- 无子菜单（只有1个或0个可访问的子路由） -->
+            <el-menu-item v-else :index="getFullPath(route.path, getAccessibleChildren(route)[0]?.path)">
+              <el-icon><component :is="route.meta?.icon || getAccessibleChildren(route)[0]?.meta?.icon" /></el-icon>
+              <span>{{ route.meta?.title || getAccessibleChildren(route)[0]?.meta?.title }}</span>
             </el-menu-item>
           </template>
         </el-menu>
@@ -155,14 +155,78 @@ const breadcrumbs = computed(() => {
   return route.matched.filter(item => item.meta?.title)
 })
 
-// 菜单路由
+// 检查用户是否有权限访问某个路由
+const hasRoutePermission = (route: any): boolean => {
+  // 获取用户信息
+  const userInfo = userStore.userInfo
+  const roleNames = userInfo?.roleNames || []
+  const userPermissions = userInfo?.permissions || []
+
+  // 检查是否为管理员角色（管理员拥有所有权限）
+  const isAdmin = roleNames.some(name =>
+    name === '超级管理员' || name === '管理员' || name.toLowerCase() === 'admin'
+  )
+
+  if (isAdmin) return true
+
+  // 获取路由所需权限
+  const requiredPermission = route.meta?.permission as string | undefined
+
+  // 如果路由没有权限要求，则所有人都可以访问
+  if (!requiredPermission) return true
+
+  // 检查用户是否拥有所需权限
+  return userPermissions.some((userPerm: string) => {
+    // 完全匹配
+    if (userPerm === requiredPermission) return true
+    // 超级权限
+    if (userPerm === '*') return true
+    // 通配符匹配，如 system:* 匹配 system:user:view
+    if (userPerm.endsWith(':*')) {
+      const prefix = userPerm.slice(0, -1)
+      return requiredPermission.startsWith(prefix)
+    }
+    return false
+  })
+}
+
+// 获取可访问的子路由
+const getAccessibleChildren = (route: any) => {
+  if (!route.children) return []
+  return route.children.filter((child: any) => {
+    // 子路由隐藏的不显示在菜单中
+    if (child.meta?.hidden) return false
+    // 检查子路由权限
+    return hasRoutePermission(child)
+  })
+}
+
+// 菜单路由（根据权限过滤）
 const menuRoutes = computed(() => {
   const routes = router.getRoutes()
-  return routes.filter(route => 
-    route.meta?.title && 
-    !route.meta?.hidden && 
-    route.children?.length
-  )
+
+  return routes.filter(route => {
+    // 基本过滤：必须有标题、不能隐藏、必须有子路由
+    if (!route.meta?.title || route.meta?.hidden || !route.children?.length) {
+      return false
+    }
+
+    // 检查父路由权限
+    if (!hasRoutePermission(route)) {
+      return false
+    }
+
+    // 如果有子路由，检查是否有至少一个可访问的子路由
+    const accessibleChildren = route.children.filter(child => {
+      // 子路由隐藏的不显示在菜单中
+      if (child.meta?.hidden) return false
+      // 检查子路由权限
+      return hasRoutePermission(child)
+    })
+
+    // 如果没有可访问的子路由，隐藏整个父菜单
+    return accessibleChildren.length > 0
+  })
 })
 
 // 切换折叠
