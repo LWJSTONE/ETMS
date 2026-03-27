@@ -1034,13 +1034,16 @@ onMounted(() => {
 .compose-container {
   display: flex;
   gap: 20px;
-  min-height: 500px;
+  // 移除固定min-height，让内容自适应高度，避免对话框过高导致底部按钮不可见
+  max-height: 60vh;
+  overflow: hidden;
 
   .question-select-area {
     flex: 1;
     border: 1px solid #e4e7ed;
     border-radius: 4px;
     padding: 15px;
+    overflow: auto;
 
     .search-box {
       margin-bottom: 15px;
@@ -1064,6 +1067,8 @@ onMounted(() => {
     border-radius: 4px;
     padding: 15px;
     background: #fafafa;
+    display: flex;
+    flex-direction: column;
 
     .area-header {
       display: flex;
