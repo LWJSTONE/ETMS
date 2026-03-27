@@ -991,6 +991,7 @@ const savePaperQuestions = async () => {
     await batchAddQuestionsToPaper(composePaper.value.id, questions)
     ElMessage.success('保存成功')
     composeVisible.value = false
+    // Bug修复：保存题目后刷新列表，更新题目数量显示
     getList()
   } catch (error: any) {
     console.error(error)

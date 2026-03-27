@@ -280,8 +280,15 @@ const handleEdit = (row: any) => {
 
 // 删除
 const handleDelete = async (row: any) => {
+  // Bug修复：保护系统内置角色（admin等）不能被删除
+  const protectedRoleCodes = ['admin', 'ADMIN', 'super_admin', 'SUPER_ADMIN']
+  if (protectedRoleCodes.includes(row.roleCode)) {
+    ElMessage.warning('系统内置角色不能删除')
+    return
+  }
+  
   try {
-    await ElMessageBox.confirm('确定要删除该角色吗？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确定要删除该角色吗？删除后该角色下的所有用户将失去对应权限。', '提示', { type: 'warning' })
     await deleteRole(row.id)
     ElMessage.success('删除成功')
     getList()
