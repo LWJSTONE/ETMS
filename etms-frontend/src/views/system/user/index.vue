@@ -76,6 +76,7 @@
         v-model:current-page="pagination.current"
         v-model:page-size="pagination.size"
         :total="pagination.total"
+        :page-sizes="[10, 20, 50, 100]"
         layout="total, sizes, prev, pager, next"
         @size-change="getList"
         @current-change="getList"
@@ -517,12 +518,8 @@ const handleSubmit = async () => {
 // 导出用户
 const handleExport = async () => {
   try {
-    // 修复：限制导出数量，避免请求超时，与后端限制保持一致
-    const exportSize = Math.min(pagination.total, 10000)
-    if (pagination.total > 10000) {
-      ElMessage.warning(`数据量超过10000条，将只导出前${exportSize}条数据`)
-    }
-    const blob = await exportUsers({ ...searchForm, current: 1, size: exportSize })
+    // 修复：导出接口不使用分页参数，只传递搜索条件
+    const blob = await exportUsers({ ...searchForm })
     // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
