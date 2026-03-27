@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.etms.entity.ExamRecord;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+
+import java.time.LocalDateTime;
 
 /**
  * 考试记录Mapper
@@ -22,4 +25,28 @@ public interface ExamRecordMapper extends BaseMapper<ExamRecord> {
      */
     @Update("UPDATE exam_record SET status = #{newStatus} WHERE id = #{recordId} AND status = #{expectedStatus}")
     int updateStatusToSubmitted(@Param("recordId") Long recordId, @Param("expectedStatus") Integer expectedStatus, @Param("newStatus") Integer newStatus);
+    
+    /**
+     * 使用SQL聚合函数计算平均分，避免内存查询
+     * 性能优化：使用数据库AVG函数替代内存计算
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @return 平均分
+     */
+    @Select("<script>" +
+            "SELECT COALESCE(AVG(user_score), 0) FROM exam_record " +
+            "WHERE status IN (1, 2, 3, 4) " +
+            "<if test='startTime != null'> AND submit_time &gt;= #{startTime} </if>" +
+            "<if test='endTime != null'> AND submit_time &lt;= #{endTime} </if>" +
+            "</script>")
+    Double calculateAvgScore(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+    
+    /**
+     * 原子操作：增加用户锁定计数
+     * 用于登录失败计数的并发安全更新
+     * @param userId 用户ID
+     * @return 影响的行数
+     */
+    @Update("UPDATE sys_user SET lock_count = lock_count + 1 WHERE id = #{userId}")
+    int incrementLockCount(@Param("userId") Long userId);
 }

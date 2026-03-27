@@ -267,13 +267,27 @@ const rules: FormRules = {
     { pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/, message: '用户名必须以字母开头，只能包含字母、数字和下划线', trigger: 'blur' }
   ],
   password: [{ 
-    // 编辑模式下密码字段不可见，此验证规则仅用于新增模式
+    // 新增模式下密码必填，且需要满足强度要求
     required: false,
     trigger: 'blur',
     validator: (_rule: any, value: string, callback: (error?: Error) => void) => {
-      // 仅在新增模式下验证密码必填
-      if (!isEdit.value && (!value || value.trim() === '')) {
-        callback(new Error('请输入密码'))
+      // 仅在新增模式下验证密码
+      if (!isEdit.value) {
+        if (!value || value.trim() === '') {
+          callback(new Error('请输入密码'))
+        } else if (value.length < 6) {
+          callback(new Error('密码长度不能少于6位'))
+        } else if (value.length > 20) {
+          callback(new Error('密码长度不能超过20位'))
+        } else {
+          const hasDigit = /\d/.test(value)
+          const hasLetter = /[a-zA-Z]/.test(value)
+          if (!hasDigit || !hasLetter) {
+            callback(new Error('密码必须包含数字和字母'))
+          } else {
+            callback()
+          }
+        }
       } else {
         callback()
       }

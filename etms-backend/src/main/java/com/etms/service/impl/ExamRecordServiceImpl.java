@@ -827,11 +827,15 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         wrapper.in(ExamRecord::getStatus, 1, 2, 3, 4);
         
         // 时间范围过滤
+        LocalDateTime startDateTime = null;
+        LocalDateTime endDateTime = null;
         if (startTime != null && !startTime.isEmpty()) {
-            wrapper.ge(ExamRecord::getSubmitTime, LocalDateTime.parse(startTime + "T00:00:00"));
+            startDateTime = LocalDateTime.parse(startTime + "T00:00:00");
+            wrapper.ge(ExamRecord::getSubmitTime, startDateTime);
         }
         if (endTime != null && !endTime.isEmpty()) {
-            wrapper.le(ExamRecord::getSubmitTime, LocalDateTime.parse(endTime + "T23:59:59"));
+            endDateTime = LocalDateTime.parse(endTime + "T23:59:59");
+            wrapper.le(ExamRecord::getSubmitTime, endDateTime);
         }
         
         // 统计总数
@@ -850,24 +854,22 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         LambdaQueryWrapper<ExamRecord> passWrapper = new LambdaQueryWrapper<>();
         passWrapper.in(ExamRecord::getStatus, 1, 2, 3, 4)
                    .eq(ExamRecord::getPassed, 1);
-        if (startTime != null && !startTime.isEmpty()) {
-            passWrapper.ge(ExamRecord::getSubmitTime, LocalDateTime.parse(startTime + "T00:00:00"));
+        if (startDateTime != null) {
+            passWrapper.ge(ExamRecord::getSubmitTime, startDateTime);
         }
-        if (endTime != null && !endTime.isEmpty()) {
-            passWrapper.le(ExamRecord::getSubmitTime, LocalDateTime.parse(endTime + "T23:59:59"));
+        if (endDateTime != null) {
+            passWrapper.le(ExamRecord::getSubmitTime, endDateTime);
         }
         Long passCount = baseMapper.selectCount(passWrapper);
         stats.setPassCount(passCount);
         stats.setFailCount(totalCount - passCount);
         stats.setPassRate(totalCount > 0 ? (passCount * 100.0 / totalCount) : 0.0);
         
-        // 计算平均分
-        List<ExamRecord> records = baseMapper.selectList(wrapper);
-        double avgScore = records.stream()
-                .filter(r -> r.getUserScore() != null)
-                .mapToDouble(r -> r.getUserScore().doubleValue())
-                .average()
-                .orElse(0.0);
+        // 性能优化：使用SQL聚合函数计算平均分，避免内存查询
+        Double avgScore = baseMapper.calculateAvgScore(startDateTime, endDateTime);
+        if (avgScore == null) {
+            avgScore = 0.0;
+        }
         // 保留两位小数
         avgScore = Math.round(avgScore * 100.0) / 100.0;
         stats.setAvgScore(avgScore);

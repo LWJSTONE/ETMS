@@ -189,13 +189,31 @@ const validateConfirmPassword = (rule: any, value: string, callback: any) => {
   }
 }
 
+// 密码强度验证：长度6-20位，必须包含数字和字母
+const validatePasswordStrength = (rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback(new Error('请输入新密码'))
+  } else if (value.length < 6) {
+    callback(new Error('密码长度不能少于6位'))
+  } else if (value.length > 20) {
+    callback(new Error('密码长度不能超过20位'))
+  } else {
+    const hasDigit = /\d/.test(value)
+    const hasLetter = /[a-zA-Z]/.test(value)
+    if (!hasDigit || !hasLetter) {
+      callback(new Error('密码必须包含数字和字母'))
+    } else {
+      callback()
+    }
+  }
+}
+
 const passwordRules: FormRules = {
   oldPassword: [
     { required: true, message: '请输入原密码', trigger: 'blur' }
   ],
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+    { required: true, validator: validatePasswordStrength, trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, message: '请再次输入新密码', trigger: 'blur' },

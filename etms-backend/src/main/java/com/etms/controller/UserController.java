@@ -193,11 +193,11 @@ public class UserController {
     @PutMapping("/{id}/reset-password")
     // 权限校验：只有管理员可以重置密码
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<String> resetPassword(@PathVariable Long id) {
-        // 重置密码并返回新密码
-        // 管理员可以将新密码通过安全渠道告知用户
-        String newPassword = userService.resetPassword(id);
-        return Result.success(newPassword);
+    public Result<Void> resetPassword(@PathVariable Long id) {
+        // 安全修复：重置密码不再返回明文密码
+        // 新密码通过邮件或短信发送给用户，API仅返回操作状态
+        userService.resetPassword(id);
+        return Result.success();
     }
     
     @ApiOperation(value = "修改状态")
