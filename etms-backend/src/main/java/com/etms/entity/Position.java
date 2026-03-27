@@ -35,5 +35,8 @@ public class Position extends BaseEntity {
     
     /** 状态(0禁用 1启用) */
     private Integer status;
-    // 注：remark字段已在BaseEntity中定义，无需重复声明
+    
+    /** 备注 - 数据库表中不存在此字段，需要排除 */
+    @TableField(exist = false)
+    private String remark;
 }

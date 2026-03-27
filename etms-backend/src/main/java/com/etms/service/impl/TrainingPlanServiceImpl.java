@@ -48,9 +48,11 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         wrapper.like(StringUtils.hasText(planName), TrainingPlan::getPlanName, planName)
                .eq(status != null, TrainingPlan::getStatus, status)
                .eq(planType != null, TrainingPlan::getPlanType, planType)
-               // 日期筛选：筛选开始日期在指定范围内
-               .ge(StringUtils.hasText(startDate), TrainingPlan::getStartDate, LocalDate.parse(startDate))
-               .le(StringUtils.hasText(endDate), TrainingPlan::getEndDate, LocalDate.parse(endDate))
+               // 日期筛选：先检查参数是否有效，再解析日期
+               .ge(StringUtils.hasText(startDate), TrainingPlan::getStartDate, 
+                   StringUtils.hasText(startDate) ? LocalDate.parse(startDate) : null)
+               .le(StringUtils.hasText(endDate), TrainingPlan::getEndDate, 
+                   StringUtils.hasText(endDate) ? LocalDate.parse(endDate) : null)
                .orderByDesc(TrainingPlan::getCreateTime);
         
         // 修复：部门筛选使用精确的JSON解析匹配，避免LIKE匹配导致的误匹配（如ID "1" 匹配到 "11", "21" 等）
