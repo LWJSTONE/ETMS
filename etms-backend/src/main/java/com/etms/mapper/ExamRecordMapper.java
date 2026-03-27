@@ -40,13 +40,4 @@ public interface ExamRecordMapper extends BaseMapper<ExamRecord> {
             "<if test='endTime != null'> AND submit_time &lt;= #{endTime} </if>" +
             "</script>")
     Double calculateAvgScore(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
-    
-    /**
-     * 原子操作：增加用户锁定计数
-     * 用于登录失败计数的并发安全更新
-     * @param userId 用户ID
-     * @return 影响的行数
-     */
-    @Update("UPDATE sys_user SET lock_count = lock_count + 1 WHERE id = #{userId}")
-    int incrementLockCount(@Param("userId") Long userId);
 }
