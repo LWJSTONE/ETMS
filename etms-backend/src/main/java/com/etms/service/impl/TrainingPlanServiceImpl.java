@@ -7,14 +7,18 @@ import com.etms.entity.TrainingPlan;
 import com.etms.entity.UserPlan;
 import com.etms.entity.Course;
 import com.etms.entity.PlanCourse;
+import com.etms.entity.User;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.TrainingPlanMapper;
 import com.etms.mapper.UserPlanMapper;
 import com.etms.mapper.CourseMapper;
 import com.etms.mapper.PlanCourseMapper;
+import com.etms.mapper.UserMapper;
 import com.etms.service.TrainingPlanService;
 import com.etms.vo.TrainingPlanVO;
+import com.etms.util.JsonArrayUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,12 +29,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * 培训计划服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, TrainingPlan> implements TrainingPlanService {
@@ -41,6 +48,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     private final UserPlanMapper userPlanMapper;
     private final CourseMapper courseMapper;
     private final PlanCourseMapper planCourseMapper;
+    private final UserMapper userMapper;
     
     @Override
     public Page<TrainingPlanVO> pagePlans(Page<TrainingPlan> page, String planName, Integer status, Integer planType, String startDate, String endDate, Long deptId) {
@@ -315,7 +323,112 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         if (updateCount == 0) {
             throw new BusinessException("发布失败，培训计划状态已被修改，请刷新后重试");
         }
+        
+        // 修复：发布培训计划时，为目标用户创建UserPlan记录，使其能在"我的课程"中看到培训计划
+        try {
+            List<Long> targetUserIds = findTargetUserIds(existingPlan);
+            if (!targetUserIds.isEmpty()) {
+                createUserPlansForTargetUsers(existingPlan, targetUserIds);
+            }
+        } catch (Exception e) {
+            // 记录日志但不影响发布流程
+            log.error("为培训计划[{}]创建用户学习记录失败: {}", id, e.getMessage(), e);
+        }
+        
         return true;
+    }
+    
+    /**
+     * 根据目标类型查找目标用户ID列表
+     */
+    private List<Long> findTargetUserIds(TrainingPlan plan) {
+        Integer targetType = plan.getTargetType();
+        if (targetType == null) {
+            return new ArrayList<>();
+        }
+        
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getStatus, 1); // 只查询正常状态的用户
+        
+        switch (targetType) {
+            case 1: // 按部门
+                String deptIds = plan.getTargetDeptIds();
+                if (StringUtils.hasText(deptIds) && !isJsonArrayEmpty(deptIds)) {
+                    List<Long> deptIdList = JsonArrayUtils.parseJsonArrayToLongList(deptIds);
+                    if (!deptIdList.isEmpty()) {
+                        wrapper.in(User::getDeptId, deptIdList);
+                        return userMapper.selectList(wrapper).stream()
+                                .map(User::getId)
+                                .collect(Collectors.toList());
+                    }
+                }
+                break;
+                
+            case 2: // 按岗位
+                String positionIds = plan.getTargetPositionIds();
+                if (StringUtils.hasText(positionIds) && !isJsonArrayEmpty(positionIds)) {
+                    List<Long> positionIdList = JsonArrayUtils.parseJsonArrayToLongList(positionIds);
+                    if (!positionIdList.isEmpty()) {
+                        wrapper.in(User::getPositionId, positionIdList);
+                        return userMapper.selectList(wrapper).stream()
+                                .map(User::getId)
+                                .collect(Collectors.toList());
+                    }
+                }
+                break;
+                
+            case 3: // 按个人
+                String userIds = plan.getTargetUserIds();
+                if (StringUtils.hasText(userIds) && !isJsonArrayEmpty(userIds)) {
+                    return JsonArrayUtils.parseJsonArrayToLongList(userIds);
+                }
+                break;
+        }
+        
+        return new ArrayList<>();
+    }
+    
+    /**
+     * 为目标用户创建学习进度记录
+     */
+    private void createUserPlansForTargetUsers(TrainingPlan plan, List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return;
+        }
+        
+        Long planId = plan.getId();
+        Long courseId = plan.getCourseId();
+        
+        // 查询已存在的UserPlan记录，避免重复创建
+        List<UserPlan> existingUserPlans = userPlanMapper.selectList(
+            new LambdaQueryWrapper<UserPlan>().eq(UserPlan::getPlanId, planId)
+        );
+        Set<Long> existingUserIds = existingUserPlans.stream()
+                .map(UserPlan::getUserId)
+                .collect(Collectors.toSet());
+        
+        // 为新用户创建UserPlan记录
+        List<UserPlan> newUserPlans = new ArrayList<>();
+        for (Long userId : userIds) {
+            if (!existingUserIds.contains(userId)) {
+                UserPlan userPlan = new UserPlan();
+                userPlan.setUserId(userId);
+                userPlan.setPlanId(planId);
+                userPlan.setCourseId(courseId);
+                userPlan.setProgress(0);
+                userPlan.setStatus(0); // 未开始
+                userPlan.setCreateTime(LocalDateTime.now());
+                newUserPlans.add(userPlan);
+            }
+        }
+        
+        // 批量插入
+        if (!newUserPlans.isEmpty()) {
+            for (UserPlan userPlan : newUserPlans) {
+                userPlanMapper.insert(userPlan);
+            }
+            log.info("为培训计划[{}]创建了{}条用户学习记录", planId, newUserPlans.size());
+        }
     }
     
     @Override

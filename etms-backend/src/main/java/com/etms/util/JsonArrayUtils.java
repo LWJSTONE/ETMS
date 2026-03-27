@@ -121,4 +121,48 @@ public class JsonArrayUtils {
         }
         return false;
     }
+    
+    /**
+     * 将JSON数组字符串解析为Long列表
+     * 
+     * @param jsonArrayStr JSON数组字符串，如 "[1, 2, 3]" 或 "[\"1\", \"2\", \"3\"]"
+     * @return Long列表
+     */
+    public static List<Long> parseJsonArrayToLongList(String jsonArrayStr) {
+        java.util.ArrayList<Long> result = new java.util.ArrayList<>();
+        if (jsonArrayStr == null || jsonArrayStr.trim().isEmpty()) {
+            return result;
+        }
+        
+        String trimmed = jsonArrayStr.trim();
+        if (trimmed.equals("[]") || trimmed.equals("[ ]")) {
+            return result;
+        }
+        
+        try {
+            List<?> list = OBJECT_MAPPER.readValue(trimmed, List.class);
+            for (Object item : list) {
+                Long itemId = convertToLong(item);
+                if (itemId != null) {
+                    result.add(itemId);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("解析JSON数组失败: {}, 错误: {}", jsonArrayStr, e.getMessage());
+            // 降级处理：尝试简单字符串分割
+            String content = trimmed.replace("[", "").replace("]", "").trim();
+            if (!content.isEmpty()) {
+                String[] parts = content.split(",");
+                for (String part : parts) {
+                    String idStr = part.trim().replace("\"", "");
+                    try {
+                        result.add(Long.parseLong(idStr));
+                    } catch (NumberFormatException ignored) {
+                        // 忽略无效的ID
+                    }
+                }
+            }
+        }
+        return result;
+    }
 }
