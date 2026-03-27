@@ -56,15 +56,30 @@ public class CaptchaServiceImpl implements CaptchaService {
         String captchaKey = UUID.randomUUID().toString().replace("-", "");
         
         // 存储验证码
+        boolean useMemoryCache = false;
         if (stringRedisTemplate != null) {
-            // 使用Redis存储
-            stringRedisTemplate.opsForValue().set(
-                CAPTCHA_PREFIX + captchaKey, 
-                captchaText.toLowerCase(), 
-                CAPTCHA_EXPIRE_MINUTES, 
-                TimeUnit.MINUTES
-            );
+            try {
+                // 使用Redis存储
+                stringRedisTemplate.opsForValue().set(
+                    CAPTCHA_PREFIX + captchaKey, 
+                    captchaText.toLowerCase(), 
+                    CAPTCHA_EXPIRE_MINUTES, 
+                    TimeUnit.MINUTES
+                );
+            } catch (org.springframework.data.redis.RedisConnectionFailureException e) {
+                // Redis连接失败，回退到内存缓存
+                log.warn("Redis连接失败，使用内存缓存存储验证码: {}", e.getMessage());
+                useMemoryCache = true;
+            } catch (Exception e) {
+                // 其他Redis异常，回退到内存缓存
+                log.warn("Redis操作失败，使用内存缓存存储验证码: {}", e.getMessage());
+                useMemoryCache = true;
+            }
         } else {
+            useMemoryCache = true;
+        }
+        
+        if (useMemoryCache) {
             // 使用内存缓存
             // 检查缓存大小，如果超过限制则清理过期条目
             if (memoryCache.size() >= MAX_CACHE_SIZE) {
@@ -97,24 +112,27 @@ public class CaptchaServiceImpl implements CaptchaService {
         String storedCaptcha = null;
         
         if (stringRedisTemplate != null) {
-            // 使用Redis验证
-            String key = CAPTCHA_PREFIX + captchaKey;
-            storedCaptcha = stringRedisTemplate.opsForValue().get(key);
-            
-            if (storedCaptcha != null) {
-                // 验证后删除验证码（一次性使用）
-                stringRedisTemplate.delete(key);
+            try {
+                // 使用Redis验证
+                String key = CAPTCHA_PREFIX + captchaKey;
+                storedCaptcha = stringRedisTemplate.opsForValue().get(key);
+                
+                if (storedCaptcha != null) {
+                    // 验证后删除验证码（一次性使用）
+                    stringRedisTemplate.delete(key);
+                }
+            } catch (org.springframework.data.redis.RedisConnectionFailureException e) {
+                // Redis连接失败，尝试使用内存缓存
+                log.warn("Redis连接失败，尝试从内存缓存验证: {}", e.getMessage());
+                storedCaptcha = getFromMemoryCache(captchaKey);
+            } catch (Exception e) {
+                // 其他Redis异常，尝试使用内存缓存
+                log.warn("Redis操作失败，尝试从内存缓存验证: {}", e.getMessage());
+                storedCaptcha = getFromMemoryCache(captchaKey);
             }
         } else {
             // 使用内存缓存验证
-            CaptchaEntry entry = memoryCache.get(captchaKey);
-            if (entry != null) {
-                if (entry.expireTime > System.currentTimeMillis()) {
-                    storedCaptcha = entry.captcha;
-                }
-                // 验证后删除验证码（一次性使用）
-                memoryCache.remove(captchaKey);
-            }
+            storedCaptcha = getFromMemoryCache(captchaKey);
         }
         
         if (storedCaptcha == null) {
@@ -124,11 +142,34 @@ public class CaptchaServiceImpl implements CaptchaService {
         return storedCaptcha.equalsIgnoreCase(captcha.trim());
     }
     
+    /**
+     * 从内存缓存获取验证码
+     */
+    private String getFromMemoryCache(String captchaKey) {
+        CaptchaEntry entry = memoryCache.get(captchaKey);
+        if (entry != null) {
+            if (entry.expireTime > System.currentTimeMillis()) {
+                // 验证后删除验证码（一次性使用）
+                memoryCache.remove(captchaKey);
+                return entry.captcha;
+            }
+            // 已过期，删除
+            memoryCache.remove(captchaKey);
+        }
+        return null;
+    }
+    
     @Override
     public void deleteCaptcha(String captchaKey) {
         if (captchaKey != null) {
             if (stringRedisTemplate != null) {
-                stringRedisTemplate.delete(CAPTCHA_PREFIX + captchaKey);
+                try {
+                    stringRedisTemplate.delete(CAPTCHA_PREFIX + captchaKey);
+                } catch (Exception e) {
+                    // Redis操作失败，尝试从内存缓存删除
+                    log.debug("Redis删除验证码失败: {}", e.getMessage());
+                    memoryCache.remove(captchaKey);
+                }
             } else {
                 memoryCache.remove(captchaKey);
             }

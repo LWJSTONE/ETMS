@@ -51,12 +51,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             authorities.add(new SimpleGrantedAuthority(permission));
         }
         
-        // 使用自定义LoginUser，包含用户ID
+        // 使用自定义LoginUser，包含用户ID和状态
         return new LoginUser(
                 user.getId(),
                 user.getUsername(),
                 user.getPassword(),
-                authorities
+                authorities,
+                user.getStatus()  // 传递用户状态，避免后续重复查询数据库
         );
     }
 }

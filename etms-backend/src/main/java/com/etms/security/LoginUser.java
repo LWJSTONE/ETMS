@@ -39,6 +39,9 @@ public class LoginUser implements UserDetails {
     /** 账户是否启用 */
     private boolean enabled = true;
     
+    /** 用户状态（0-禁用，1-正常，2-离职）- 用于快速检查用户状态，避免重复查询数据库 */
+    private Integer status;
+    
     public LoginUser() {
     }
     
@@ -47,6 +50,14 @@ public class LoginUser implements UserDetails {
         this.username = username;
         this.password = password;
         this.authorities = authorities;
+    }
+    
+    public LoginUser(Long userId, String username, String password, Collection<? extends GrantedAuthority> authorities, Integer status) {
+        this.userId = userId;
+        this.username = username;
+        this.password = password;
+        this.authorities = authorities;
+        this.status = status;
     }
     
     @Override

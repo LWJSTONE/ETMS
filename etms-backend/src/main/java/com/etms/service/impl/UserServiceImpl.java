@@ -249,10 +249,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             
             // 将Token加入黑名单（如果Redis可用）
             if (stringRedisTemplate != null) {
-                long remainingTime = jwtTokenProvider.getTokenRemainingTime(token);
-                if (remainingTime > 0) {
-                    String key = TOKEN_BLACKLIST_PREFIX + token;
-                    stringRedisTemplate.opsForValue().set(key, "1", remainingTime, java.util.concurrent.TimeUnit.MILLISECONDS);
+                try {
+                    long remainingTime = jwtTokenProvider.getTokenRemainingTime(token);
+                    if (remainingTime > 0) {
+                        String key = TOKEN_BLACKLIST_PREFIX + token;
+                        stringRedisTemplate.opsForValue().set(key, "1", remainingTime, java.util.concurrent.TimeUnit.MILLISECONDS);
+                        log.debug("Token已加入黑名单，剩余有效时间: {}ms", remainingTime);
+                    }
+                } catch (org.springframework.data.redis.RedisConnectionFailureException e) {
+                    // Redis连接失败，记录日志但不影响登出流程
+                    log.warn("Redis连接失败，Token黑名单功能暂时不可用: {}", e.getMessage());
+                } catch (Exception e) {
+                    // 其他Redis异常，记录日志但不影响登出流程
+                    log.warn("Token加入黑名单失败: {}", e.getMessage());
                 }
             }
         }
