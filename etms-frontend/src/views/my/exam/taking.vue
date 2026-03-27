@@ -250,7 +250,6 @@ let timer: ReturnType<typeof setInterval> | null = null
 // 防作弊：切屏次数
 const switchCount = ref(0)
 const MAX_SWITCH_COUNT = 3
-let hiddenTime = ref(0)
 
 // 当前题目
 const currentQuestion = computed(() => questions.value[currentIndex.value])
@@ -431,23 +430,31 @@ watch(answers, () => {
 }, { deep: true })
 
 // 防作弊：监听页面可见性变化
+// 修复：添加最小隐藏时间阈值（500ms），避免快速切换误判
+const MIN_HIDDEN_TIME = 500 // 最小隐藏时间阈值（毫秒）
+let hiddenStartTime = 0
+
 const handleVisibilityChange = () => {
   if (document.hidden) {
-    // 仅在页面变为隐藏时记录时间，避免误判
-    hiddenTime.value = Date.now()
+    // 页面变为隐藏时记录开始时间
+    hiddenStartTime = Date.now()
   } else {
-    // 页面重新可见时，检查是否之前记录了隐藏时间
-    if (hiddenTime.value > 0) {
-      switchCount.value++
-      const recordedTime = hiddenTime.value
-      hiddenTime.value = 0 // 重置时间，确保每次切屏只计数一次
+    // 页面重新可见时，检查隐藏时间是否超过阈值
+    if (hiddenStartTime > 0) {
+      const hiddenDuration = Date.now() - hiddenStartTime
+      hiddenStartTime = 0 // 重置时间
       
-      if (switchCount.value >= MAX_SWITCH_COUNT) {
-        // 超过最大切屏次数，强制提交
-        ElMessage.error('切屏次数过多，系统将自动提交试卷！')
-        confirmSubmit()
-      } else {
-        ElMessage.warning(`您已切换页面${switchCount.value}次，超过${MAX_SWITCH_COUNT}次将自动提交试卷！`)
+      // 只有隐藏时间超过阈值才计入切屏次数
+      if (hiddenDuration >= MIN_HIDDEN_TIME) {
+        switchCount.value++
+        
+        if (switchCount.value >= MAX_SWITCH_COUNT) {
+          // 超过最大切屏次数，强制提交
+          ElMessage.error('切屏次数过多，系统将自动提交试卷！')
+          confirmSubmit()
+        } else {
+          ElMessage.warning(`您已切换页面${switchCount.value}次，超过${MAX_SWITCH_COUNT}次将自动提交试卷！`)
+        }
       }
     }
   }

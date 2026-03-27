@@ -621,6 +621,8 @@ const handleEdit = async (row: any) => {
       }
     } catch (e) {
       console.warn('解析目标ID失败', e)
+      // 修复：解析失败时向用户提示错误
+      ElMessage.warning('培训计划数据格式异常，部分目标信息无法解析，建议重新编辑保存')
     }
     
     Object.assign(form, {
