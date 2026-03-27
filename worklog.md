@@ -455,3 +455,47 @@ CREATE INDEX idx_attendance_plan_id ON attendance_record(plan_id);
 - 继续保持代码风格一致性
 - 考虑添加更多单元测试覆盖
 - 持续优化大数据量场景的性能
+
+---
+
+## 2026年3月最新修复
+
+### 安全问题修复
+
+#### 1. 重置密码接口安全修复
+- **文件**：`etms-backend/src/main/java/com/etms/controller/UserController.java`
+- **问题**：重置密码接口返回明文密码，存在安全风险
+- **修复**：不再返回明文密码，仅返回操作状态
+- **建议**：新密码应通过邮件或短信等安全渠道发送给用户
+
+### 性能优化
+
+#### 1. 平均分计算优化
+- **文件**：`etms-backend/src/main/java/com/etms/service/impl/ExamRecordServiceImpl.java`
+- **问题**：平均分计算使用内存流处理，大数据量时消耗内存
+- **修复**：使用SQL聚合函数AVG()替代内存计算
+
+#### 2. 新增Mapper层聚合查询
+- **文件**：`etms-backend/src/main/java/com/etms/mapper/ExamRecordMapper.java`
+- **新增方法**：
+  - `calculateAvgScore`: 使用数据库计算平均分
+  - `incrementLockCount`: 原子操作增加锁定计数
+
+### 前端密码验证增强
+
+#### 1. 修改密码表单验证
+- **文件**：`etms-frontend/src/layouts/MainLayout.vue`
+- **修复**：添加密码强度验证
+  - 要求密码长度6-20位
+  - 要求密码必须包含数字和字母
+
+#### 2. 用户管理密码验证
+- **文件**：`etms-frontend/src/views/system/user/index.vue`
+- **修复**：
+  - 新增用户时密码必填
+  - 添加密码强度验证（长度6-20位，必须包含数字和字母）
+  - 动态验证规则适应新增/编辑模式
+
+---
+
+**更新时间**：2026年3月27日
