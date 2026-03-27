@@ -989,8 +989,9 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     public void exportResults(Long paperId, Long userId, Integer passed, String userName, String paperName, String startTime, String endTime, OutputStream outputStream) {
         // 构建查询条件
         LambdaQueryWrapper<ExamRecord> wrapper = new LambdaQueryWrapper<>();
-        // 修复：导出已完成(2)和已超时(3)状态的考试
-        wrapper.in(ExamRecord::getStatus, 2, 3)
+        // 修复：导出所有已完成状态的考试记录
+        // 状态定义：0-考试中 1-已提交 2-超时 3-已批阅 4-已放弃
+        wrapper.in(ExamRecord::getStatus, 1, 2, 3, 4)
                .eq(paperId != null, ExamRecord::getPaperId, paperId)
                .eq(userId != null, ExamRecord::getUserId, userId)
                .eq(passed != null, ExamRecord::getPassed, passed)
