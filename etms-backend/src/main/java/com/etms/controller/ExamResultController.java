@@ -34,7 +34,7 @@ public class ExamResultController {
     
     @ApiOperation(value = "分页查询成绩列表")
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<PageResult<ExamResultVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
@@ -83,7 +83,7 @@ public class ExamResultController {
     
     @ApiOperation(value = "获取成绩统计")
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<ExamResultStatsVO> getStats(
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime) {
@@ -93,7 +93,7 @@ public class ExamResultController {
     
     @ApiOperation(value = "导出成绩")
     @GetMapping("/export")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public void export(
             @RequestParam(required = false) Long paperId,
             @RequestParam(required = false) Long userId,

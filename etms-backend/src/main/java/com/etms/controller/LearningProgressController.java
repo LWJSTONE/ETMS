@@ -33,7 +33,7 @@ public class LearningProgressController {
     
     @ApiOperation(value = "分页查询学习进度列表")
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin', 'dept_manager')")
     public Result<PageResult<LearningProgressVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
@@ -93,7 +93,7 @@ public class LearningProgressController {
     
     @ApiOperation(value = "获取学习进度详情")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin', 'dept_manager')")
     public Result<LearningProgressVO> get(@PathVariable Long id) {
         LearningProgressVO vo = learningProgressService.getProgressDetail(id);
         if (vo == null) {

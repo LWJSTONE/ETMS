@@ -40,7 +40,7 @@ public class UserController {
     
     @ApiOperation(value = "分页查询用户列表")
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasPermission('system:user:list')")
+    @PreAuthorize("hasRole('admin')")
     public Result<PageResult<UserVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
@@ -65,7 +65,7 @@ public class UserController {
         String currentUsername = authentication.getName();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> "ROLE_ADMIN".equals(auth) || "admin".equals(auth));
+                .anyMatch(auth -> "ROLE_admin".equals(auth) || "admin".equals(auth));
         
         UserVO vo = userService.getUserDetail(id);
         if (vo == null) {
@@ -82,7 +82,7 @@ public class UserController {
     
     @ApiOperation(value = "新增用户")
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> add(@Validated(UserDTO.Add.class) @RequestBody UserDTO userDTO) {
         userService.addUser(userDTO);
         return Result.success();
@@ -100,7 +100,7 @@ public class UserController {
         String currentUsername = authentication.getName();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> "ROLE_ADMIN".equals(auth) || "admin".equals(auth));
+                .anyMatch(auth -> "ROLE_admin".equals(auth) || "admin".equals(auth));
         
         // 获取目标用户信息
         User targetUser = userService.getById(id);
@@ -125,7 +125,7 @@ public class UserController {
     
     @ApiOperation(value = "删除用户")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> delete(@PathVariable Long id) {
         // 获取当前登录用户信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -172,7 +172,7 @@ public class UserController {
         // 检查是否是管理员
         boolean isAdmin = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> "ROLE_ADMIN".equals(auth) || "admin".equals(auth));
+                .anyMatch(auth -> "ROLE_admin".equals(auth) || "admin".equals(auth));
         
         // 获取目标用户信息
         User targetUser = userService.getById(id);
@@ -192,7 +192,7 @@ public class UserController {
     @ApiOperation(value = "重置密码")
     @PutMapping("/{id}/reset-password")
     // 权限校验：只有管理员可以重置密码
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> resetPassword(@PathVariable Long id) {
         // 安全修复：重置密码不再返回明文密码
         // 新密码通过邮件或短信发送给用户，API仅返回操作状态
@@ -203,7 +203,7 @@ public class UserController {
     @ApiOperation(value = "修改状态")
     @PutMapping("/{id}/status")
     // 权限校验：只有管理员可以修改用户状态
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusDTO statusDTO) {
         Integer status = statusDTO.getStatus();
         
@@ -227,7 +227,7 @@ public class UserController {
     @ApiOperation(value = "分配角色")
     @PutMapping("/{id}/roles")
     // 权限校验：只有管理员可以分配角色
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> assignRoles(@PathVariable Long id, @Valid @RequestBody List<Long> roleIds) {
         userService.assignRoles(id, roleIds);
         return Result.success();
@@ -236,7 +236,7 @@ public class UserController {
     @ApiOperation(value = "导出用户")
     @GetMapping("/export")
     // 权限校验：只有管理员可以导出用户数据
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('admin')")
     public void export(
             UserDTO userDTO,
             HttpServletResponse response) {

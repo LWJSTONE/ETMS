@@ -32,7 +32,7 @@ public class QuestionController {
     
     @ApiOperation(value = "分页查询题目列表")
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<PageResult<QuestionVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 100, message = "每页数量不能超过100") Long size,
@@ -51,7 +51,7 @@ public class QuestionController {
     
     @ApiOperation(value = "获取题目详情")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<QuestionVO> get(@PathVariable Long id) {
         QuestionVO vo = questionService.getQuestionDetail(id);
         if (vo == null) {
@@ -62,7 +62,7 @@ public class QuestionController {
     
     @ApiOperation(value = "新增题目")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> add(@Valid @RequestBody Question question) {
         questionService.addQuestion(question);
         return Result.success();
@@ -70,7 +70,7 @@ public class QuestionController {
     
     @ApiOperation(value = "更新题目")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Question question) {
         question.setId(id);
         questionService.updateQuestion(question);
@@ -79,7 +79,7 @@ public class QuestionController {
     
     @ApiOperation(value = "删除题目")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> delete(@PathVariable Long id) {
         // 修复：删除题目前检查是否被试卷引用，统一使用BusinessException
         if (questionService.isUsedInPapers(id)) {
@@ -91,7 +91,7 @@ public class QuestionController {
     
     @ApiOperation(value = "随机抽取题目")
     @GetMapping("/random")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<List<QuestionVO>> randomQuestions(
             @RequestParam(required = false) Integer questionType,
             @RequestParam(required = false) Integer difficulty,

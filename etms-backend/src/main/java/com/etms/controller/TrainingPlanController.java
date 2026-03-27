@@ -63,7 +63,7 @@ public class TrainingPlanController {
     
     @ApiOperation(value = "新增培训计划")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> add(@Valid @RequestBody TrainingPlan plan) {
         trainingPlanService.addPlan(plan);
         return Result.success();
@@ -71,7 +71,7 @@ public class TrainingPlanController {
     
     @ApiOperation(value = "更新培训计划")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody TrainingPlan plan) {
         plan.setId(id);
         trainingPlanService.updatePlan(plan);
@@ -80,7 +80,7 @@ public class TrainingPlanController {
     
     @ApiOperation(value = "删除培训计划")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> delete(@PathVariable Long id) {
         // 修复：删除培训计划前检查是否有学员参与，统一使用BusinessException
         if (trainingPlanService.hasParticipants(id)) {
@@ -92,7 +92,7 @@ public class TrainingPlanController {
     
     @ApiOperation(value = "发布培训计划")
     @PostMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> publish(@PathVariable Long id) {
         trainingPlanService.publishPlan(id);
         return Result.success();
@@ -100,7 +100,7 @@ public class TrainingPlanController {
     
     @ApiOperation(value = "归档培训计划")
     @PostMapping("/{id}/archive")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> archive(@PathVariable Long id) {
         trainingPlanService.archivePlan(id);
         return Result.success();
@@ -108,7 +108,7 @@ public class TrainingPlanController {
     
     @ApiOperation(value = "结束培训计划")
     @PostMapping("/{id}/end")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> end(@PathVariable Long id) {
         trainingPlanService.endPlan(id);
         return Result.success();

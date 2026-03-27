@@ -59,7 +59,7 @@ public class CategoryController {
     
     @ApiOperation(value = "新增分类")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> add(@Valid @RequestBody Category category) {
         categoryService.addCategory(category);
         return Result.success();
@@ -67,7 +67,7 @@ public class CategoryController {
     
     @ApiOperation(value = "更新分类")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Category category) {
         category.setId(id);
         categoryService.updateCategory(category);
@@ -76,7 +76,7 @@ public class CategoryController {
     
     @ApiOperation(value = "删除分类")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> delete(@PathVariable Long id) {
         // 删除分类前检查是否有子分类
         if (categoryService.hasChildren(id)) {
@@ -92,7 +92,7 @@ public class CategoryController {
     
     @ApiOperation(value = "更新分类状态")
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusDTO statusDTO) {
         categoryService.updateStatus(id, statusDTO.getStatus());
         return Result.success();

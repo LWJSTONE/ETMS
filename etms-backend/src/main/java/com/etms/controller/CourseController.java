@@ -47,8 +47,8 @@ public class CourseController {
         org.springframework.security.core.Authentication auth = 
             org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
-            .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || 
-                          "ROLE_TRAINING_MANAGER".equals(a.getAuthority()));
+            .anyMatch(a -> "ROLE_admin".equals(a.getAuthority()) || 
+                          "ROLE_train_admin".equals(a.getAuthority()));
         
         // 如果不是管理员，强制只显示已上架的课程(状态2表示已上架)
         Integer queryStatus = status;
@@ -78,8 +78,8 @@ public class CourseController {
         org.springframework.security.core.Authentication auth = 
             org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
-            .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || 
-                          "ROLE_TRAINING_MANAGER".equals(a.getAuthority()));
+            .anyMatch(a -> "ROLE_admin".equals(a.getAuthority()) || 
+                          "ROLE_train_admin".equals(a.getAuthority()));
         
         if (!isAdmin && vo.getStatus() != null && vo.getStatus() != 2) {
             throw new BusinessException("您无权查看该课程");
@@ -90,7 +90,7 @@ public class CourseController {
     
     @ApiOperation(value = "新增课程")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> add(@Valid @RequestBody Course course) {
         courseService.addCourse(course);
         return Result.success();
@@ -98,7 +98,7 @@ public class CourseController {
     
     @ApiOperation(value = "更新课程")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Course course) {
         course.setId(id);
         courseService.updateCourse(course);
@@ -107,7 +107,7 @@ public class CourseController {
     
     @ApiOperation(value = "删除课程")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> delete(@PathVariable Long id) {
         // 修复：删除课程前检查是否有关联的培训计划，统一使用BusinessException
         if (courseService.hasTrainingPlans(id)) {
@@ -119,7 +119,7 @@ public class CourseController {
     
     @ApiOperation(value = "提交审核")
     @PostMapping("/{id}/submit")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> submitAudit(@PathVariable Long id) {
         courseService.submitAudit(id);
         return Result.success();
@@ -127,7 +127,7 @@ public class CourseController {
     
     @ApiOperation(value = "审核课程")
     @PostMapping("/{id}/audit")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> audit(
             @PathVariable Long id,
             @Valid @RequestBody CourseAuditDTO auditDTO) {
@@ -137,7 +137,7 @@ public class CourseController {
     
     @ApiOperation(value = "上架课程")
     @PostMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> publish(@PathVariable Long id) {
         courseService.publishCourse(id);
         return Result.success();
@@ -145,7 +145,7 @@ public class CourseController {
     
     @ApiOperation(value = "下架课程")
     @PostMapping("/{id}/unpublish")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
     public Result<Void> unpublish(@PathVariable Long id) {
         courseService.unpublishCourse(id);
         return Result.success();
@@ -160,8 +160,8 @@ public class CourseController {
         org.springframework.security.core.Authentication auth = 
             org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
-            .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || 
-                          "ROLE_TRAINING_MANAGER".equals(a.getAuthority()));
+            .anyMatch(a -> "ROLE_admin".equals(a.getAuthority()) || 
+                          "ROLE_train_admin".equals(a.getAuthority()));
         
         List<CourseVO> list = courseService.listCourses(categoryId);
         

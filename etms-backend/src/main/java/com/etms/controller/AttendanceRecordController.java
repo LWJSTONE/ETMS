@@ -38,7 +38,7 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "分页查询签到记录")
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin', 'dept_manager')")
     public Result<PageResult<AttendanceRecordVO>> page(
             @RequestParam(defaultValue = "1") @javax.validation.constraints.Min(value = 1, message = "页码最小为1") Long current,
             @RequestParam(defaultValue = "10") @javax.validation.constraints.Min(value = 1, message = "每页条数最小为1") @javax.validation.constraints.Max(value = 100, message = "每页条数最大为100") Long size,
@@ -108,7 +108,7 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "补签审核")
     @PostMapping("/{id}/audit")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin', 'dept_manager')")
     public Result<Void> audit(@PathVariable Long id, @Valid @RequestBody AttendanceAuditDTO auditDTO) {
         attendanceRecordService.auditSupplement(id, auditDTO.getAuditStatus(), auditDTO.getAuditRemark());
         return Result.success();
@@ -128,7 +128,7 @@ public class AttendanceRecordController {
     
     @ApiOperation(value = "获取指定用户签到统计(管理员)")
     @GetMapping("/stats/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINING_MANAGER', 'DEPT_MANAGER')")
+    @PreAuthorize("hasAnyRole('admin', 'train_admin', 'dept_manager')")
     public Result<?> getUserStats(@PathVariable Long userId) {
         return Result.success(attendanceRecordService.getPersonalStats(userId));
     }
