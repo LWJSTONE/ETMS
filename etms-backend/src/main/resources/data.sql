@@ -36,9 +36,7 @@ INSERT INTO sys_position (id, position_name, position_code, position_level, posi
 -- =============================================
 INSERT INTO sys_role (id, role_code, role_name, role_desc, data_scope, sort_order, status) VALUES
 (1, 'admin', '超级管理员', '拥有系统全部权限', 1, 1, 1),
-(2, 'train_admin', '培训管理员', '管理培训相关业务', 1, 2, 1),
-(3, 'dept_manager', '部门主管', '管理本部门培训事务', 2, 3, 1),
-(4, 'employee', '普通员工', '参与培训学习', 3, 4, 1);
+(2, 'employee', '普通员工', '参与培训学习', 3, 2, 1);
 
 -- =============================================
 -- 初始化用户数据 (密码为: 123456，BCrypt加密)
@@ -48,16 +46,16 @@ INSERT INTO sys_user (id, username, password, real_name, gender, email, phone, d
 (2, 'zhangsan', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '张三', 1, 'zhangsan@etms.com', '13800138001', 2, 3, 1),
 (3, 'lisi', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '李四', 1, 'lisi@etms.com', '13800138002', 2, 4, 1),
 (4, 'wangwu', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '王五', 2, 'wangwu@etms.com', '13800138003', 3, 4, 1),
-(5, 'trainadmin', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '培训管理员', 1, 'train@etms.com', '13800138004', 4, 7, 1);
+(5, 'trainadmin', '$2a$10$3be60RRk3AJV8cY5oVkaqOlag3ISilX/bOu55z/b9VwXkPO0.QzSm', '培训专员', 1, 'train@etms.com', '13800138004', 4, 7, 1);
 
 -- =============================================
 -- 初始化用户角色关联
 -- =============================================
 INSERT INTO sys_user_role (user_id, role_id) VALUES
 (1, 1),
-(2, 4),
-(3, 4),
-(4, 4),
+(2, 2),
+(3, 2),
+(4, 2),
 (5, 2);
 
 -- =============================================
@@ -109,24 +107,9 @@ INSERT INTO sys_permission (id, perm_code, perm_name, perm_type, parent_id, path
 INSERT INTO sys_role_permission (role_id, permission_id)
 SELECT 1, id FROM sys_permission;
 
--- 培训管理员权限
+-- 普通员工权限（只有我的培训模块）
 INSERT INTO sys_role_permission (role_id, permission_id) VALUES
-(2, 20), (2, 21), (2, 22), (2, 23), (2, 24),
-(2, 30), (2, 31), (2, 32),
-(2, 40), (2, 41), (2, 42), (2, 43), (2, 44),
-(2, 50), (2, 51), (2, 52);
-
--- 部门主管权限
-INSERT INTO sys_role_permission (role_id, permission_id) VALUES
-(3, 20), (3, 21), (3, 23), (3, 24),
-(3, 30), (3, 31),
-(3, 40), (3, 43), (3, 44),
-(3, 50), (3, 51),
-(3, 60), (3, 61), (3, 62), (3, 63), (3, 64);
-
--- 普通员工权限
-INSERT INTO sys_role_permission (role_id, permission_id) VALUES
-(4, 60), (4, 61), (4, 62), (4, 63), (4, 64);
+(2, 60), (2, 61), (2, 62), (2, 63), (2, 64);
 
 -- =============================================
 -- 初始化课程分类数据

@@ -34,7 +34,7 @@ public class PaperController {
     
     @ApiOperation(value = "分页查询试卷列表")
     @GetMapping
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<PageResult<PaperVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 10000, message = "每页数量不能超过10000") Long size,
@@ -104,7 +104,7 @@ public class PaperController {
     
     @ApiOperation(value = "新增试卷")
     @PostMapping
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> add(@Valid @RequestBody Paper paper) {
         paperService.addPaper(paper);
         return Result.success();
@@ -112,7 +112,7 @@ public class PaperController {
     
     @ApiOperation(value = "更新试卷")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Paper paper) {
         paper.setId(id);
         paperService.updatePaper(paper);
@@ -133,7 +133,7 @@ public class PaperController {
     
     @ApiOperation(value = "发布试卷")
     @PostMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> publish(@PathVariable Long id) {
         paperService.publishPaper(id);
         return Result.success();
@@ -141,7 +141,7 @@ public class PaperController {
     
     @ApiOperation(value = "停用试卷")
     @PostMapping("/{id}/disable")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> disable(@PathVariable Long id) {
         paperService.disablePaper(id);
         return Result.success();
@@ -151,7 +151,7 @@ public class PaperController {
     
     @ApiOperation(value = "获取试卷题目列表")
     @GetMapping("/{id}/questions")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<List<PaperQuestionVO>> getQuestions(@PathVariable Long id) {
         List<PaperQuestionVO> questions = paperService.getPaperQuestions(id);
         return Result.success(questions);
@@ -159,7 +159,7 @@ public class PaperController {
     
     @ApiOperation(value = "批量添加题目到试卷")
     @PostMapping("/{id}/questions")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> addQuestions(@PathVariable Long id, @Valid @RequestBody List<@Valid PaperQuestionDTO> questions) {
         paperService.batchAddQuestions(id, questions);
         return Result.success();
@@ -167,7 +167,7 @@ public class PaperController {
     
     @ApiOperation(value = "从试卷移除单个题目")
     @DeleteMapping("/{id}/questions/{questionId}")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> removeQuestion(@PathVariable Long id, @PathVariable Long questionId) {
         paperService.removeQuestionFromPaper(id, questionId);
         return Result.success();
@@ -175,7 +175,7 @@ public class PaperController {
     
     @ApiOperation(value = "清空试卷所有题目")
     @DeleteMapping("/{id}/questions")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> clearQuestions(@PathVariable Long id) {
         paperService.clearPaperQuestions(id);
         return Result.success();

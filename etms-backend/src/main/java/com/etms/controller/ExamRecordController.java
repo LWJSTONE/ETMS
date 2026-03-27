@@ -36,7 +36,7 @@ public class ExamRecordController {
     
     @ApiOperation(value = "分页查询考试记录")
     @GetMapping
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<PageResult<ExamRecordVO>> page(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "页码必须大于0") Long current,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页数量必须大于0") @Max(value = 10000, message = "每页数量不能超过10000") Long size,
@@ -110,7 +110,7 @@ public class ExamRecordController {
     
     @ApiOperation(value = "导出考试记录")
     @GetMapping("/export")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public void export(
             @RequestParam(required = false) Long paperId,
             @RequestParam(required = false) Long userId,

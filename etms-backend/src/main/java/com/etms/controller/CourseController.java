@@ -90,7 +90,7 @@ public class CourseController {
     
     @ApiOperation(value = "新增课程")
     @PostMapping
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> add(@Valid @RequestBody Course course) {
         courseService.addCourse(course);
         return Result.success();
@@ -98,7 +98,7 @@ public class CourseController {
     
     @ApiOperation(value = "更新课程")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody Course course) {
         course.setId(id);
         courseService.updateCourse(course);
@@ -119,7 +119,7 @@ public class CourseController {
     
     @ApiOperation(value = "提交审核")
     @PostMapping("/{id}/submit")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> submitAudit(@PathVariable Long id) {
         courseService.submitAudit(id);
         return Result.success();
@@ -127,7 +127,7 @@ public class CourseController {
     
     @ApiOperation(value = "审核课程")
     @PostMapping("/{id}/audit")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> audit(
             @PathVariable Long id,
             @Valid @RequestBody CourseAuditDTO auditDTO) {
@@ -137,7 +137,7 @@ public class CourseController {
     
     @ApiOperation(value = "上架课程")
     @PostMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> publish(@PathVariable Long id) {
         courseService.publishCourse(id);
         return Result.success();
@@ -145,7 +145,7 @@ public class CourseController {
     
     @ApiOperation(value = "下架课程")
     @PostMapping("/{id}/unpublish")
-    @PreAuthorize("hasAnyRole('admin', 'train_admin')")
+    @PreAuthorize("hasRole('admin')")
     public Result<Void> unpublish(@PathVariable Long id) {
         courseService.unpublishCourse(id);
         return Result.success();
