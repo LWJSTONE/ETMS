@@ -412,22 +412,11 @@ import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
-// 权限检查函数
-const hasPermission = (permission: string): boolean => {
-  const permissions = userStore.userInfo?.permissions || []
-  const roleNames = userStore.userInfo?.roleNames || []
-  // 管理员角色拥有所有权限（中文角色名直接比较，英文字符转小写比较）
-  if (roleNames.some(name => 
-    name === '超级管理员' || name === '管理员' || name.toLowerCase() === 'admin'
-  )) return true
-  return permissions.includes(permission)
-}
-
-// 检查是否有试卷管理相关权限
-const canAdd = computed(() => hasPermission('exam:paper:add'))
-const canEdit = computed(() => hasPermission('exam:paper:edit'))
-const canDelete = computed(() => hasPermission('exam:paper:delete'))
-const canPublish = computed(() => hasPermission('exam:paper:publish'))
+// 检查是否有试卷管理相关权限（直接使用userStore.hasPermission方法）
+const canAdd = computed(() => userStore.hasPermission('exam:paper:add'))
+const canEdit = computed(() => userStore.hasPermission('exam:paper:edit'))
+const canDelete = computed(() => userStore.hasPermission('exam:paper:delete'))
+const canPublish = computed(() => userStore.hasPermission('exam:paper:publish'))
 
 // 搜索表单
 const searchForm = reactive({
