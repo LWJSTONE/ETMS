@@ -22,9 +22,9 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(getPersistedUserInfo())
 
   // 登录
-  const loginAction = async (username: string, password: string, captcha: string, captchaKey: string) => {
+  const loginAction = async (username: string, password: string) => {
     try {
-      const res = await login({ username, password, captcha, captchaKey })
+      const res = await login({ username, password })
       token.value = res.accessToken
       localStorage.setItem(STORAGE_KEYS.TOKEN, res.accessToken)
       

@@ -43,11 +43,10 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     private final UserMapper userMapper;
     
     @Override
-    public Page<CourseVO> pageCourses(Page<Course> page, String courseName, String courseCode, Long categoryId, Integer courseType, Integer status, Integer difficulty) {
+    public Page<CourseVO> pageCourses(Page<Course> page, String courseName, String courseCode, Integer courseType, Integer status, Integer difficulty) {
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(courseName), Course::getCourseName, courseName)
                .like(StringUtils.hasText(courseCode), Course::getCourseCode, courseCode)
-               .eq(categoryId != null, Course::getCategoryId, categoryId)
                .eq(courseType != null, Course::getCourseType, courseType)
                .eq(status != null, Course::getStatus, status)
                .eq(difficulty != null, Course::getDifficulty, difficulty)
@@ -316,10 +315,9 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     }
     
     @Override
-    public List<CourseVO> listCourses(Long categoryId) {
+    public List<CourseVO> listCourses() {
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Course::getStatus, 2) // 已上架
-               .eq(categoryId != null, Course::getCategoryId, categoryId)
                .orderByDesc(Course::getCreateTime);
         
         List<Course> courses = baseMapper.selectList(wrapper);

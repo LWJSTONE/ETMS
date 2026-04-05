@@ -17,16 +17,10 @@ const PERMISSIONS = {
   ROLE_VIEW: 'system:role:view',
   DEPT_VIEW: 'system:dept:view',
   POSITION_VIEW: 'system:position:view',
-  DICT_VIEW: 'system:dict:view',
-  CONFIG_VIEW: 'system:config:view',
-  LOG_VIEW: 'system:log:view',
   // 培训管理
   COURSE_VIEW: 'training:course:view',
-  CATEGORY_VIEW: 'training:category:view',
   PLAN_VIEW: 'training:plan:view',
   PROGRESS_VIEW: 'training:progress:view',
-  // 签到管理
-  ATTENDANCE_VIEW: 'attendance:record:view',
   // 考核管理
   QUESTION_VIEW: 'exam:question:view',
   PAPER_VIEW: 'exam:paper:view',
@@ -37,7 +31,7 @@ const PERMISSIONS = {
 } as const
 
 // 需要管理员权限的路由前缀（用于兼容旧逻辑）
-const adminRoutes = ['/system', '/training', '/attendance', '/exam', '/report']
+const adminRoutes = ['/system', '/training', '/exam', '/report']
 
 /**
  * 检查用户是否有指定权限
@@ -122,24 +116,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/system/position/index.vue'),
         meta: { title: '岗位管理', icon: 'Briefcase', permission: PERMISSIONS.POSITION_VIEW }
       },
-      {
-        path: 'dict',
-        name: 'Dict',
-        component: () => import('@/views/system/dict/index.vue'),
-        meta: { title: '字典管理', icon: 'Collection', permission: PERMISSIONS.DICT_VIEW }
-      },
-      {
-        path: 'config',
-        name: 'Config',
-        component: () => import('@/views/system/config/index.vue'),
-        meta: { title: '系统配置', icon: 'Tools', permission: PERMISSIONS.CONFIG_VIEW }
-      },
-      {
-        path: 'log',
-        name: 'Log',
-        component: () => import('@/views/system/log/index.vue'),
-        meta: { title: '日志管理', icon: 'Document', permission: PERMISSIONS.LOG_VIEW }
-      }
+
     ]
   },
   // 培训管理
@@ -157,12 +134,6 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '课程管理', icon: 'Notebook', permission: PERMISSIONS.COURSE_VIEW }
       },
       {
-        path: 'category',
-        name: 'Category',
-        component: () => import('@/views/training/category/index.vue'),
-        meta: { title: '课程分类', icon: 'Files', permission: PERMISSIONS.CATEGORY_VIEW }
-      },
-      {
         path: 'plan',
         name: 'Plan',
         component: () => import('@/views/training/plan/index.vue'),
@@ -173,28 +144,6 @@ const routes: RouteRecordRaw[] = [
         name: 'Progress',
         component: () => import('@/views/training/progress/index.vue'),
         meta: { title: '学习进度', icon: 'DataLine', permission: PERMISSIONS.PROGRESS_VIEW }
-      }
-    ]
-  },
-  // 签到管理
-  {
-    path: '/attendance',
-    name: 'Attendance',
-    component: () => import('@/layouts/MainLayout.vue'),
-    redirect: '/attendance/record',
-    meta: { title: '签到管理', icon: 'Clock' },
-    children: [
-      {
-        path: 'record',
-        name: 'AttendanceRecord',
-        component: () => import('@/views/attendance/record/index.vue'),
-        meta: { title: '签到记录', icon: 'List', permission: PERMISSIONS.ATTENDANCE_VIEW }
-      },
-      {
-        path: 'apply',
-        name: 'AttendanceApply',
-        component: () => import('@/views/attendance/apply/index.vue'),
-        meta: { title: '补签申请', icon: 'Edit', permission: PERMISSIONS.ATTENDANCE_VIEW }
       }
     ]
   },

@@ -12,7 +12,6 @@ import com.etms.entity.UserRole;
 import com.etms.entity.Dept;
 import com.etms.entity.ExamRecord;
 import com.etms.entity.UserPlan;
-import com.etms.entity.AttendanceRecord;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.RoleMapper;
 import com.etms.mapper.UserMapper;
@@ -20,8 +19,6 @@ import com.etms.mapper.UserRoleMapper;
 import com.etms.mapper.DeptMapper;
 import com.etms.mapper.ExamRecordMapper;
 import com.etms.mapper.UserPlanMapper;
-import com.etms.mapper.AttendanceRecordMapper;
-import com.etms.service.CaptchaService;
 import com.etms.service.UserService;
 import com.etms.vo.LoginVO;
 import com.etms.vo.RoleVO;
@@ -71,10 +68,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final RoleMapper roleMapper;
     private final UserRoleMapper userRoleMapper;
     private final DeptMapper deptMapper;
-    private final CaptchaService captchaService;
     private final ExamRecordMapper examRecordMapper;
     private final UserPlanMapper userPlanMapper;
-    private final AttendanceRecordMapper attendanceRecordMapper;
     
     @Autowired(required = false)
     private StringRedisTemplate stringRedisTemplate;
@@ -86,12 +81,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Override
     public LoginVO login(LoginDTO loginDTO, HttpServletRequest request) {
-        // 验证验证码
-        if (!captchaService.validateCaptcha(loginDTO.getCaptchaKey(), loginDTO.getCaptcha())) {
-            // 修复：返回明确的验证码错误提示，避免用户误解
-            throw new BusinessException("验证码错误或已过期");
-        }
-        
         // 获取用户信息
         User user = baseMapper.selectByUsername(loginDTO.getUsername());
         if (user == null) {
@@ -524,14 +513,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         );
         if (progressCount > 0) {
             throw new BusinessException("用户存在学习进度记录，无法删除。请先处理相关数据。");
-        }
-        
-        // 修复：检查用户是否有签到记录
-        Long attendanceCount = attendanceRecordMapper.selectCount(
-            new LambdaQueryWrapper<AttendanceRecord>().eq(AttendanceRecord::getUserId, id)
-        );
-        if (attendanceCount > 0) {
-            throw new BusinessException("用户存在签到记录，无法删除。请先处理相关数据。");
         }
         
         // 检查用户是否有相关数据

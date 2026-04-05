@@ -83,7 +83,6 @@ etms:
   security:
     ignore-urls:
       - /auth/login
-      - /auth/captcha
       - /auth/register
       - /files/**
       - /swagger-ui/**

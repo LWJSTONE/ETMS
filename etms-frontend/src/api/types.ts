@@ -27,50 +27,6 @@ export interface PageParams {
 }
 
 /**
- * 字典类型创建参数
- */
-export interface DictTypeCreateParams {
-  dictName: string
-  dictType: string
-  status?: number
-  remark?: string
-}
-
-/**
- * 字典类型更新参数
- */
-export interface DictTypeUpdateParams {
-  dictName?: string
-  dictType?: string
-  status?: number
-  remark?: string
-}
-
-/**
- * 字典数据创建参数
- */
-export interface DictDataCreateParams {
-  dictTypeId: number
-  dictLabel: string
-  dictValue: string
-  dictSort?: number
-  status?: number
-  remark?: string
-}
-
-/**
- * 字典数据更新参数
- */
-export interface DictDataUpdateParams {
-  dictTypeId?: number
-  dictLabel?: string
-  dictValue?: string
-  dictSort?: number
-  status?: number
-  remark?: string
-}
-
-/**
  * 用户相关类型
  */
 export interface User {
@@ -206,8 +162,6 @@ export interface Course {
   videoUrl?: string
   documentUrl?: string
   pptUrl?: string
-  categoryId?: number
-  categoryName?: string
   courseType?: number  // 课程类型(1视频 2文档 3直播)
   duration?: number
   credit?: number
@@ -236,7 +190,6 @@ export interface CourseCreateParams {
   videoUrl?: string
   documentUrl?: string
   pptUrl?: string
-  categoryId?: number
   courseType?: number  // 课程类型(1视频 2文档 3直播)
   duration?: number
   credit?: number
@@ -255,7 +208,6 @@ export interface CourseUpdateParams {
   videoUrl?: string
   documentUrl?: string
   pptUrl?: string
-  categoryId?: number
   courseType?: number  // 课程类型(1视频 2文档 3直播)
   duration?: number
   credit?: number
@@ -600,61 +552,6 @@ export interface LearningProgressUpdateParams {
 }
 
 /**
- * 签到记录相关类型 - 已修复与后端字段匹配
- */
-export interface AttendanceRecord {
-  id: number
-  planId: number
-  planName?: string
-  userId: number
-  userName?: string
-  realName?: string
-  signType: number
-  signCategory?: number  // 签到类别(1签到 2签退)
-  signTime: string
-  location?: string
-  ipAddress?: string
-  deviceInfo?: string
-  status: number
-  lateMinutes?: number
-  earlyMinutes?: number
-  remark?: string
-  reason?: string
-  auditStatus?: number
-  auditRemark?: string
-  auditBy?: number
-  auditTime?: string
-  createTime?: string
-}
-
-export interface AttendanceSignInParams {
-  planId: number
-  signType: number
-  signCategory?: number  // 签到类别(1签到 2签退)
-  location?: string
-}
-
-export interface AttendanceSupplementaryParams {
-  planId: number
-  signType: number
-  signCategory: number  // 签到类别(1签到 2签退)
-  signTime: string
-  reason: string
-}
-
-export interface AttendanceAuditParams {
-  auditStatus: number
-  auditRemark?: string
-}
-
-export interface AttendanceStats {
-  totalCount: number      // 总签到次数
-  normalCount: number     // 正常签到次数
-  pendingCount: number    // 待审核数量
-  attendanceRate: number  // 出勤率(百分比)
-}
-
-/**
  * 成绩相关类型 - 已修复与后端字段匹配
  */
 export interface ExamResult {
@@ -684,54 +581,11 @@ export interface ExamResult {
 }
 
 /**
- * 分类相关类型 - 已修复与后端字段匹配
- */
-export interface Category {
-  id: number
-  categoryName: string
-  categoryCode?: string
-  categoryType: number  // 分类类型(1课程分类 2题目分类)
-  parentId?: number
-  parentName?: string
-  level?: number
-  sortOrder?: number
-  icon?: string
-  status: number
-  children?: Category[]
-  createTime?: string
-  updateTime?: string
-}
-
-export interface CategoryCreateParams {
-  categoryName: string
-  categoryCode?: string
-  categoryType: number
-  parentId?: number
-  level?: number
-  sortOrder?: number
-  icon?: string
-  status?: number
-}
-
-export interface CategoryUpdateParams {
-  categoryName?: string
-  categoryCode?: string
-  categoryType?: number
-  parentId?: number
-  level?: number
-  sortOrder?: number
-  icon?: string
-  status?: number
-}
-
-/**
  * 登录相关类型
  */
 export interface LoginParams {
   username: string
   password: string
-  captcha: string
-  captchaKey: string
 }
 
 export interface LoginResult {

@@ -69,20 +69,11 @@ INSERT INTO sys_permission (id, perm_code, perm_name, perm_type, parent_id, path
 (4, 'system:dept', '部门管理', 1, 1, '/system/dept', 'OfficeBuilding', 'system/dept/index', 3, 1, 1),
 (5, 'system:position', '岗位管理', 1, 1, '/system/position', 'Briefcase', 'system/position/index', 4, 1, 1),
 (6, 'system:permission', '权限管理', 1, 1, '/system/permission', 'Lock', 'system/permission/index', 5, 1, 1),
-(7, 'system:config', '系统配置', 1, 1, '/system/config', 'Tools', 'system/config/index', 6, 1, 1),
-(8, 'system:dict', '字典管理', 1, 1, '/system/dict', 'Collection', 'system/dict/index', 7, 1, 1),
-(9, 'system:log', '日志管理', 1, 1, '/system/log', 'Document', 'system/log/index', 8, 1, 1),
-(10, 'system:notice', '通知公告', 1, 1, '/system/notice', 'Bell', 'system/notice/index', 9, 1, 1),
 -- 培训管理
 (20, 'training', '培训管理', 1, 0, '/training', 'Reading', NULL, 2, 1, 1),
 (21, 'training:course', '课程管理', 1, 20, '/training/course', 'Notebook', 'training/course/index', 1, 1, 1),
-(22, 'training:category', '课程分类', 1, 20, '/training/category', 'Files', 'training/category/index', 2, 1, 1),
 (23, 'training:plan', '培训计划', 1, 20, '/training/plan', 'Calendar', 'training/plan/index', 3, 1, 1),
 (24, 'training:progress', '学习进度', 1, 20, '/training/progress', 'DataLine', 'training/progress/index', 4, 1, 1),
--- 签到管理
-(30, 'attendance', '签到管理', 1, 0, '/attendance', 'Clock', NULL, 3, 1, 1),
-(31, 'attendance:record', '签到记录', 1, 30, '/attendance/record', 'List', 'attendance/record/index', 1, 1, 1),
-(32, 'attendance:apply', '补签申请', 1, 30, '/attendance/apply', 'Edit', 'attendance/apply/index', 2, 1, 1),
 -- 考核管理
 (40, 'exam', '考核管理', 1, 0, '/exam', 'Edit', NULL, 4, 1, 1),
 (41, 'exam:question', '题库管理', 1, 40, '/exam/question', 'Collection', 'exam/question/index', 1, 1, 1),
@@ -112,21 +103,6 @@ INSERT INTO sys_role_permission (role_id, permission_id) VALUES
 (2, 60), (2, 61), (2, 62), (2, 63), (2, 64);
 
 -- =============================================
--- 初始化课程分类数据
--- =============================================
-INSERT INTO training_category (id, parent_id, category_name, category_code, level, sort_order, status) VALUES
-(1, 0, '技术类', 'TECH', 1, 1, 1),
-(2, 0, '管理类', 'MANAGE', 1, 2, 1),
-(3, 0, '通用类', 'GENERAL', 1, 3, 1),
-(4, 1, '编程语言', 'TECH_LANG', 2, 1, 1),
-(5, 1, '数据库', 'TECH_DB', 2, 2, 1),
-(6, 1, '框架技术', 'TECH_FRAME', 2, 3, 1),
-(7, 2, '领导力', 'MANAGE_LEADER', 2, 1, 1),
-(8, 2, '团队管理', 'MANAGE_TEAM', 2, 2, 1),
-(9, 3, '办公软件', 'GENERAL_OFFICE', 2, 1, 1),
-(10, 3, '职业素养', 'GENERAL_CAREER', 2, 2, 1);
-
--- =============================================
 -- 初始化课程数据
 -- =============================================
 INSERT INTO training_course (id, course_name, course_code, course_desc, course_objective, category_id, duration, difficulty, status, create_by) VALUES
@@ -151,86 +127,4 @@ INSERT INTO exam_question (id, question_code, question_type, question_content, o
 (7, 'Q007', 3, 'Vue3的Composition API相比Options API更利于代码复用。', NULL, NULL, NULL, NULL, '正确', 'Composition API通过组合函数实现逻辑复用', 1, 2, 3, 1, 1),
 (8, 'Q008', 1, 'MySQL中，使用哪个命令查看表结构？', 'SHOW TABLE', 'DESC TABLE', 'DESCRIBE', 'SELECT TABLE', 'C', 'DESCRIBE或DESC命令可以查看表结构', 1, 2, 4, 1, 1);
 
--- =============================================
--- 初始化字典类型数据
--- =============================================
-INSERT INTO sys_dict_type (id, dict_name, dict_type, status) VALUES
-(1, '用户状态', 'user_status', 1),
-(2, '性别', 'gender', 1),
-(3, '课程难度', 'course_difficulty', 1),
-(4, '课程状态', 'course_status', 1),
-(5, '培训计划状态', 'plan_status', 1),
-(6, '签到状态', 'attendance_status', 1),
-(7, '题目类型', 'question_type', 1),
-(8, '考试状态', 'exam_status', 1);
 
--- =============================================
--- 初始化字典数据
--- =============================================
-INSERT INTO sys_dict_data (dict_type_id, dict_label, dict_value, dict_sort, status) VALUES
--- 用户状态
-(1, '禁用', '0', 1, 1),
-(1, '正常', '1', 2, 1),
-(1, '离职', '2', 3, 1),
-(1, '休假', '3', 4, 1),
--- 性别
-(2, '未知', '0', 1, 1),
-(2, '男', '1', 2, 1),
-(2, '女', '2', 3, 1),
--- 课程难度
-(3, '入门', '1', 1, 1),
-(3, '初级', '2', 2, 1),
-(3, '中级', '3', 3, 1),
-(3, '高级', '4', 4, 1),
-(3, '专家', '5', 5, 1),
--- 课程状态
-(4, '草稿', '0', 1, 1),
-(4, '待审核', '1', 2, 1),
-(4, '已上架', '2', 3, 1),
-(4, '已下架', '3', 4, 1),
-(4, '审核驳回', '4', 5, 1),
--- 培训计划状态
-(5, '草稿', '0', 1, 1),
-(5, '已发布', '1', 2, 1),
-(5, '进行中', '2', 3, 1),
-(5, '已结束', '3', 4, 1),
-(5, '已归档', '4', 5, 1),
--- 签到状态
-(6, '正常', '1', 1, 1),
-(6, '迟到', '2', 2, 1),
-(6, '早退', '3', 3, 1),
-(6, '缺勤', '4', 4, 1),
-(6, '补签', '5', 5, 1),
--- 题目类型
-(7, '单选题', '1', 1, 1),
-(7, '多选题', '2', 2, 1),
-(7, '判断题', '3', 3, 1),
-(7, '填空题', '4', 4, 1),
-(7, '简答题', '5', 5, 1),
--- 考试状态
-(8, '考试中', '0', 1, 1),
-(8, '已提交', '1', 2, 1),
-(8, '超时', '2', 3, 1),
-(8, '已批阅', '3', 4, 1);
-
--- =============================================
--- 初始化系统配置
--- =============================================
-INSERT INTO sys_config (config_name, config_key, config_value, config_type, is_editable, remark) VALUES
-('密码最小长度', 'sys.password.min.length', '6', 1, 1, '密码最小长度'),
-('密码最大长度', 'sys.password.max.length', '20', 1, 1, '密码最大长度'),
-('密码是否需要特殊字符', 'sys.password.special.char', 'true', 1, 1, '密码是否需要特殊字符'),
-('登录失败锁定次数', 'sys.login.lock.count', '5', 1, 1, '登录失败锁定次数'),
-('会话超时时间(分钟)', 'sys.session.timeout', '30', 1, 1, '会话超时时间'),
-('验证码过期时间(秒)', 'sys.captcha.expire', '60', 1, 1, '验证码过期时间'),
-('文件上传最大大小(MB)', 'sys.file.max.size', '50', 1, 1, '文件上传最大大小'),
-('允许上传的文件类型', 'sys.file.allow.types', 'jpg,png,pdf,doc,docx,xls,xlsx,ppt,pptx,mp4', 1, 1, '允许上传的文件类型'),
-('培训预警提前天数', 'train.warning.days', '3', 2, 1, '培训预警提前天数'),
-('考试切屏最大次数', 'exam.switch.max.count', '3', 2, 1, '考试切屏最大次数');
-
--- =============================================
--- 初始化通知公告
--- =============================================
-INSERT INTO sys_notice (notice_title, notice_type, notice_content, target_type, priority, is_top, status, publish_time, create_by) VALUES
-('系统上线通知', 1, '企业员工培训管理系统已正式上线，请各部门积极配合使用。如有问题请联系管理员。', 1, 2, 1, 1, NOW(), 1),
-('新员工培训须知', 2, '新入职员工需在入职后一周内完成《办公软件使用培训》和《公司规章制度培训》。', 1, 1, 0, 1, NOW(), 5);

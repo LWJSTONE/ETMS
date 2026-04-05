@@ -33,23 +33,6 @@
           />
         </el-form-item>
         
-        <el-form-item prop="captcha">
-          <div class="captcha-row">
-            <el-input
-              v-model="loginForm.captcha"
-              placeholder="请输入验证码"
-              prefix-icon="Key"
-              size="large"
-              class="captcha-input"
-              @keyup.enter="handleLogin"
-            />
-            <div class="captcha-image" @click="refreshCaptcha">
-              <img v-if="captchaImage" :src="captchaImage" alt="验证码" />
-              <span v-else class="captcha-loading">加载中...</span>
-            </div>
-          </div>
-        </el-form-item>
-        
         <el-form-item>
           <el-button
             type="primary"
@@ -67,12 +50,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { getCaptcha } from '@/api/auth'
 import { resetRedirectFlag } from '@/utils/request'
 
 const router = useRouter()
@@ -81,17 +63,10 @@ const userStore = useUserStore()
 
 const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
-const captchaImage = ref('')
-const captchaKey = ref('')
-const captchaRetryCount = ref(0)
-const MAX_CAPTCHA_RETRY = 3
-// 修复：添加验证码请求的AbortController，避免并发请求
-let captchaAbortController: AbortController | null = null
 
 const loginForm = reactive({
   username: '',
-  password: '',
-  captcha: ''
+  password: ''
 })
 
 // 用户名验证规则：长度3-20位，必须以字母开头，只允许字母、数字、下划线
@@ -114,45 +89,7 @@ const loginRules: FormRules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
-  ],
-  captcha: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
-    { min: 4, max: 6, message: '验证码为4-6位字符', trigger: 'blur' }
   ]
-}
-
-// 获取验证码（带自动重试机制）
-// 修复：使用AbortController避免并发请求问题
-const refreshCaptcha = async () => {
-  // 取消之前的请求
-  if (captchaAbortController) {
-    captchaAbortController.abort()
-  }
-  captchaAbortController = new AbortController()
-  
-  try {
-    const res = await getCaptcha(captchaAbortController.signal)
-    captchaImage.value = res.captchaImage
-    captchaKey.value = res.captchaKey
-    captchaRetryCount.value = 0 // 成功后重置计数器
-  } catch (error: any) {
-    // 忽略取消的请求
-    if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
-      return
-    }
-    captchaRetryCount.value++
-    if (captchaRetryCount.value < MAX_CAPTCHA_RETRY) {
-      // 自动重试
-      ElMessage.warning(`获取验证码失败，正在重试(${captchaRetryCount.value}/${MAX_CAPTCHA_RETRY})...`)
-      setTimeout(refreshCaptcha, 1000)
-    } else {
-      ElMessage.error('获取验证码失败，请刷新页面重试')
-      // 重置计数器，允许用户手动重试
-      captchaRetryCount.value = 0
-    }
-  } finally {
-    captchaAbortController = null
-  }
 }
 
 // 获取友好的错误消息
@@ -185,7 +122,7 @@ const handleLogin = async () => {
   
   loading.value = true
   try {
-    await userStore.loginAction(loginForm.username, loginForm.password, loginForm.captcha, captchaKey.value)
+    await userStore.loginAction(loginForm.username, loginForm.password)
     // 重置401重定向标志位，允许后续的401错误能够正常处理
     resetRedirectFlag()
     ElMessage.success('登录成功')
@@ -197,17 +134,10 @@ const handleLogin = async () => {
     ElMessage.error(errorMessage)
     // 登录失败后清空密码（安全考虑）
     loginForm.password = ''
-    loginForm.captcha = ''
-    // 登录失败刷新验证码
-    refreshCaptcha()
   } finally {
     loading.value = false
   }
 }
-
-onMounted(() => {
-  refreshCaptcha()
-})
 </script>
 
 <style lang="scss" scoped>
@@ -254,37 +184,4 @@ onMounted(() => {
   }
 }
 
-.captcha-row {
-  display: flex;
-  width: 100%;
-  gap: 10px;
-  
-  .captcha-input {
-    flex: 1;
-  }
-  
-  .captcha-image {
-    width: 120px;
-    height: 40px;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
-    cursor: pointer;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f5f7fa;
-    
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .captcha-loading {
-      font-size: 12px;
-      color: #909399;
-    }
-  }
-}
 </style>

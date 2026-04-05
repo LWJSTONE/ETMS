@@ -29,12 +29,6 @@ public class CourseVO implements Serializable {
     /** 课程目标 */
     private String courseObjective;
     
-    /** 分类ID */
-    private Long categoryId;
-    
-    /** 分类名称 */
-    private String categoryName;
-    
     /** 课程类型(1视频 2文档 3直播) */
     private Integer courseType;
     

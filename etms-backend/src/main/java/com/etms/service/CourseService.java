@@ -14,7 +14,7 @@ public interface CourseService extends IService<Course> {
     /**
      * 分页查询课程列表
      */
-    Page<CourseVO> pageCourses(Page<Course> page, String courseName, String courseCode, Long categoryId, Integer courseType, Integer status, Integer difficulty);
+    Page<CourseVO> pageCourses(Page<Course> page, String courseName, String courseCode, Integer courseType, Integer status, Integer difficulty);
     
     /**
      * 获取课程详情
@@ -59,7 +59,7 @@ public interface CourseService extends IService<Course> {
     /**
      * 获取课程列表(不分页)
      */
-    List<CourseVO> listCourses(Long categoryId);
+    List<CourseVO> listCourses();
     
     /**
      * 检查课程是否有培训计划

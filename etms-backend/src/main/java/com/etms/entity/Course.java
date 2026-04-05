@@ -27,9 +27,6 @@ public class Course extends BaseEntity {
     /** 课程目标 */
     private String courseObjective;
     
-    /** 分类ID */
-    private Long categoryId;
-    
     /** 课程类型(1视频 2文档 3直播) */
     private Integer courseType;
     
@@ -88,6 +85,4 @@ public class Course extends BaseEntity {
     /** 评分人数 */
     private Integer ratingCount;
     
-    @TableField(exist = false)
-    private String categoryName;
 }

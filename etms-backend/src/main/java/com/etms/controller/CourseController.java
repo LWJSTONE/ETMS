@@ -37,7 +37,6 @@ public class CourseController {
             @RequestParam(defaultValue = "10") @javax.validation.constraints.Min(value = 1, message = "每页条数最小为1") @javax.validation.constraints.Max(value = 10000, message = "每页条数最大为10000") Long size,
             @RequestParam(required = false) String courseName,
             @RequestParam(required = false) String courseCode,
-            @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Integer courseType,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) Integer difficulty) {
@@ -57,7 +56,7 @@ public class CourseController {
         }
         
         Page<Course> page = new Page<>(current, size);
-        Page<CourseVO> voPage = courseService.pageCourses(page, courseName, courseCode, categoryId, courseType, queryStatus, difficulty);
+        Page<CourseVO> voPage = courseService.pageCourses(page, courseName, courseCode, courseType, queryStatus, difficulty);
         PageResult<CourseVO> pageResult = new PageResult<>(
                 voPage.getRecords(), voPage.getTotal(), voPage.getCurrent(), voPage.getSize()
         );
@@ -154,7 +153,7 @@ public class CourseController {
     @ApiOperation(value = "获取课程列表(不分页)")
     @GetMapping("/all")
     @PreAuthorize("isAuthenticated()")
-    public Result<List<CourseVO>> list(@RequestParam(required = false) Long categoryId) {
+    public Result<List<CourseVO>> list() {
         // 修复：根据用户权限过滤课程数据
         // 未登录或普通用户只能查看已发布的课程
         org.springframework.security.core.Authentication auth = 
@@ -163,7 +162,7 @@ public class CourseController {
             .anyMatch(a -> "ROLE_admin".equals(a.getAuthority()) || 
                           "ROLE_train_admin".equals(a.getAuthority()));
         
-        List<CourseVO> list = courseService.listCourses(categoryId);
+        List<CourseVO> list = courseService.listCourses();
         
         // 修复：课程状态判断不一致问题
         // 统一使用状态2表示已上架/已发布的课程（与page()方法保持一致）

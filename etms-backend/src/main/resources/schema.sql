@@ -175,32 +175,6 @@ CREATE TABLE sys_role_permission (
 -- 培训业务表
 -- =============================================
 
--- 8. 课程分类表
-DROP TABLE IF EXISTS training_category;
-CREATE TABLE training_category (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '分类ID',
-    parent_id BIGINT(20) DEFAULT 0 COMMENT '父分类ID',
-    category_name VARCHAR(50) NOT NULL COMMENT '分类名称',
-    category_code VARCHAR(50) DEFAULT NULL COMMENT '分类编码',
-    category_type TINYINT(1) DEFAULT 1 COMMENT '分类类型(1课程分类 2题目分类)',
-    level INT(11) DEFAULT 1 COMMENT '分类层级',
-    sort_order INT(11) DEFAULT 0 COMMENT '排序顺序',
-    icon VARCHAR(50) DEFAULT NULL COMMENT '分类图标',
-    status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1正常)',
-    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
-    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_category_code (category_code),
-    KEY idx_parent_id (parent_id),
-    KEY idx_category_type (category_type),
-    KEY idx_status (status),
-    KEY idx_deleted (deleted)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程分类表';
-
 -- 9. 课程表
 DROP TABLE IF EXISTS training_course;
 CREATE TABLE training_course (
@@ -237,7 +211,6 @@ CREATE TABLE training_course (
     deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
     PRIMARY KEY (id),
     UNIQUE KEY uk_course_code (course_code),
-    KEY idx_category_id (category_id),
     KEY idx_status (status),
     KEY idx_difficulty (difficulty),
     KEY idx_deleted (deleted)
@@ -262,26 +235,6 @@ CREATE TABLE training_course_resource (
     KEY idx_course_id (course_id),
     KEY idx_resource_type (resource_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程资源表';
-
--- 11. 课程评价表
-DROP TABLE IF EXISTS training_course_rating;
-CREATE TABLE training_course_rating (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '评价ID',
-    course_id BIGINT(20) NOT NULL COMMENT '课程ID',
-    user_id BIGINT(20) NOT NULL COMMENT '用户ID',
-    rating TINYINT(1) NOT NULL COMMENT '评分(1-5星)',
-    content VARCHAR(500) DEFAULT NULL COMMENT '评价内容',
-    reply_content VARCHAR(500) DEFAULT NULL COMMENT '回复内容',
-    reply_by BIGINT(20) DEFAULT NULL COMMENT '回复人ID',
-    reply_time DATETIME DEFAULT NULL COMMENT '回复时间',
-    is_anonymous TINYINT(1) DEFAULT 0 COMMENT '是否匿名',
-    status TINYINT(1) DEFAULT 1 COMMENT '状态(0隐藏 1显示)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_course_user (course_id, user_id),
-    KEY idx_course_id (course_id),
-    KEY idx_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程评价表';
 
 -- 12. 培训计划表
 DROP TABLE IF EXISTS training_plan;
@@ -382,64 +335,6 @@ CREATE TABLE learning_progress (
     KEY idx_course_id (course_id),
     KEY idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学习进度表';
-
--- =============================================
--- 签到考核表
--- =============================================
-
--- 14. 签到记录表
-DROP TABLE IF EXISTS attendance_record;
-CREATE TABLE attendance_record (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '签到ID',
-    user_id BIGINT(20) NOT NULL COMMENT '用户ID',
-    plan_id BIGINT(20) NOT NULL COMMENT '计划ID',
-    sign_time DATETIME NOT NULL COMMENT '签到时间',
-    sign_date DATE GENERATED ALWAYS AS (DATE(sign_time)) STORED COMMENT '签到日期(虚拟列)',
-    sign_type TINYINT(1) NOT NULL COMMENT '签到类型(1二维码 2GPS定位 3人脸识别)',
-    sign_category TINYINT(1) DEFAULT 1 COMMENT '签到类别(1签到 2签退)',
-    location VARCHAR(100) DEFAULT NULL COMMENT '签到位置',
-    ip_address VARCHAR(64) DEFAULT NULL COMMENT '签到IP地址(支持IPv6)',
-    device_info VARCHAR(100) DEFAULT NULL COMMENT '设备信息',
-    status TINYINT(1) DEFAULT 1 COMMENT '状态(1正常 2迟到 3早退 4缺勤 5补签)',
-    late_minutes INT(11) DEFAULT 0 COMMENT '迟到分钟数',
-    early_minutes INT(11) DEFAULT 0 COMMENT '早退分钟数',
-    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
-    reason VARCHAR(500) DEFAULT NULL COMMENT '补签原因',
-    audit_remark VARCHAR(500) DEFAULT NULL COMMENT '审核备注',
-    audit_status TINYINT(1) DEFAULT 0 COMMENT '审核状态(0待审核 1通过 2驳回)',
-    audit_by BIGINT(20) DEFAULT NULL COMMENT '审核人ID',
-    audit_time DATETIME DEFAULT NULL COMMENT '审核时间',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_user_plan_category_date (user_id, plan_id, sign_category, sign_date),
-    KEY idx_user_id (user_id),
-    KEY idx_plan_id (plan_id),
-    KEY idx_sign_time (sign_time),
-    KEY idx_status (status),
-    KEY idx_user_plan_date_category (user_id, plan_id, sign_category, sign_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='签到记录表';
-
--- 15. 补签申请表
-DROP TABLE IF EXISTS attendance_apply;
-CREATE TABLE attendance_apply (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '申请ID',
-    user_id BIGINT(20) NOT NULL COMMENT '用户ID',
-    plan_id BIGINT(20) NOT NULL COMMENT '计划ID',
-    apply_reason VARCHAR(500) NOT NULL COMMENT '申请原因',
-    apply_time DATETIME NOT NULL COMMENT '申请时间',
-    sign_date DATE NOT NULL COMMENT '需补签日期',
-    proof_image VARCHAR(500) DEFAULT NULL COMMENT '证明材料图片URL',
-    audit_status TINYINT(1) DEFAULT 0 COMMENT '审核状态(0待审核 1通过 2驳回)',
-    audit_remark VARCHAR(500) DEFAULT NULL COMMENT '审核意见',
-    audit_by BIGINT(20) DEFAULT NULL COMMENT '审核人ID',
-    audit_time DATETIME DEFAULT NULL COMMENT '审核时间',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_user_plan_date (user_id, plan_id, sign_date),
-    KEY idx_user_id (user_id),
-    KEY idx_plan_id (plan_id),
-    KEY idx_audit_status (audit_status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='补签申请表';
 
 -- 16. 题库表
 DROP TABLE IF EXISTS exam_question;
@@ -658,107 +553,6 @@ CREATE TABLE sys_login_log (
     KEY idx_status (status),
     KEY idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录日志表';
-
--- 24. 系统配置表
-DROP TABLE IF EXISTS sys_config;
-CREATE TABLE sys_config (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '配置ID',
-    config_name VARCHAR(100) NOT NULL COMMENT '配置名称',
-    config_key VARCHAR(100) NOT NULL COMMENT '配置键',
-    config_value VARCHAR(500) DEFAULT NULL COMMENT '配置值',
-    config_type TINYINT(1) DEFAULT 1 COMMENT '配置类型(1系统 2业务)',
-    is_editable TINYINT(1) DEFAULT 1 COMMENT '是否可编辑',
-    status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1启用)',
-    sort_order INT(11) DEFAULT 0 COMMENT '排序顺序',
-    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
-    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_config_key (config_key),
-    KEY idx_config_type (config_type),
-    KEY idx_deleted (deleted)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
-
--- 25. 字典类型表
-DROP TABLE IF EXISTS sys_dict_type;
-CREATE TABLE sys_dict_type (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '字典类型ID',
-    dict_name VARCHAR(100) NOT NULL COMMENT '字典名称',
-    dict_type VARCHAR(100) NOT NULL COMMENT '字典类型',
-    status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1正常)',
-    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
-    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_dict_type (dict_type),
-    KEY idx_status (status),
-    KEY idx_deleted (deleted)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典类型表';
-
--- 26. 字典数据表
-DROP TABLE IF EXISTS sys_dict_data;
-CREATE TABLE sys_dict_data (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '字典数据ID',
-    dict_type_id BIGINT(20) NOT NULL COMMENT '字典类型ID',
-    dict_label VARCHAR(100) NOT NULL COMMENT '字典标签',
-    dict_value VARCHAR(100) NOT NULL COMMENT '字典键值',
-    dict_sort INT(11) DEFAULT 0 COMMENT '排序顺序',
-    status TINYINT(1) DEFAULT 1 COMMENT '状态(0禁用 1正常)',
-    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_by BIGINT(20) DEFAULT NULL COMMENT '更新人',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
-    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除(0否 1是)',
-    PRIMARY KEY (id),
-    KEY idx_dict_type_id (dict_type_id),
-    KEY idx_status (status),
-    KEY idx_deleted (deleted)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典数据表';
-
--- 27. 通知公告表
-DROP TABLE IF EXISTS sys_notice;
-CREATE TABLE sys_notice (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '公告ID',
-    notice_title VARCHAR(100) NOT NULL COMMENT '公告标题',
-    notice_type TINYINT(1) NOT NULL COMMENT '公告类型(1通知 2公告 3消息)',
-    notice_content TEXT NOT NULL COMMENT '公告内容',
-    target_type TINYINT(1) DEFAULT 1 COMMENT '目标类型(1全部 2部门 3角色 4个人)',
-    target_ids VARCHAR(500) DEFAULT NULL COMMENT '目标ID集合(JSON)',
-    priority TINYINT(1) DEFAULT 1 COMMENT '优先级(1普通 2重要 3紧急)',
-    is_top TINYINT(1) DEFAULT 0 COMMENT '是否置顶',
-    status TINYINT(1) DEFAULT 1 COMMENT '状态(0草稿 1已发布 2已撤回)',
-    publish_time DATETIME DEFAULT NULL COMMENT '发布时间',
-    expire_time DATETIME DEFAULT NULL COMMENT '过期时间',
-    create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    KEY idx_notice_type (notice_type),
-    KEY idx_status (status),
-    KEY idx_publish_time (publish_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知公告表';
-
--- 28. 通知记录表
-DROP TABLE IF EXISTS sys_notice_record;
-CREATE TABLE sys_notice_record (
-    id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '记录ID',
-    notice_id BIGINT(20) NOT NULL COMMENT '公告ID',
-    user_id BIGINT(20) NOT NULL COMMENT '用户ID',
-    is_read TINYINT(1) DEFAULT 0 COMMENT '是否已读(0未读 1已读)',
-    read_time DATETIME DEFAULT NULL COMMENT '阅读时间',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    PRIMARY KEY (id),
-    KEY idx_notice_id (notice_id),
-    KEY idx_user_id (user_id),
-    KEY idx_is_read (is_read)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知记录表';
 
 -- 29. 文件管理表
 DROP TABLE IF EXISTS sys_file;

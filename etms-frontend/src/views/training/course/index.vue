@@ -139,21 +139,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="课程分类" prop="categoryId">
-              <el-tree-select
-                v-model="form.categoryId"
-                :data="categoryTreeOptions"
-                :props="{ value: 'id', label: 'categoryName', children: 'children' }"
-                value-key="id"
-                placeholder="请选择课程分类"
-                check-strictly
-                clearable
-                :render-after-expand="false"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -243,7 +228,6 @@ import {
   publishCourse,
   unpublishCourse
 } from '@/api/course'
-import { getCategoryTree, type Category } from '@/api/category'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
@@ -292,9 +276,6 @@ const pagination = reactive({
   total: 0
 })
 
-// 分类树选项
-const categoryTreeOptions = ref<Category[]>([])
-
 // 对话框
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -307,7 +288,6 @@ const form = reactive({
   id: null as number | null,
   courseName: '',
   courseCode: '',
-  categoryId: null as number | null,
   courseType: null as number | null,
   coverImage: '',
   courseDesc: '',  // 修复：与后端字段名一致
@@ -325,9 +305,6 @@ const rules: FormRules = {
   courseCode: [
     { required: true, message: '请输入课程编码', trigger: 'blur' },
     { max: 50, message: '课程编码不能超过50个字符', trigger: 'blur' }
-  ],
-  categoryId: [
-    { required: true, message: '请选择课程分类', trigger: 'change' }
   ],
   courseType: [{ required: true, message: '请选择课程类型', trigger: 'change' }],
   difficulty: [{ required: true, message: '请选择难度', trigger: 'change' }]
@@ -436,7 +413,6 @@ const resetForm = () => {
     id: null,
     courseName: '',
     courseCode: '',
-    categoryId: null,
     courseType: null,
     coverImage: '',
     courseDesc: '',  // 修复：与后端字段名一致
@@ -470,7 +446,6 @@ const handleEdit = async (row: any) => {
       id: data.id,
       courseName: data.courseName,
       courseCode: data.courseCode,
-      categoryId: data.categoryId,
       courseType: data.courseType,
       coverImage: data.coverImage,
       courseDesc: data.courseDesc,
@@ -650,24 +625,8 @@ const handleUnpublish = async (row: any) => {
   }
 }
 
-// 获取分类树
-const getCategoryTreeData = async () => {
-  try {
-    const res = await getCategoryTree()
-    const treeData = res || []
-    // 设置分类树选项（添加顶级节点选项）
-    categoryTreeOptions.value = [
-      { id: 0, parentId: null, categoryName: '顶级分类', categoryCode: '', level: 0, sortOrder: 0, icon: null, status: 1, children: treeData }
-    ] as Category[]
-  } catch (error: any) {
-    console.error('获取分类树失败:', error)
-    ElMessage.error(getFriendlyErrorMessage(error, '获取分类树失败'))
-  }
-}
-
 onMounted(() => {
   getList()
-  getCategoryTreeData()
 })
 </script>
 

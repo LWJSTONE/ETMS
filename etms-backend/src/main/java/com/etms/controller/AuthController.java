@@ -6,7 +6,6 @@ import com.etms.dto.LoginDTO;
 import com.etms.entity.User;
 import com.etms.exception.BusinessException;
 import com.etms.security.LoginUser;
-import com.etms.service.CaptchaService;
 import com.etms.service.UserService;
 import com.etms.vo.LoginVO;
 import com.etms.vo.UserVO;
@@ -37,15 +36,6 @@ import java.util.stream.Collectors;
 public class AuthController {
     
     private final UserService userService;
-    private final CaptchaService captchaService;
-    
-    @RateLimiter(key = "captcha", limit = 10, period = 60, message = "获取验证码过于频繁，请稍后再试")
-    @ApiOperation(value = "获取验证码")
-    @PostMapping("/captcha")
-    public Result<Map<String, String>> getCaptcha(HttpServletRequest request) {
-        Map<String, String> captcha = captchaService.generateCaptcha();
-        return Result.success(captcha);
-    }
     
     @RateLimiter(key = "login", limit = 5, period = 60, message = "登录尝试过于频繁，请稍后再试")
     @ApiOperation(value = "用户登录")
