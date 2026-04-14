@@ -54,38 +54,29 @@ class ER:
     # ── 实体矩形 ──
     def entity(self, cx, cy, cn, en):
         w1, h1 = self._tw(cn, 9.5)
-        w2, h2 = self._tw(en, 7.5)
-        bw = max(w1, w2) + 0.60
-        bh = h1 + h2 + 0.15 + 0.40
+        bw = w1 + 0.55
+        bh = h1 + 0.35
         self.ax.add_patch(FancyBboxPatch(
             (cx-bw/2, cy-bh/2), bw, bh, boxstyle="round,pad=0.06",
             lw=2.0, ec=BLACK, fc=WHITE, zorder=5))
-        self.ax.text(cx, cy+h1/2+0.06, cn, ha='center', va='center',
+        self.ax.text(cx, cy, cn, ha='center', va='center',
                      fontsize=9.5, fontweight='bold', color=BLACK, zorder=6)
-        self.ax.text(cx, cy-h2/2-0.03, en, ha='center', va='center',
-                     fontsize=7.5, color=GRAY, zorder=6)
         return bw, bh
 
     # ── 属性椭圆 ──
     def attr(self, cx, cy, name, dtype, pk=False, fk=False):
-        tag = ''
-        if pk: tag += ' [PK]'
-        if fk: tag += ' [FK]'
-        lb2 = dtype + tag
-        w1, h1 = self._tw(name, 6.5)
-        w2, h2 = self._tw(lb2,  5.5)
-        ew = max(w1, w2) + 0.50
-        eh = h1 + h2 + 0.10 + 0.38
+        display = name + (' [FK]' if fk else '')
+        w1, h1 = self._tw(display, 6.5)
+        ew = w1 + 0.42
+        eh = h1 + 0.28
         self.ax.add_patch(Ellipse((cx, cy), ew, eh,
             lw=(1.8 if pk else 1.0), ec=BLACK, fc=WHITE, zorder=5))
-        self.ax.text(cx, cy+h1/2+0.03, name, ha='center', va='center',
+        self.ax.text(cx, cy, display, ha='center', va='center',
                      fontsize=6.5, fontweight='bold' if pk else 'normal',
                      color=BLACK, zorder=6)
-        self.ax.text(cx, cy-h2/2-0.02, lb2, ha='center', va='center',
-                     fontsize=5.5, color=GRAY, zorder=6)
         if pk:
             self.ax.plot([cx-w1*0.75/2, cx+w1*0.75/2],
-                         [cy+0.01, cy+0.01],
+                         [cy-0.02, cy-0.02],
                          color=BLACK, lw=0.7, zorder=6)
         return ew, eh
 
@@ -126,12 +117,9 @@ class ER:
 #  自动排列，各方向内等间距居中
 
 def _esz(d, a):
-    tag = ''
-    if a[2]: tag += ' [PK]'
-    if a[3]: tag += ' [FK]'
-    w1, h1 = d._tw(a[0], 6.5)
-    w2, h2 = d._tw(a[1]+tag, 5.5)
-    return max(w1,w2)+0.50, h1+h2+0.10+0.38
+    display = a[0] + (' [FK]' if a[3] else '')
+    w1, h1 = d._tw(display, 6.5)
+    return w1+0.42, h1+0.28
 
 
 def layout(d, cx, cy, bw, bh, attrs, dirs):
