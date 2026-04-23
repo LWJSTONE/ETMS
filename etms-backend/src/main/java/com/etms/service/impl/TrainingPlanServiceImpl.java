@@ -4,13 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etms.entity.TrainingPlan;
-import com.etms.entity.UserPlan;
+import com.etms.entity.UserTrainingPlan;
 import com.etms.entity.Course;
 import com.etms.entity.PlanCourse;
 import com.etms.entity.User;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.TrainingPlanMapper;
-import com.etms.mapper.UserPlanMapper;
+import com.etms.mapper.UserTrainingPlanMapper;
 import com.etms.mapper.CourseMapper;
 import com.etms.mapper.PlanCourseMapper;
 import com.etms.mapper.UserMapper;
@@ -47,7 +47,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     // 修复：将ObjectMapper声明为静态常量，避免每次调用都创建新实例，提升性能
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     
-    private final UserPlanMapper userPlanMapper;
+    private final UserTrainingPlanMapper userTrainingPlanMapper;
     private final CourseMapper courseMapper;
     private final PlanCourseMapper planCourseMapper;
     private final UserMapper userMapper;
@@ -233,9 +233,9 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("只有草稿状态的培训计划才能删除");
         }
         
-        // 检查培训计划是否有学习记录
-        Long count = userPlanMapper.selectCount(
-            new LambdaQueryWrapper<UserPlan>().eq(UserPlan::getPlanId, id)
+        // 检查培训计划是否有用户参与记录
+        Long count = userTrainingPlanMapper.selectCount(
+            new LambdaQueryWrapper<UserTrainingPlan>().eq(UserTrainingPlan::getPlanId, id)
         );
         if (count > 0) {
             throw new BusinessException("培训计划存在学习记录，无法删除");
@@ -251,8 +251,8 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     
     @Override
     public boolean hasParticipants(Long planId) {
-        Long count = userPlanMapper.selectCount(
-            new LambdaQueryWrapper<UserPlan>().eq(UserPlan::getPlanId, planId)
+        Long count = userTrainingPlanMapper.selectCount(
+            new LambdaQueryWrapper<UserTrainingPlan>().eq(UserTrainingPlan::getPlanId, planId)
         );
         return count > 0;
     }
@@ -426,8 +426,8 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     }
     
     /**
-     * 为目标用户创建学习进度记录
-     * 修复：改用逐条检查+异常捕获方式，避免唯一约束冲突导致整个事务回滚
+     * 为目标用户创建培训计划关联记录
+     * 修复：使用UserTrainingPlan实体（映射到etms_user_plan表）替代UserPlan（错误映射到learning_progress表）
      */
     private void createUserPlansForTargetUsers(TrainingPlan plan, List<Long> userIds) {
         if (userIds == null || userIds.isEmpty()) {
@@ -435,43 +435,40 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         }
         
         Long planId = plan.getId();
-        Long courseId = plan.getCourseId();
         
-        // 查询已存在的UserPlan记录，避免重复创建
-        List<UserPlan> existingUserPlans = userPlanMapper.selectList(
-            new LambdaQueryWrapper<UserPlan>().eq(UserPlan::getPlanId, planId)
+        // 查询已存在的UserTrainingPlan记录，避免重复创建
+        List<UserTrainingPlan> existingUserPlans = userTrainingPlanMapper.selectList(
+            new LambdaQueryWrapper<UserTrainingPlan>().eq(UserTrainingPlan::getPlanId, planId)
         );
         Set<Long> existingUserIds = existingUserPlans.stream()
-                .map(UserPlan::getUserId)
+                .map(UserTrainingPlan::getUserId)
                 .collect(Collectors.toSet());
         
-        // 为新用户创建UserPlan记录
+        // 为新用户创建UserTrainingPlan记录
         int successCount = 0;
         int failCount = 0;
         for (Long userId : userIds) {
             if (!existingUserIds.contains(userId)) {
                 try {
-                    UserPlan userPlan = new UserPlan();
-                    userPlan.setUserId(userId);
-                    userPlan.setPlanId(planId);
-                    userPlan.setCourseId(courseId);
-                    userPlan.setProgress(0);
-                    userPlan.setStatus(0); // 未开始
-                    userPlanMapper.insert(userPlan);
+                    UserTrainingPlan userTrainingPlan = new UserTrainingPlan();
+                    userTrainingPlan.setUserId(userId);
+                    userTrainingPlan.setPlanId(planId);
+                    userTrainingPlan.setStatus(0); // 未开始
+                    userTrainingPlanMapper.insert(userTrainingPlan);
                     successCount++;
                 } catch (Exception e) {
-                    // 修复：捕获单条插入异常（如唯一约束冲突），不影响其他用户
+                    // 捕获单条插入异常（如唯一约束冲突），不影响其他用户
                     failCount++;
-                    log.warn("为用户[{}]创建培训计划[{}]学习记录失败: {}", userId, planId, e.getMessage());
+                    log.warn("为用户[{}]创建培训计划[{}]关联记录失败: {}", userId, planId, e.getMessage());
                 }
             }
         }
         
         if (successCount > 0) {
-            log.info("为培训计划[{}]成功创建{}条用户学习记录", planId, successCount);
+            log.info("为培训计划[{}]成功创建{}条用户关联记录", planId, successCount);
         }
         if (failCount > 0) {
-            log.warn("为培训计划[{}]创建用户学习记录时{}条失败", planId, failCount);
+            log.warn("为培训计划[{}]创建用户关联记录时{}条失败", planId, failCount);
         }
     }
     
