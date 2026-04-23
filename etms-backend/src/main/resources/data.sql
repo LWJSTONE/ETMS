@@ -127,4 +127,33 @@ INSERT INTO exam_question (id, question_code, question_type, question_content, o
 (7, 'Q007', 3, 'Vue3的Composition API相比Options API更利于代码复用。', NULL, NULL, NULL, NULL, '正确', 'Composition API通过组合函数实现逻辑复用', 1, 2, 3, 1, 1),
 (8, 'Q008', 1, 'MySQL中，使用哪个命令查看表结构？', 'SHOW TABLE', 'DESC TABLE', 'DESCRIBE', 'SELECT TABLE', 'C', 'DESCRIBE或DESC命令可以查看表结构', 1, 2, 4, 1, 1);
 
+-- =============================================
+-- 初始化试卷数据
+-- =============================================
+INSERT INTO exam_paper (id, paper_name, paper_code, course_id, paper_type, total_score, pass_score, exam_duration, question_count, status, description, create_by) VALUES
+(1, 'Java编程基础测试', 'PAPER_JAVA_001', 1, 1, 20, 12, 60, 3, 1, 'Java语言基础语法、面向对象编程等核心知识的考核', 1),
+(2, 'Spring Boot框架测试', 'PAPER_SPRING_001', 2, 1, 20, 12, 60, 3, 1, 'Spring Boot框架核心概念和自动配置原理的考核', 1),
+(3, 'Vue3前端开发测试', 'PAPER_VUE3_001', 3, 1, 20, 12, 60, 3, 1, 'Vue3 Composition API、响应式原理等核心知识的考核', 1),
+(4, 'MySQL数据库测试', 'PAPER_MYSQL_001', 4, 1, 20, 12, 60, 3, 1, 'MySQL索引原理、SQL优化等高级技术的考核', 1);
+
+-- =============================================
+-- 初始化试卷题目关联数据
+-- =============================================
+INSERT INTO exam_paper_question (paper_id, question_id, question_score, sort_order) VALUES
+-- Java编程基础测试：Q001(2分) + Q003(4分) + Q005(2分) = 额外增加Q008 = 总20分改为：Q001(4分) + Q003(8分) + Q005(8分)
+(1, 1, 4, 1),
+(1, 3, 8, 2),
+(1, 5, 8, 3),
+-- Spring Boot框架测试：Q002(4分) + Q006(8分) + Q001(8分)
+(2, 2, 4, 1),
+(2, 6, 8, 2),
+(2, 1, 8, 3),
+-- Vue3前端开发测试：Q004(4分) + Q007(4分) + Q003(8分) → 改为 Q004(4分) + Q007(4分) + Q008(12分)
+(3, 4, 4, 1),
+(3, 7, 4, 2),
+(3, 8, 12, 3),
+-- MySQL数据库测试：Q005(4分) + Q008(4分) + Q003(12分) → 改为 Q005(4分) + Q008(4分) + Q006(12分)
+(4, 5, 4, 1),
+(4, 8, 4, 2),
+(4, 6, 12, 3);
 

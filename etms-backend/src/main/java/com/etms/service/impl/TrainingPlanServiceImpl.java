@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * 培训计划服务实现类
@@ -315,7 +317,18 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("关联的课程不存在");
         }
         if (course.getStatus() != 2) {
-            throw new BusinessException("关联的课程未上架，无法发布培训计划");
+            // 如果课程处于待审核状态，自动审核通过并上架
+            if (course.getStatus() == 1) {
+                Course courseUpdate = new Course();
+                courseUpdate.setId(course.getId());
+                courseUpdate.setStatus(2); // 已上架
+                courseUpdate.setAuditBy(getCurrentUserId());
+                courseUpdate.setAuditTime(LocalDateTime.now());
+                courseUpdate.setAuditRemark("发布培训计划时自动审核通过");
+                courseMapper.updateById(courseUpdate);
+            } else {
+                throw new BusinessException("关联的课程未上架，无法发布培训计划");
+            }
         }
         
         // 修复：使用乐观锁防止并发重复发布
@@ -574,5 +587,21 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         }
         
         return false;
+    }
+    
+    /**
+     * 获取当前登录用户ID
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        String username = authentication.getName();
+        if (username == null || "anonymousUser".equals(username)) {
+            return null;
+        }
+        User user = userMapper.selectByUsername(username);
+        return user != null ? user.getId() : null;
     }
 }

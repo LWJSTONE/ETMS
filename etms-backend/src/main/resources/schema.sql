@@ -427,7 +427,7 @@ DROP TABLE IF EXISTS exam_record;
 CREATE TABLE exam_record (
     id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '记录ID',
     user_id BIGINT(20) NOT NULL COMMENT '用户ID',
-    plan_id BIGINT(20) NOT NULL COMMENT '计划ID',
+    plan_id BIGINT(20) DEFAULT NULL COMMENT '计划ID',
     paper_id BIGINT(20) NOT NULL COMMENT '试卷ID',
     exam_start_time DATETIME DEFAULT NULL COMMENT '考试开始时间',
     exam_end_time DATETIME DEFAULT NULL COMMENT '考试结束时间',
