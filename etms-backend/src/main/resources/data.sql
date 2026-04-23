@@ -105,14 +105,14 @@ INSERT INTO sys_role_permission (role_id, permission_id) VALUES
 -- =============================================
 -- 初始化课程数据
 -- =============================================
-INSERT INTO training_course (id, course_name, course_code, course_desc, course_objective, category_id, duration, difficulty, status, create_by) VALUES
-(1, 'Java编程基础', 'JAVA_BASIC', 'Java语言基础语法、面向对象编程、集合框架、IO流、多线程等核心知识', '掌握Java编程基础，能够独立完成简单项目开发', 4, 120, 2, 2, 1),
-(2, 'Spring Boot实战', 'SPRING_BOOT', 'Spring Boot框架核心概念、自动配置原理、Web开发、数据访问、安全控制等', '掌握Spring Boot框架，能够快速构建企业级应用', 6, 180, 3, 2, 1),
-(3, 'Vue3前端开发', 'VUE3_DEV', 'Vue3 Composition API、响应式原理、组件开发、路由管理、状态管理等', '掌握Vue3前端开发技术，能够开发复杂前端应用', 4, 150, 3, 2, 1),
-(4, 'MySQL数据库优化', 'MYSQL_OPT', 'MySQL索引原理、SQL优化、分库分表、主从复制、性能调优等高级技术', '掌握MySQL数据库优化技巧，提升数据库性能', 5, 100, 4, 2, 1),
-(5, '高效沟通技巧', 'COMM_SKILL', '职场沟通技巧、汇报方法、会议沟通、跨部门协作等实用技能', '提升沟通效率，改善职场人际关系', 10, 60, 1, 2, 1),
-(6, '团队领导力', 'TEAM_LEADER', '团队建设、目标管理、激励机制、冲突处理、绩效管理等领导力技能', '提升领导力，打造高效团队', 7, 90, 3, 2, 1),
-(7, 'Office办公技巧', 'OFFICE_TIPS', 'Word排版技巧、Excel数据处理、PPT设计制作等办公软件高级技巧', '提升办公效率，掌握Office高级应用', 9, 45, 1, 2, 1);
+INSERT INTO training_course (id, course_name, course_code, course_desc, course_objective, category_id, duration, difficulty, status, create_by, cover_image, video_url, course_type) VALUES
+(1, 'Java编程基础', 'JAVA_BASIC', 'Java语言基础语法、面向对象编程、集合框架、IO流、多线程等核心知识', '掌握Java编程基础，能够独立完成简单项目开发', 4, 120, 2, 2, 1, '/files/courses/cover_java.png', 'https://media.w3.org/2010/05/sintel/trailer.mp4', 1),
+(2, 'Spring Boot实战', 'SPRING_BOOT', 'Spring Boot框架核心概念、自动配置原理、Web开发、数据访问、安全控制等', '掌握Spring Boot框架，能够快速构建企业级应用', 6, 180, 3, 2, 1, '/files/courses/cover_springboot.png', 'https://www.w3schools.com/html/mov_bbb.mp4', 1),
+(3, 'Vue3前端开发', 'VUE3_DEV', 'Vue3 Composition API、响应式原理、组件开发、路由管理、状态管理等', '掌握Vue3前端开发技术，能够开发复杂前端应用', 4, 150, 3, 2, 1, '/files/courses/cover_vue3.png', 'https://media.w3.org/2010/05/video/movie_300.mp4', 1),
+(4, 'MySQL数据库优化', 'MYSQL_OPT', 'MySQL索引原理、SQL优化、分库分表、主从复制、性能调优等高级技术', '掌握MySQL数据库优化技巧，提升数据库性能', 5, 100, 4, 2, 1, '/files/courses/cover_mysql.png', 'https://media.w3.org/2010/05/bunny/trailer.mp4', 1),
+(5, '高效沟通技巧', 'COMM_SKILL', '职场沟通技巧、汇报方法、会议沟通、跨部门协作等实用技能', '提升沟通效率，改善职场人际关系', 10, 60, 1, 2, 1, '/files/courses/cover_communication.png', 'https://samplelib.com/mp4/sample-15s.mp4', 1),
+(6, '团队领导力', 'TEAM_LEADER', '团队建设、目标管理、激励机制、冲突处理、绩效管理等领导力技能', '提升领导力，打造高效团队', 7, 90, 3, 2, 1, '/files/courses/cover_leadership.png', 'https://samplelib.com/mp4/sample-20s.mp4', 1),
+(7, 'Office办公技巧', 'OFFICE_TIPS', 'Word排版技巧、Excel数据处理、PPT设计制作等办公软件高级技巧', '提升办公效率，掌握Office高级应用', 9, 45, 1, 2, 1, '/files/courses/cover_office.png', 'https://samplelib.com/mp4/sample-30s.mp4', 1);
 
 -- =============================================
 -- 初始化题库数据

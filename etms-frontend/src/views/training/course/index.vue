@@ -153,23 +153,41 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="封面图片" prop="coverImage">
-              <el-input v-model="form.coverImage" placeholder="请输入封面图片URL" />
+            <el-form-item label="时长(分钟)" prop="duration">
+              <el-input-number v-model="form.duration" :min="0" :max="9999" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="时长(分钟)" prop="duration">
-              <el-input-number v-model="form.duration" :min="0" :max="9999" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
             <el-form-item label="学分" prop="credit">
               <el-input-number v-model="form.credit" :min="0" :max="100" style="width: 100%" />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="课程目标" prop="courseObjective">
+              <el-input v-model="form.courseObjective" placeholder="请输入课程目标" />
+            </el-form-item>
+          </el-col>
         </el-row>
+        <el-form-item label="封面图片" prop="coverImage">
+          <el-input v-model="form.coverImage" placeholder="请输入封面图片URL（如 /files/courses/cover_java.png）">
+            <template #append>
+              <el-button v-if="form.coverImage" @click="previewCoverVisible = true">
+                <el-icon><View /></el-icon>
+              </el-button>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="视频地址" prop="videoUrl">
+          <el-input v-model="form.videoUrl" placeholder="请输入视频URL（支持MP4等格式的在线视频地址）" />
+        </el-form-item>
+        <el-form-item label="文档地址" prop="documentUrl">
+          <el-input v-model="form.documentUrl" placeholder="请输入文档URL（如PDF在线地址）" />
+        </el-form-item>
+        <el-form-item label="PPT地址" prop="pptUrl">
+          <el-input v-model="form.pptUrl" placeholder="请输入PPT资源URL" />
+        </el-form-item>
         <el-form-item label="课程描述" prop="courseDesc">
           <el-input
             v-model="form.courseDesc"
@@ -185,6 +203,14 @@
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
       </template>
+    </el-dialog>
+
+    <!-- 封面图片预览对话框 -->
+    <el-dialog v-model="previewCoverVisible" title="封面图片预览" width="500px">
+      <div style="text-align: center;">
+        <img v-if="form.coverImage" :src="form.coverImage" style="max-width: 100%; border-radius: 8px;" alt="课程封面" />
+        <el-empty v-else description="暂无封面图片" />
+      </div>
     </el-dialog>
 
     <!-- 审核驳回对话框 -->
@@ -216,7 +242,7 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, View } from '@element-plus/icons-vue'
 import {
   getCourseList,
   getCourseDetail,
@@ -284,16 +310,23 @@ const formRef = ref<FormInstance>()
 const submitLoading = ref(false)
 
 // 表单数据
+const previewCoverVisible = ref(false)
+
+// 表单数据
 const form = reactive({
   id: null as number | null,
   courseName: '',
   courseCode: '',
   courseType: null as number | null,
   coverImage: '',
-  courseDesc: '',  // 修复：与后端字段名一致
+  courseDesc: '',
+  courseObjective: '',
   difficulty: null as number | null,
   duration: 0,
-  credit: 0
+  credit: 0,
+  videoUrl: '',
+  documentUrl: '',
+  pptUrl: ''
 })
 
 // 表单验证规则
@@ -415,10 +448,14 @@ const resetForm = () => {
     courseCode: '',
     courseType: null,
     coverImage: '',
-    courseDesc: '',  // 修复：与后端字段名一致
+    courseDesc: '',
+    courseObjective: '',
     difficulty: null,
     duration: 0,
-    credit: 0
+    credit: 0,
+    videoUrl: '',
+    documentUrl: '',
+    pptUrl: ''
   })
   formRef.value?.resetFields()
 }
@@ -449,9 +486,13 @@ const handleEdit = async (row: any) => {
       courseType: data.courseType,
       coverImage: data.coverImage,
       courseDesc: data.courseDesc,
+      courseObjective: data.courseObjective || '',
       difficulty: data.difficulty,
       duration: data.duration || 0,
-      credit: data.credit || 0
+      credit: data.credit || 0,
+      videoUrl: data.videoUrl || '',
+      documentUrl: data.documentUrl || '',
+      pptUrl: data.pptUrl || ''
     })
     dialogVisible.value = true
     // 对话框打开后清除验证状态
