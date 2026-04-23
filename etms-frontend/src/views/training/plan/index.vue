@@ -636,12 +636,14 @@ const handleEdit = async (row: any) => {
       targetDeptIds,
       targetPositionIds,
       targetUserIds,
-      needExam: data.needExam || 0,
-      paperId: data.paperId || null,
-      passScore: data.passScore || 60,
-      maxRetake: data.maxRetake || 3,
-      minStudyTime: data.minStudyTime || 0,
-      minProgress: data.minProgress || 100,
+      // 修复：使用 ?? 空值合并运算符替代 || 逻辑或运算符
+      // || 运算符会将合法的0值视为falsy而使用默认值，导致数据被错误覆盖
+      needExam: data.needExam ?? 0,
+      paperId: data.paperId ?? null,
+      passScore: data.passScore ?? 60,
+      maxRetake: data.maxRetake ?? 3,
+      minStudyTime: data.minStudyTime ?? 0,
+      minProgress: data.minProgress ?? 100,
       planDesc: data.planDesc || '',
       planObjective: data.planObjective || ''
     })
@@ -692,53 +694,37 @@ const handlePublish = async (row: any) => {
     missingFields.push('培训日期')
   }
   
-  // 修复：移除paperId前端校验，因为后端TrainingPlan实体不包含paperId字段，
-  // 该字段未持久化到数据库，前端校验会错误阻止发布
-  // paperId的校验可在后续添加到后端实体和数据库后恢复
+  // paperId校验：后端TrainingPlan实体已包含paperId字段，
+  // 数据库schema也已有paper_id列，无需前端额外校验，后端会在发布时进行完整验证
 
   if (!row.targetType) {
     missingFields.push('目标类型')
   } else {
     // 验证目标选择
-    if (row.targetType === 1) {
-      let targetDeptIds: number[] = []
+    // 修复：与handleEdit保持一致，先判断数据类型再解析JSON字符串
+    const parseJsonSafe = (val: any): any[] => {
+      if (!val) return []
+      if (Array.isArray(val)) return val
       try {
-        targetDeptIds = row.targetDeptIds ? JSON.parse(row.targetDeptIds) : []
-        if (!Array.isArray(targetDeptIds)) {
-          targetDeptIds = []
-        }
+        const parsed = JSON.parse(val)
+        return Array.isArray(parsed) ? parsed : []
       } catch (e) {
-        console.warn('解析目标部门ID失败:', e)
-        targetDeptIds = []
+        console.warn('JSON解析失败:', e)
+        return []
       }
+    }
+    if (row.targetType === 1) {
+      const targetDeptIds = parseJsonSafe(row.targetDeptIds)
       if (targetDeptIds.length === 0) {
         missingFields.push('目标部门')
       }
     } else if (row.targetType === 2) {
-      let targetPositionIds: number[] = []
-      try {
-        targetPositionIds = row.targetPositionIds ? JSON.parse(row.targetPositionIds) : []
-        if (!Array.isArray(targetPositionIds)) {
-          targetPositionIds = []
-        }
-      } catch (e) {
-        console.warn('解析目标岗位ID失败:', e)
-        targetPositionIds = []
-      }
+      const targetPositionIds = parseJsonSafe(row.targetPositionIds)
       if (targetPositionIds.length === 0) {
         missingFields.push('目标岗位')
       }
     } else if (row.targetType === 3) {
-      let targetUserIds: number[] = []
-      try {
-        targetUserIds = row.targetUserIds ? JSON.parse(row.targetUserIds) : []
-        if (!Array.isArray(targetUserIds)) {
-          targetUserIds = []
-        }
-      } catch (e) {
-        console.warn('解析目标人员ID失败:', e)
-        targetUserIds = []
-      }
+      const targetUserIds = parseJsonSafe(row.targetUserIds)
       if (targetUserIds.length === 0) {
         missingFields.push('目标人员')
       }

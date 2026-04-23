@@ -216,6 +216,10 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("开始日期不能晚于结束日期");
         }
         
+        // 修复：清除status字段，防止通过更新接口绕过发布流程非法修改状态
+        // 状态变更必须通过专用的publish/end/archive接口完成，确保状态流转的安全性和可追溯性
+        plan.setStatus(null);
+        
         return baseMapper.updateById(plan) > 0;
     }
     

@@ -205,7 +205,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Timer, DataLine, CircleCheck, Document, Clock } from '@element-plus/icons-vue'
@@ -555,6 +555,10 @@ const handleViewResult = async (record: any) => {
   }
 }
 
+// 修复：添加定时器，每分钟刷新一次考试状态，确保时间窗口变化后按钮状态实时更新
+// 例如：考试在10:00开始，用户在9:55打开页面，按钮显示“未开始”，到10:00应自动变为“开始考试”
+let examStatusTimer: ReturnType<typeof setInterval> | null = null
+
 // 初始化
 onMounted(async () => {
   // 并行加载所有数据，提高加载速度
@@ -563,6 +567,18 @@ onMounted(async () => {
     fetchAllOngoingRecords(),
     fetchAvailableExams()
   ])
+  // 每60秒刷新一次考试列表，确保时间窗口状态实时更新
+  examStatusTimer = setInterval(async () => {
+    await fetchAllOngoingRecords()
+    await fetchAvailableExams()
+  }, 60000)
+})
+
+onUnmounted(() => {
+  if (examStatusTimer) {
+    clearInterval(examStatusTimer)
+    examStatusTimer = null
+  }
 })
 </script>
 
