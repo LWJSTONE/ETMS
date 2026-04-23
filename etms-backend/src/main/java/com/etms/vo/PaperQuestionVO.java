@@ -14,6 +14,9 @@ public class PaperQuestionVO implements Serializable {
     /** 题目ID */
     private Long questionId;
 
+    /** 题目ID（别名，供前端答题页面使用，与questionId相同） */
+    private Long id;
+
     /** 题目类型(1单选 2多选 3判断 4填空 5简答) */
     private Integer questionType;
 

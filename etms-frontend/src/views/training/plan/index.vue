@@ -692,11 +692,10 @@ const handlePublish = async (row: any) => {
     missingFields.push('培训日期')
   }
   
-  // 修复：当需要考试时，验证是否已关联试卷
-  if (row.needExam === 1 && !row.paperId) {
-    missingFields.push('关联试卷（已设置需要考试）')
-  }
-  
+  // 修复：移除paperId前端校验，因为后端TrainingPlan实体不包含paperId字段，
+  // 该字段未持久化到数据库，前端校验会错误阻止发布
+  // paperId的校验可在后续添加到后端实体和数据库后恢复
+
   if (!row.targetType) {
     missingFields.push('目标类型')
   } else {

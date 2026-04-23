@@ -3,6 +3,7 @@ package com.etms.vo;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 考试记录视图对象
@@ -56,6 +57,9 @@ public class ExamRecordVO {
     
     /** 答题详情(JSON格式) */
     private String answerDetail;
+    
+    /** 试卷题目列表（考试进行中时返回，用于考试答题页面展示题目） */
+    private List<PaperQuestionVO> questions;
     
     private LocalDateTime createTime;
     

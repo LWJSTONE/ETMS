@@ -243,6 +243,54 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             vo.setTotalScore(paper.getTotalScore());
             vo.setPassScore(paper.getPassScore());
             vo.setDuration(paper.getExamDuration());
+            
+            // 修复：当考试进行中（status=0）时，加载试卷题目列表供答题页面使用
+            // 答题完成后不再返回题目（防止查看答案）
+            if (record.getStatus() == 0) {
+                List<PaperQuestion> paperQuestions = paperQuestionMapper.selectList(
+                    new LambdaQueryWrapper<PaperQuestion>()
+                        .eq(PaperQuestion::getPaperId, record.getPaperId())
+                        .orderByAsc(PaperQuestion::getSortOrder)
+                );
+                
+                if (!paperQuestions.isEmpty()) {
+                    // 获取所有题目ID并批量查询
+                    List<Long> questionIds = paperQuestions.stream()
+                        .map(PaperQuestion::getQuestionId)
+                        .collect(Collectors.toList());
+                    
+                    List<Question> questions = questionMapper.selectBatchIds(questionIds);
+                    Map<Long, Question> questionMap = questions.stream()
+                        .collect(Collectors.toMap(Question::getId, q -> q));
+                    
+                    // 构建题目分数映射
+                    Map<Long, Integer> scoreMap = paperQuestions.stream()
+                        .collect(Collectors.toMap(PaperQuestion::getQuestionId, PaperQuestion::getScore));
+                    
+                    // 构建题目排序映射
+                    Map<Long, Integer> sortOrderMap = paperQuestions.stream()
+                        .collect(Collectors.toMap(PaperQuestion::getQuestionId, PaperQuestion::getSortOrder));
+                    
+                    // 转换为VO列表（隐藏答案和解析，防止作弊）
+                    List<com.etms.vo.PaperQuestionVO> questionVOList = new java.util.ArrayList<>();
+                    for (PaperQuestion pq : paperQuestions) {
+                        Question question = questionMap.get(pq.getQuestionId());
+                        if (question != null) {
+                            com.etms.vo.PaperQuestionVO qvo = new com.etms.vo.PaperQuestionVO();
+                            BeanUtils.copyProperties(question, qvo);
+                            qvo.setQuestionId(question.getId());
+                            qvo.setId(question.getId());
+                            qvo.setScore(scoreMap.getOrDefault(question.getId(), question.getScore()));
+                            qvo.setSortOrder(sortOrderMap.get(question.getId()));
+                            // 考试中不返回答案和解析
+                            qvo.setAnswer(null);
+                            qvo.setAnswerAnalysis(null);
+                            questionVOList.add(qvo);
+                        }
+                    }
+                    vo.setQuestions(questionVOList);
+                }
+            }
         }
         
         // 获取用户信息

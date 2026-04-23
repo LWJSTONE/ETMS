@@ -262,10 +262,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("开始日期不能晚于结束日期");
         }
         
-        // 验证开始日期不能早于当前日期（允许等于当前日期，支持"立即发布、立即开始"的场景）
-        if (existingPlan.getStartDate().isBefore(LocalDate.now())) {
-            throw new BusinessException("开始日期不能早于当前日期");
-        }
+        // 修复：移除开始日期不能早于当前日期的限制，允许发布过去日期的培训计划（可能用于补录等场景）
         
         // 验证必要字段：培训类型
         if (existingPlan.getPlanType() == null) {
