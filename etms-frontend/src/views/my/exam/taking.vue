@@ -519,16 +519,38 @@ const fetchExamDetail = async () => {
       ElMessage.success('已恢复之前保存的答题进度')
     }
     
-    // 修复：计算剩余时间时增加类型检查和默认值
+    // 修复：计算剩余时间时增加类型检查和默认值，处理各种异常情况
     const duration = Number(data.duration) || 60  // 默认60分钟
     if (data.startTime && duration > 0) {
-      const startTime = new Date(data.startTime).getTime()
-      const endTime = startTime + duration * 60 * 1000
-      const now = Date.now()
-      remainingTime.value = Math.max(0, Math.floor((endTime - now) / 1000))
-      
-      // 启动计时器
+      try {
+        const startTime = new Date(data.startTime).getTime()
+        // 验证日期解析结果
+        if (isNaN(startTime)) {
+          console.error('无法解析考试开始时间:', data.startTime)
+          ElMessage.error('考试时间数据异常，请联系管理员')
+          return
+        }
+        const endTime = startTime + duration * 60 * 1000
+        const now = Date.now()
+        remainingTime.value = Math.max(0, Math.floor((endTime - now) / 1000))
+        
+        // 如果剩余时间已经为0，说明考试已超时
+        if (remainingTime.value === 0) {
+          ElMessage.warning('考试时间已到，请尽快提交试卷')
+        }
+        
+        // 启动计时器
+        startTimer()
+      } catch (e) {
+        console.error('解析考试时间失败:', e)
+        ElMessage.error('考试时间数据异常，请联系管理员')
+        return
+      }
+    } else {
+      // 修复：如果没有开始时间或时长，使用默认值
+      remainingTime.value = duration * 60  // 默认给足考试时间
       startTimer()
+      ElMessage.info('未获取到考试开始时间，已使用默认时长')
     }
   } catch (error: any) {
     console.error('获取考试详情失败:', error)

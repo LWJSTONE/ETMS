@@ -84,6 +84,9 @@ public class TrainingPlanVO implements Serializable {
     /** 最大补考次数 */
     private Integer maxRetake;
     
+    /** 关联试卷ID */
+    private Long paperId;
+    
     /** 状态 */
     private Integer status;
     

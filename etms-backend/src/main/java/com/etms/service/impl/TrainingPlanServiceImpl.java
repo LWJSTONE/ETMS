@@ -160,11 +160,35 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean addPlan(TrainingPlan plan) {
+        // 修复：增加必填字段校验，对应数据库NOT NULL约束
+        if (!StringUtils.hasText(plan.getPlanName())) {
+            throw new BusinessException("计划名称不能为空");
+        }
+        if (!StringUtils.hasText(plan.getPlanCode())) {
+            throw new BusinessException("计划编码不能为空");
+        }
+        // 修复：增加计划编码唯一性检查，避免数据库唯一约束异常
+        Long codeCount = baseMapper.selectCount(
+            new LambdaQueryWrapper<TrainingPlan>().eq(TrainingPlan::getPlanCode, plan.getPlanCode())
+        );
+        if (codeCount > 0) {
+            throw new BusinessException("计划编码已存在，请使用其他编码");
+        }
+        if (plan.getStartDate() == null) {
+            throw new BusinessException("开始日期不能为空");
+        }
+        if (plan.getEndDate() == null) {
+            throw new BusinessException("结束日期不能为空");
+        }
+        if (plan.getTargetType() == null) {
+            throw new BusinessException("目标类型不能为空");
+        }
         // 验证日期合理性
-        if (plan.getStartDate() != null && plan.getEndDate() != null) {
-            if (plan.getStartDate().isAfter(plan.getEndDate())) {
-                throw new BusinessException("开始日期不能晚于结束日期");
-            }
+        if (plan.getStartDate().isAfter(plan.getEndDate())) {
+            throw new BusinessException("开始日期不能晚于结束日期");
+        }
+        if (plan.getCourseId() == null) {
+            throw new BusinessException("请选择关联课程");
         }
         
         plan.setStatus(0); // 草稿状态
@@ -308,14 +332,16 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("请先关联培训课程");
         }
         
-        // 验证关联课程是否存在且已上架
+        // 验证关联课程是否存在且可用
         Course course = courseMapper.selectById(existingPlan.getCourseId());
         if (course == null) {
             throw new BusinessException("关联的课程不存在");
         }
+        // 修复：扩展自动审核通过的范围，支持草稿(0)和待审核(1)状态
+        // 之前只允许待审核(1)自动审核，导致草稿状态的课程无法发布培训计划
         if (course.getStatus() != 2) {
-            // 如果课程处于待审核状态，自动审核通过并上架
-            if (course.getStatus() == 1) {
+            if (course.getStatus() == 0 || course.getStatus() == 1) {
+                // 课程处于草稿或待审核状态，自动审核通过并上架
                 Course courseUpdate = new Course();
                 courseUpdate.setId(course.getId());
                 courseUpdate.setStatus(2); // 已上架
@@ -323,8 +349,9 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
                 courseUpdate.setAuditTime(LocalDateTime.now());
                 courseUpdate.setAuditRemark("发布培训计划时自动审核通过");
                 courseMapper.updateById(courseUpdate);
+                log.info("发布培训计划时自动审核通过课程[{}]", course.getId());
             } else {
-                throw new BusinessException("关联的课程未上架，无法发布培训计划");
+                throw new BusinessException("关联的课程未上架（当前状态已下架或审核驳回），无法发布培训计划，请先将课程重新上架");
             }
         }
         
@@ -400,6 +427,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     
     /**
      * 为目标用户创建学习进度记录
+     * 修复：改用逐条检查+异常捕获方式，避免唯一约束冲突导致整个事务回滚
      */
     private void createUserPlansForTargetUsers(TrainingPlan plan, List<Long> userIds) {
         if (userIds == null || userIds.isEmpty()) {
@@ -418,26 +446,32 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
                 .collect(Collectors.toSet());
         
         // 为新用户创建UserPlan记录
-        List<UserPlan> newUserPlans = new ArrayList<>();
+        int successCount = 0;
+        int failCount = 0;
         for (Long userId : userIds) {
             if (!existingUserIds.contains(userId)) {
-                UserPlan userPlan = new UserPlan();
-                userPlan.setUserId(userId);
-                userPlan.setPlanId(planId);
-                userPlan.setCourseId(courseId);
-                userPlan.setProgress(0);
-                userPlan.setStatus(0); // 未开始
-                userPlan.setCreateTime(LocalDateTime.now());
-                newUserPlans.add(userPlan);
+                try {
+                    UserPlan userPlan = new UserPlan();
+                    userPlan.setUserId(userId);
+                    userPlan.setPlanId(planId);
+                    userPlan.setCourseId(courseId);
+                    userPlan.setProgress(0);
+                    userPlan.setStatus(0); // 未开始
+                    userPlanMapper.insert(userPlan);
+                    successCount++;
+                } catch (Exception e) {
+                    // 修复：捕获单条插入异常（如唯一约束冲突），不影响其他用户
+                    failCount++;
+                    log.warn("为用户[{}]创建培训计划[{}]学习记录失败: {}", userId, planId, e.getMessage());
+                }
             }
         }
         
-        // 批量插入
-        if (!newUserPlans.isEmpty()) {
-            for (UserPlan userPlan : newUserPlans) {
-                userPlanMapper.insert(userPlan);
-            }
-            log.info("为培训计划[{}]创建了{}条用户学习记录", planId, newUserPlans.size());
+        if (successCount > 0) {
+            log.info("为培训计划[{}]成功创建{}条用户学习记录", planId, successCount);
+        }
+        if (failCount > 0) {
+            log.warn("为培训计划[{}]创建用户学习记录时{}条失败", planId, failCount);
         }
     }
     

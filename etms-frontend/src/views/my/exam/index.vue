@@ -103,9 +103,15 @@
                 {{ formatDuration(row.durationUsed) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="120" fixed="right">
+            <el-table-column label="操作" width="220" fixed="right">
               <template #default="{ row }">
-                <el-button type="primary" link @click="handleViewResult(row)">查看详情</el-button>
+                <!-- 考试中的记录：显示继续考试和放弃考试按钮 -->
+                <template v-if="row.status === 0">
+                  <el-button type="primary" link @click="handleContinueExam(row)">继续考试</el-button>
+                  <el-button type="danger" link @click="handleGiveUpExam(row)">放弃考试</el-button>
+                </template>
+                <!-- 其他状态的记录：显示查看详情按钮 -->
+                <el-button v-else type="primary" link @click="handleViewResult(row)">查看详情</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -191,7 +197,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Timer, DataLine, CircleCheck, Document, Clock } from '@element-plus/icons-vue'
-import { getAvailableExams, getMyExamRecordList, startExam, getExamRecordDetail } from '@/api/exam'
+import { getAvailableExams, getMyExamRecordList, startExam, getExamRecordDetail, giveUpExam } from '@/api/exam'
 
 const router = useRouter()
 
@@ -267,25 +273,45 @@ const getExamStatusText = (exam: any) => {
 }
 
 // 判断是否可以开始考试
-// 修复：考虑用户已有进行中考试的情况
+// 修复：完善时间窗口检查和试卷状态校验
 const canStartExam = (exam: any) => {
-  const now = new Date().getTime()
-  const startTime = exam.startTime ? new Date(exam.startTime).getTime() : null
-  const endTime = exam.endTime ? new Date(exam.endTime).getTime() : null
-
-  // 如果有开始时间，当前时间必须大于开始时间
-  if (startTime && now < startTime) {
-    return false
-  }
-  // 如果有结束时间，当前时间必须小于结束时间
-  if (endTime && now > endTime) {
+  // 试卷必须存在
+  if (!exam.id) {
     return false
   }
   // 试卷必须是已发布状态
   if (exam.status !== 1) {
     return false
   }
-  
+
+  const now = new Date().getTime()
+  // 修复：增加日期解析异常保护，防止无效日期格式导致判断异常
+  let startTime: number | null = null
+  let endTime: number | null = null
+  try {
+    if (exam.startTime) {
+      startTime = new Date(exam.startTime).getTime()
+      // 验证解析结果是否有效
+      if (isNaN(startTime)) startTime = null
+    }
+    if (exam.endTime) {
+      endTime = new Date(exam.endTime).getTime()
+      if (isNaN(endTime)) endTime = null
+    }
+  } catch (e) {
+    console.warn('解析考试时间失败:', e)
+    return false
+  }
+
+  // 如果有开始时间，当前时间必须大于开始时间
+  if (startTime !== null && now < startTime) {
+    return false
+  }
+  // 如果有结束时间，当前时间必须小于结束时间
+  if (endTime !== null && now > endTime) {
+    return false
+  }
+
   // 修复：检查是否有进行中的考试记录
   const hasOngoingExam = historyRecords.value.some(record => 
     record.paperId === exam.id && record.status === 0
@@ -298,17 +324,42 @@ const canStartExam = (exam: any) => {
 }
 
 // 获取开始按钮文本
+// 修复：与canStartExam保持一致的判断逻辑
 const getStartButtonText = (exam: any) => {
+  if (exam.status !== 1) {
+    return '不可用'
+  }
+  
   const now = new Date().getTime()
-  const startTime = exam.startTime ? new Date(exam.startTime).getTime() : null
-  const endTime = exam.endTime ? new Date(exam.endTime).getTime() : null
+  let startTime: number | null = null
+  let endTime: number | null = null
+  try {
+    if (exam.startTime) {
+      startTime = new Date(exam.startTime).getTime()
+      if (isNaN(startTime)) startTime = null
+    }
+    if (exam.endTime) {
+      endTime = new Date(exam.endTime).getTime()
+      if (isNaN(endTime)) endTime = null
+    }
+  } catch (e) {
+    return '时间异常'
+  }
 
-  if (startTime && now < startTime) {
+  if (startTime !== null && now < startTime) {
     return '未开始'
   }
-  if (endTime && now > endTime) {
+  if (endTime !== null && now > endTime) {
     return '已结束'
   }
+  
+  const hasOngoingExam = historyRecords.value.some(record => 
+    record.paperId === exam.id && record.status === 0
+  )
+  if (hasOngoingExam) {
+    return '考试进行中'
+  }
+  
   return '开始考试'
 }
 
@@ -379,8 +430,9 @@ const getHistoryRecords = async () => {
 // 开始考试
 const handleStartExam = async (exam: any) => {
   try {
+    const durationText = exam.duration ? `考试时长为 ${exam.duration} 分钟` : ''
     await ElMessageBox.confirm(
-      `确定要开始考试「${exam.paperName}」吗？考试时长为 ${exam.duration} 分钟，开始后请认真作答。`,
+      `确定要开始考试「${exam.paperName}」吗？${durationText}，开始后请认真作答。`,
       '开始考试',
       {
         confirmButtonText: '开始考试',
@@ -403,6 +455,7 @@ const handleStartExam = async (exam: any) => {
       ElMessage.error('考试启动失败，请重试')
     }
     
+    // 刷新历史记录
     getHistoryRecords()
   } catch (error: any) {
     if (error !== 'cancel') {
@@ -418,6 +471,38 @@ const handleStartExam = async (exam: any) => {
 const handleViewPaper = (exam: any) => {
   currentPaper.value = exam
   paperDetailVisible.value = true
+}
+
+// 继续考试 - 跳转到考试答题页面
+const handleContinueExam = (record: any) => {
+  if (record.id) {
+    router.push(`/my/exam/taking/${record.id}`)
+  }
+}
+
+// 放弃考试
+const handleGiveUpExam = async (record: any) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要放弃该考试吗？放弃后将无法继续答题。',
+      '放弃考试',
+      {
+        confirmButtonText: '确定放弃',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    await giveUpExam(record.id)
+    ElMessage.success('已放弃考试')
+    // 刷新历史记录和可参加考试列表
+    await getHistoryRecords()
+    fetchAvailableExams()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '放弃考试失败')
+    }
+  }
 }
 
 // 查看考试结果

@@ -35,6 +35,7 @@ import java.time.LocalDateTime;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+// 修复：确保所有必要的导入都已包含
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -309,27 +310,40 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         // 获取当前用户
         User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
-            throw new BusinessException("用户未登录");
+            throw new BusinessException("用户未登录，请重新登录");
         }
         
         // 检查试卷是否存在
         Paper paper = paperMapper.selectById(paperId);
         if (paper == null) {
-            throw new BusinessException("试卷不存在");
+            throw new BusinessException("试卷不存在，请联系管理员");
         }
         
-        // 检查试卷状态
+        // 修复：先检查试卷状态，提供更明确的错误信息
+        if (paper.getStatus() == null || paper.getStatus() == 0) {
+            throw new BusinessException("试卷尚未发布，无法开始考试");
+        }
         if (paper.getStatus() != 1) {
-            throw new BusinessException("试卷未发布，无法开始考试");
+            throw new BusinessException("试卷已停用或下架，无法开始考试");
         }
         
         // 检查考试时间窗口
         LocalDateTime now = LocalDateTime.now();
         if (paper.getStartTime() != null && now.isBefore(paper.getStartTime())) {
-            throw new BusinessException("考试尚未开始");
+            throw new BusinessException("考试尚未开始，开始时间为：" + 
+                paper.getStartTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
         }
         if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
-            throw new BusinessException("考试已结束");
+            throw new BusinessException("考试已结束，结束时间为：" + 
+                paper.getEndTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+        }
+        
+        // 修复：检查试卷是否有题目，避免进入空考试页面
+        Long questionCount = paperQuestionMapper.selectCount(
+            new LambdaQueryWrapper<PaperQuestion>().eq(PaperQuestion::getPaperId, paperId)
+        );
+        if (questionCount == null || questionCount == 0) {
+            throw new BusinessException("试卷没有关联题目，无法开始考试，请联系管理员");
         }
         
         // 检查是否已有进行中的考试（状态0表示考试中）
@@ -340,7 +354,20 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
                 .eq(ExamRecord::getStatus, 0)
         );
         if (count > 0) {
-            throw new BusinessException("您已有进行中的考试，请先完成");
+            // 修复：提供更详细的信息，帮助用户定位问题
+            ExamRecord ongoingRecord = baseMapper.selectOne(
+                new LambdaQueryWrapper<ExamRecord>()
+                    .eq(ExamRecord::getUserId, currentUser.getId())
+                    .eq(ExamRecord::getPaperId, paperId)
+                    .eq(ExamRecord::getStatus, 0)
+            );
+            String recordInfo = "";
+            if (ongoingRecord != null && ongoingRecord.getStartTime() != null) {
+                Duration elapsed = Duration.between(ongoingRecord.getStartTime(), now);
+                long minutesElapsed = elapsed.toMinutes();
+                recordInfo = "（已进行" + minutesElapsed + "分钟）";
+            }
+            throw new BusinessException("您已有进行中的考试" + recordInfo + "，请先完成或放弃后再开始新考试");
         }
         
         // 修复：检查考试次数限制（补考次数限制）
@@ -348,16 +375,15 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
             TrainingPlan plan = trainingPlanMapper.selectById(planId);
             if (plan != null && plan.getMaxRetake() != null && plan.getMaxRetake() > 0) {
                 // 修复：统计用户已完成的考试次数，包括已提交(1)、超时(2)、已批阅(3)、已放弃(4)状态
-                // 注意：状态定义：0-考试中 1-已提交 2-超时 3-已批阅 4-已放弃
                 Long totalAttempts = baseMapper.selectCount(
                     new LambdaQueryWrapper<ExamRecord>()
                         .eq(ExamRecord::getUserId, currentUser.getId())
                         .eq(ExamRecord::getPaperId, paperId)
                         .eq(ExamRecord::getPlanId, planId)
-                        .in(ExamRecord::getStatus, 1, 2, 3, 4) // 已提交、超时、已批阅、已放弃
+                        .in(ExamRecord::getStatus, 1, 2, 3, 4)
                 );
                 if (totalAttempts >= plan.getMaxRetake()) {
-                    throw new BusinessException("您已达到最大考试次数限制（" + plan.getMaxRetake() + "次）");
+                    throw new BusinessException("您已达到最大考试次数限制（" + plan.getMaxRetake() + "次），无法再次参加考试");
                 }
             }
         }
@@ -370,8 +396,11 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         record.setStatus(0); // 考试中
         record.setTotalScore(paper.getTotalScore());
         record.setStartTime(LocalDateTime.now());
+        record.setSwitchCount(0);
         
         baseMapper.insert(record);
+        
+        log.info("用户[{}]开始考试，试卷ID: {}，考试记录ID: {}", currentUser.getId(), paperId, record.getId());
         
         return record;
     }
