@@ -259,6 +259,7 @@ CREATE TABLE training_plan (
     need_exam TINYINT(1) DEFAULT 0 COMMENT '是否需要考试',
     pass_score INT(11) DEFAULT 60 COMMENT '及格分数',
     max_retake INT(11) DEFAULT 3 COMMENT '最大补考次数',
+    paper_id BIGINT(20) DEFAULT NULL COMMENT '关联试卷ID',
     status TINYINT(1) DEFAULT 0 COMMENT '状态(0草稿 1已发布 2进行中 3已结束 4已归档)',
     create_by BIGINT(20) DEFAULT NULL COMMENT '创建人',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

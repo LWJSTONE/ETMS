@@ -39,14 +39,26 @@
                     <span>{{ formatDateTime(exam.startTime) }} 至 {{ formatDateTime(exam.endTime) }}</span>
                   </div>
                   <div class="exam-actions">
-                    <el-button
-                      type="primary"
-                      :disabled="!canStartExam(exam)"
-                      @click="handleStartExam(exam)"
-                      :loading="exam.starting"
-                    >
-                      {{ getStartButtonText(exam) }}
-                    </el-button>
+                    <!-- 有进行中的考试：显示继续考试和放弃考试按钮 -->
+                    <template v-if="getOngoingRecord(exam)">
+                      <el-button type="success" @click="handleContinueExam(getOngoingRecord(exam))">
+                        继续考试
+                      </el-button>
+                      <el-button type="danger" @click="handleGiveUpExam(getOngoingRecord(exam))">
+                        放弃考试
+                      </el-button>
+                    </template>
+                    <!-- 没有进行中的考试：显示开始考试按钮 -->
+                    <template v-else>
+                      <el-button
+                        type="primary"
+                        :disabled="!canStartExam(exam)"
+                        @click="handleStartExam(exam)"
+                        :loading="exam.starting"
+                      >
+                        {{ getStartButtonText(exam) }}
+                      </el-button>
+                    </template>
                     <el-button @click="handleViewPaper(exam)">查看详情</el-button>
                   </div>
                 </el-card>
@@ -208,6 +220,9 @@ const activeTab = ref('available')
 const availableExams = ref<any[]>([])
 const availableLoading = ref(false)
 
+// 全量进行中的考试记录（不受分页限制）
+const allOngoingRecords = ref<any[]>([])
+
 // 考试历史
 const historyRecords = ref<any[]>([])
 const historyLoading = ref(false)
@@ -272,6 +287,11 @@ const getExamStatusText = (exam: any) => {
   return '进行中'
 }
 
+// 获取进行中的考试记录（匹配指定试卷）
+const getOngoingRecord = (exam: any) => {
+  return allOngoingRecords.value.find(record => record.paperId === exam.id && record.status === 0)
+}
+
 // 判断是否可以开始考试
 // 修复：完善时间窗口检查和试卷状态校验
 const canStartExam = (exam: any) => {
@@ -312,8 +332,8 @@ const canStartExam = (exam: any) => {
     return false
   }
 
-  // 修复：检查是否有进行中的考试记录
-  const hasOngoingExam = historyRecords.value.some(record => 
+  // 修复：使用全量进行中考试记录进行检查，避免分页遗漏
+  const hasOngoingExam = allOngoingRecords.value.some(record => 
     record.paperId === exam.id && record.status === 0
   )
   if (hasOngoingExam) {
@@ -353,7 +373,7 @@ const getStartButtonText = (exam: any) => {
     return '已结束'
   }
   
-  const hasOngoingExam = historyRecords.value.some(record => 
+  const hasOngoingExam = allOngoingRecords.value.some(record => 
     record.paperId === exam.id && record.status === 0
   )
   if (hasOngoingExam) {
@@ -409,6 +429,22 @@ const fetchAvailableExams = async () => {
   }
 }
 
+// 获取所有进行中的考试记录（不受分页限制）
+const fetchAllOngoingRecords = async () => {
+  try {
+    // 查询所有进行中(status=0)的考试记录
+    const res = await getMyExamRecordList({
+      current: 1,
+      size: 1000,
+      status: 0
+    })
+    allOngoingRecords.value = res.records || []
+  } catch (error: any) {
+    console.error('获取进行中考试记录失败:', error)
+    allOngoingRecords.value = []
+  }
+}
+
 // 获取考试历史记录
 const getHistoryRecords = async () => {
   historyLoading.value = true
@@ -455,7 +491,8 @@ const handleStartExam = async (exam: any) => {
       ElMessage.error('考试启动失败，请重试')
     }
     
-    // 刷新历史记录
+    // 刷新进行中记录和历史记录
+    fetchAllOngoingRecords()
     getHistoryRecords()
   } catch (error: any) {
     if (error !== 'cancel') {
@@ -494,8 +531,9 @@ const handleGiveUpExam = async (record: any) => {
     )
     await giveUpExam(record.id)
     ElMessage.success('已放弃考试')
-    // 刷新历史记录和可参加考试列表
+    // 刷新历史记录、进行中记录和可参加考试列表
     await getHistoryRecords()
+    await fetchAllOngoingRecords()
     fetchAvailableExams()
   } catch (error: any) {
     if (error !== 'cancel') {
@@ -519,8 +557,12 @@ const handleViewResult = async (record: any) => {
 
 // 初始化
 onMounted(async () => {
-  await getHistoryRecords() // 先获取历史记录
-  fetchAvailableExams() // 再获取可参加考试
+  // 并行加载所有数据，提高加载速度
+  await Promise.all([
+    getHistoryRecords(),
+    fetchAllOngoingRecords(),
+    fetchAvailableExams()
+  ])
 })
 </script>
 

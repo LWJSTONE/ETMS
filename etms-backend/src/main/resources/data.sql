@@ -36,7 +36,8 @@ INSERT INTO sys_position (id, position_name, position_code, position_level, posi
 -- =============================================
 INSERT INTO sys_role (id, role_code, role_name, role_desc, data_scope, sort_order, status) VALUES
 (1, 'admin', '超级管理员', '拥有系统全部权限', 1, 1, 1),
-(2, 'employee', '普通员工', '参与培训学习', 3, 2, 1);
+(2, 'employee', '普通员工', '参与培训学习', 3, 2, 1),
+(3, 'train_admin', '培训管理员', '管理培训计划和课程', 2, 3, 1);
 
 -- =============================================
 -- 初始化用户数据 (密码为: 123456，BCrypt加密)
@@ -56,7 +57,7 @@ INSERT INTO sys_user_role (user_id, role_id) VALUES
 (2, 2),
 (3, 2),
 (4, 2),
-(5, 2);
+(5, 3);
 
 -- =============================================
 -- 初始化权限数据
@@ -97,6 +98,15 @@ INSERT INTO sys_permission (id, perm_code, perm_name, perm_type, parent_id, path
 -- 超级管理员拥有所有权限
 INSERT INTO sys_role_permission (role_id, permission_id)
 SELECT 1, id FROM sys_permission;
+
+-- 培训管理员拥有培训管理和考核管理权限
+INSERT INTO sys_role_permission (role_id, permission_id)
+SELECT 3, id FROM sys_permission WHERE id IN (
+  20, 21, 23, 24,  -- 培训管理模块
+  40, 41, 42, 43, 44,  -- 考核管理模块
+  50, 51, 52,  -- 报表分析模块
+  60, 61, 62, 63, 64   -- 我的培训模块
+);
 
 -- 普通员工权限（只有我的培训模块）
 INSERT INTO sys_role_permission (role_id, permission_id) VALUES

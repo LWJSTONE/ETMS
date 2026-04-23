@@ -20,6 +20,6 @@ public interface TrainingPlanMapper extends BaseMapper<TrainingPlan> {
      * @param newStatus 新状态
      * @return 影响的行数（0表示更新失败，状态已被其他线程修改）
      */
-    @Update("UPDATE training_plan SET status = #{newStatus}, update_time = NOW() WHERE id = #{id} AND status = #{expectedStatus}")
+    @Update("UPDATE training_plan SET status = #{newStatus}, update_time = NOW() WHERE id = #{id} AND status = #{expectedStatus} AND deleted = 0")
     int updateStatusWithOptimisticLock(@Param("id") Long id, @Param("expectedStatus") Integer expectedStatus, @Param("newStatus") Integer newStatus);
 }

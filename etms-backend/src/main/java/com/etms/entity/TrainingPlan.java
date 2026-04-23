@@ -75,7 +75,10 @@ public class TrainingPlan extends BaseEntity {
     
     /** 最大补考次数 */
     private Integer maxRetake;
-    
+
+    /** 关联试卷ID */
+    private Long paperId;
+
     /** 状态(0草稿 1已发布 2进行中 3已结束 4已归档) */
     private Integer status;
     

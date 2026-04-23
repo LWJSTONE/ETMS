@@ -44,6 +44,7 @@ public class TrainingPlanStatusTask {
             // 1. 将已发布(1)且到达开始日期的计划更新为进行中(2)
             LambdaUpdateWrapper<TrainingPlan> startWrapper = new LambdaUpdateWrapper<>();
             startWrapper.eq(TrainingPlan::getStatus, 1) // 已发布
+                       .eq(TrainingPlan::getDeleted, 0) // 未删除
                        .le(TrainingPlan::getStartDate, today) // 开始日期<=今天
                        .ge(TrainingPlan::getEndDate, today)   // 结束日期>=今天（还未结束）
                        .set(TrainingPlan::getStatus, 2);      // 更新为进行中
@@ -57,6 +58,7 @@ public class TrainingPlanStatusTask {
             // 2. 将进行中(2)且已过结束日期的计划更新为已结束(3)
             LambdaUpdateWrapper<TrainingPlan> endWrapper = new LambdaUpdateWrapper<>();
             endWrapper.eq(TrainingPlan::getStatus, 2) // 进行中
+                      .eq(TrainingPlan::getDeleted, 0) // 未删除
                       .lt(TrainingPlan::getEndDate, today) // 结束日期<今天（已过期）
                       .set(TrainingPlan::getStatus, 3);    // 更新为已结束
             
@@ -70,6 +72,7 @@ public class TrainingPlanStatusTask {
             // 处理那些发布后未开始就已过期的计划
             LambdaUpdateWrapper<TrainingPlan> expiredWrapper = new LambdaUpdateWrapper<>();
             expiredWrapper.eq(TrainingPlan::getStatus, 1) // 已发布
+                         .eq(TrainingPlan::getDeleted, 0) // 未删除
                          .lt(TrainingPlan::getEndDate, today) // 结束日期<今天（已过期）
                          .set(TrainingPlan::getStatus, 3);    // 更新为已结束
             
@@ -121,6 +124,7 @@ public class TrainingPlanStatusTask {
         if (newStatus != null && !newStatus.equals(currentStatus)) {
             LambdaUpdateWrapper<TrainingPlan> updateWrapper = new LambdaUpdateWrapper<>();
             updateWrapper.eq(TrainingPlan::getId, planId)
+                        .eq(TrainingPlan::getDeleted, 0) // 未删除
                         .set(TrainingPlan::getStatus, newStatus);
             trainingPlanMapper.update(null, updateWrapper);
             log.info("培训计划[{}]状态从{}更新为{}", planId, currentStatus, newStatus);
