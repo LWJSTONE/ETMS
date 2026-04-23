@@ -16,7 +16,6 @@ const PERMISSIONS = {
   USER_VIEW: 'system:user:view',
   ROLE_VIEW: 'system:role:view',
   DEPT_VIEW: 'system:dept:view',
-  POSITION_VIEW: 'system:position:view',
   // 培训管理
   COURSE_VIEW: 'training:course:view',
   PLAN_VIEW: 'training:plan:view',
@@ -110,13 +109,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/system/dept/index.vue'),
         meta: { title: '部门管理', icon: 'OfficeBuilding', permission: PERMISSIONS.DEPT_VIEW }
       },
-      {
-        path: 'position',
-        name: 'Position',
-        component: () => import('@/views/system/position/index.vue'),
-        meta: { title: '岗位管理', icon: 'Briefcase', permission: PERMISSIONS.POSITION_VIEW }
-      },
-
     ]
   },
   // 培训管理

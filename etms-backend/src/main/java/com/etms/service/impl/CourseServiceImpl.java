@@ -101,7 +101,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             throw new BusinessException("课程编码已存在");
         }
         
-        course.setStatus(0); // 草稿状态
+        course.setStatus(1); // 创建后直接进入待审核状态，等待管理员审核或驳回
         course.setViewCount(0);
         course.setCollectCount(0);
         course.setRatingCount(0);
@@ -216,13 +216,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         
         // 获取当前审核人
         Long auditBy = getCurrentUserId();
-        
-        // 修复：禁止审核自己创建的课程，避免权限滥用
-        if (auditBy != null && existingCourse.getCreateBy() != null 
-            && auditBy.equals(existingCourse.getCreateBy())) {
-            throw new BusinessException("不能审核自己创建的课程");
-        }
-        
+
         Course course = new Course();
         course.setId(id);
         course.setStatus(status);

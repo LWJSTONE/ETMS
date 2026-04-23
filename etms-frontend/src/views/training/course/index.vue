@@ -521,7 +521,7 @@ const handleSubmit = async () => {
       ElMessage.success('更新成功')
     } else {
       await createCourse(form)
-      ElMessage.success('新增成功')
+      ElMessage.success('新增成功，课程已提交审核')
     }
     dialogVisible.value = false
     getList()
