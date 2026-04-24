@@ -8,12 +8,14 @@ import com.etms.entity.UserTrainingPlan;
 import com.etms.entity.Course;
 import com.etms.entity.PlanCourse;
 import com.etms.entity.User;
+import com.etms.entity.Paper;
 import com.etms.exception.BusinessException;
 import com.etms.mapper.TrainingPlanMapper;
 import com.etms.mapper.UserTrainingPlanMapper;
 import com.etms.mapper.CourseMapper;
 import com.etms.mapper.PlanCourseMapper;
 import com.etms.mapper.UserMapper;
+import com.etms.mapper.PaperMapper;
 import com.etms.service.TrainingPlanService;
 import com.etms.vo.TrainingPlanVO;
 import com.etms.util.JsonArrayUtils;
@@ -51,6 +53,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
     private final CourseMapper courseMapper;
     private final PlanCourseMapper planCourseMapper;
     private final UserMapper userMapper;
+    private final PaperMapper paperMapper;
     
     @Override
     public Page<TrainingPlanVO> pagePlans(Page<TrainingPlan> page, String planName, Integer status, Integer planType, String startDate, String endDate, Long deptId) {
