@@ -172,14 +172,15 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         if (!StringUtils.hasText(plan.getPlanCode())) {
             plan.setPlanCode("PLAN-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         }
-        // 修复：计划编码唯一性检查
-        // @TableLogic只对SELECT生效，但数据库UNIQUE KEY约束对所有记录生效
-        // 先检查未删除记录中的编码冲突
-        Long codeCount = baseMapper.selectCount(
-            new LambdaQueryWrapper<TrainingPlan>().eq(TrainingPlan::getPlanCode, plan.getPlanCode())
-        );
+        // 修复：计划编码唯一性检查——必须包含软删除记录
+        // 原因：@TableLogic使selectCount自动追加AND deleted=0，但数据库UNIQUE KEY约束对全部记录生效
+        // 如果只检查未删除记录，软删除记录的planCode冲突会导致INSERT时抛DuplicateKeyException，
+        // 而在@Transactional内catch DuplicateKeyException后抛BusinessException，
+        // Spring事务管理器可能已经将事务标记为rollback-only，最终抛出UnexpectedRollbackException，
+        // 被GlobalExceptionHandler捕获后返回"系统内部错误"
+        Long codeCount = baseMapper.countByPlanCodeIncludingDeleted(plan.getPlanCode());
         if (codeCount > 0) {
-            throw new BusinessException("计划编码已存在，请使用其他编码");
+            throw new BusinessException("计划编码已存在，请使用其他编码或清空编码由系统自动生成");
         }
         if (plan.getStartDate() == null) {
             throw new BusinessException("开始日期不能为空");
@@ -200,17 +201,16 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         
         plan.setStatus(0); // 草稿状态
         
-        // 修复：移除 try-catch DuplicateKeyException 重试逻辑
-        // 原因：在 @Transactional 内部 catch RuntimeException 子类后再次 insert，
-        // Spring 已经将事务标记为 rollback-only，最终提交时会抛出 UnexpectedRollbackException，
-        // 导致前端显示"系统内部错误"。改为使用 UUID 生成唯一编码，从根源避免冲突。
-        // 如果仍然发生 DuplicateKeyException（极低概率），直接抛出 BusinessException 让前端显示友好错误
-        try {
-            return baseMapper.insert(plan) > 0;
-        } catch (org.springframework.dao.DuplicateKeyException e) {
-            log.error("培训计划编码[{}]插入时发生唯一键冲突", plan.getPlanCode(), e);
-            throw new BusinessException("计划编码冲突，请更换计划编码后重试");
-        }
+        // 修复：移除 try-catch DuplicateKeyException 逻辑
+        // 原因1：在 @Transactional 内部 catch RuntimeException 子类(DuplicateKeyException)后再次抛出BusinessException，
+        //   Spring 事务同步管理器可能已将事务标记为 rollback-only，
+        //   最终提交时抛出 UnexpectedRollbackException，导致前端显示"系统内部错误"
+        // 原因2：现在使用 countByPlanCodeIncludingDeleted() 在INSERT前精确检查唯一性（包含软删除记录），
+        //   从根源避免 DuplicateKeyException 的发生
+        // 修复：如果仍发生 DuplicateKeyException（极低概率的并发竞态条件），
+        //   不再catch它，让它自然传播到GlobalExceptionHandler，作为RuntimeException返回500错误
+        //   这样比catch后抛BusinessException但触发UnexpectedRollbackException要好
+        return baseMapper.insert(plan) > 0;
     }
     
     @Override

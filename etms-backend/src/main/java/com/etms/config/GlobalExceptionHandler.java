@@ -4,6 +4,7 @@ import com.etms.common.Result;
 import com.etms.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
@@ -129,6 +131,39 @@ public class GlobalExceptionHandler {
     public Result<Void> handleNoHandlerFoundException(NoHandlerFoundException e) {
         log.warn("资源不存在: {}", e.getRequestURL());
         return Result.error(404, "请求的资源不存在");
+    }
+    
+    /**
+     * 处理请求体解析异常（JSON反序列化失败）
+     * 修复：原来未显式处理HttpMessageNotReadableException，此类异常会落入
+     * 通用的Exception处理器，返回"系统内部错误"，用户无法得知具体原因
+     * 常见触发场景：日期格式不正确、数字类型传入了字符串、JSON格式错误等
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        String message = "请求参数格式错误";
+        // 尝试提取更具体的错误信息
+        Throwable cause = e.getCause();
+        if (cause instanceof InvalidFormatException) {
+            InvalidFormatException ife = (InvalidFormatException) cause;
+            String fieldName = ife.getPath() != null && !ife.getPath().isEmpty() 
+                    ? ife.getPath().get(0).getFieldName() 
+                    : "未知字段";
+            message = String.format("字段'%s'的值'%s'格式不正确", fieldName, ife.getValue());
+        } else if (cause != null && cause.getMessage() != null) {
+            // 提取关键信息，避免暴露过多技术细节
+            String causeMsg = cause.getMessage();
+            if (causeMsg.contains("Cannot deserialize value of type")) {
+                message = "请求参数类型不匹配，请检查输入";
+            } else if (causeMsg.contains("Unrecognized field")) {
+                message = "请求中包含无法识别的字段";
+            } else if (causeMsg.contains("was expecting double-quote")) {
+                message = "JSON格式错误，请检查请求参数";
+            }
+        }
+        log.warn("请求体解析失败: {}", message, e);
+        return Result.error(400, message);
     }
     
     /**

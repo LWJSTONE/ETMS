@@ -127,7 +127,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="计划编码" prop="planCode">
-              <el-input v-model="form.planCode" placeholder="请输入计划编码" />
+              <el-input v-model="form.planCode" placeholder="留空则自动生成" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -460,7 +460,7 @@ const rules: FormRules = {
     { required: true, message: '请输入计划名称', trigger: 'blur' }
   ],
   planCode: [
-    { required: true, message: '请输入计划编码', trigger: 'blur' }
+    { required: false, message: '请输入计划编码', trigger: 'blur' }
   ],
   planType: [
     { required: true, message: '请选择计划类型', trigger: 'change' }
