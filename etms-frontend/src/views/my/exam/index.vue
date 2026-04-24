@@ -258,31 +258,68 @@ const formatDuration = (minutes: number) => {
 }
 
 // 获取考试状态类型（根据时间判断）
+// 修复：使用与canStartExam一致的日期解析方式，确保跨浏览器兼容性
 const getExamStatusType = (exam: any) => {
   const now = new Date().getTime()
-  const startTime = exam.startTime ? new Date(exam.startTime).getTime() : null
-  const endTime = exam.endTime ? new Date(exam.endTime).getTime() : null
+  let startTime: number | null = null
+  let endTime: number | null = null
+  try {
+    if (exam.startTime) {
+      const dateStr = exam.startTime.replace(' ', 'T')
+      startTime = new Date(dateStr).getTime()
+      if (isNaN(startTime)) startTime = null
+    }
+    if (exam.endTime) {
+      const dateStr = exam.endTime.replace(' ', 'T')
+      endTime = new Date(dateStr).getTime()
+      if (isNaN(endTime)) endTime = null
+    }
+  } catch (e) {
+    return 'info'
+  }
 
-  if (startTime && now < startTime) {
-    return 'info' // 未开始
+  if (startTime !== null && endTime !== null) {
+    if (now < startTime) {
+      return 'info' // 未开始
+    }
+    if (now > endTime) {
+      return 'danger' // 已结束
+    }
+    return 'success' // 进行中
   }
-  if (endTime && now > endTime) {
-    return 'danger' // 已结束
-  }
-  return 'success' // 进行中
+  // 如果没有设置时间窗口，默认显示为进行中
+  return 'success'
 }
 
 // 获取考试状态文本
+// 修复：使用与canStartExam一致的日期解析方式
 const getExamStatusText = (exam: any) => {
   const now = new Date().getTime()
-  const startTime = exam.startTime ? new Date(exam.startTime).getTime() : null
-  const endTime = exam.endTime ? new Date(exam.endTime).getTime() : null
-
-  if (startTime && now < startTime) {
-    return '未开始'
+  let startTime: number | null = null
+  let endTime: number | null = null
+  try {
+    if (exam.startTime) {
+      const dateStr = exam.startTime.replace(' ', 'T')
+      startTime = new Date(dateStr).getTime()
+      if (isNaN(startTime)) startTime = null
+    }
+    if (exam.endTime) {
+      const dateStr = exam.endTime.replace(' ', 'T')
+      endTime = new Date(dateStr).getTime()
+      if (isNaN(endTime)) endTime = null
+    }
+  } catch (e) {
+    return '进行中'
   }
-  if (endTime && now > endTime) {
-    return '已结束'
+
+  if (startTime !== null && endTime !== null) {
+    if (now < startTime) {
+      return '未开始'
+    }
+    if (now > endTime) {
+      return '已结束'
+    }
+    return '进行中'
   }
   return '进行中'
 }
@@ -294,12 +331,13 @@ const getOngoingRecord = (exam: any) => {
 
 // 判断是否可以开始考试
 // 修复：完善时间窗口检查和试卷状态校验
+// 与后端startExam方法保持一致的判断逻辑
 const canStartExam = (exam: any) => {
   // 试卷必须存在
   if (!exam.id) {
     return false
   }
-  // 试卷必须是已发布状态
+  // 试卷必须是已发布状态(1)
   if (exam.status !== 1) {
     return false
   }
@@ -310,12 +348,16 @@ const canStartExam = (exam: any) => {
   let endTime: number | null = null
   try {
     if (exam.startTime) {
-      startTime = new Date(exam.startTime).getTime()
+      // 修复：将日期字符串中的空格替换为T，确保跨浏览器兼容性
+      // 某些浏览器对"yyyy-MM-dd HH:mm:ss"格式的解析可能不一致
+      const dateStr = exam.startTime.replace(' ', 'T')
+      startTime = new Date(dateStr).getTime()
       // 验证解析结果是否有效
       if (isNaN(startTime)) startTime = null
     }
     if (exam.endTime) {
-      endTime = new Date(exam.endTime).getTime()
+      const dateStr = exam.endTime.replace(' ', 'T')
+      endTime = new Date(dateStr).getTime()
       if (isNaN(endTime)) endTime = null
     }
   } catch (e) {
@@ -323,11 +365,11 @@ const canStartExam = (exam: any) => {
     return false
   }
 
-  // 如果有开始时间，当前时间必须大于开始时间
+  // 修复：与后端保持一致的时间窗口校验逻辑
+  // 只有设置了时间才进行校验，如果两个时间都没有设置则允许参加考试
   if (startTime !== null && now < startTime) {
     return false
   }
-  // 如果有结束时间，当前时间必须小于结束时间
   if (endTime !== null && now > endTime) {
     return false
   }
@@ -355,11 +397,13 @@ const getStartButtonText = (exam: any) => {
   let endTime: number | null = null
   try {
     if (exam.startTime) {
-      startTime = new Date(exam.startTime).getTime()
+      const dateStr = exam.startTime.replace(' ', 'T')
+      startTime = new Date(dateStr).getTime()
       if (isNaN(startTime)) startTime = null
     }
     if (exam.endTime) {
-      endTime = new Date(exam.endTime).getTime()
+      const dateStr = exam.endTime.replace(' ', 'T')
+      endTime = new Date(dateStr).getTime()
       if (isNaN(endTime)) endTime = null
     }
   } catch (e) {

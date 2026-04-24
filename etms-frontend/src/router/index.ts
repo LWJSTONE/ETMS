@@ -337,9 +337,12 @@ router.beforeEach(async (to, from, next) => {
   // 权限检查
   const userInfo = userStore.userInfo
   // 检查是否为管理员（检查角色名称是否包含"管理员"或"admin"，兼容中英文）
-  const isAdmin = userInfo?.roleNames?.some(r => 
-    r === '超级管理员' || r === '管理员' || r.toLowerCase() === 'admin'
-  ) ?? false
+  // 修复：扩展管理员角色判断，兼容中英文角色名和培训管理员角色
+  // 培训管理员(train_admin)也应被视为管理员，否则无法访问培训管理等功能
+  const isAdmin = userInfo?.roleNames?.some(r => {
+    const lower = (r || '').toLowerCase()
+    return lower === '超级管理员' || lower === '管理员' || lower === 'admin' || lower === 'train_admin' || lower === '培训管理员'
+  }) ?? false
   // 获取用户权限列表
   const userPermissions = userInfo?.permissions || []
   // 获取路由所需权限

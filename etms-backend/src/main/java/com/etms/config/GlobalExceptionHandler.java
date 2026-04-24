@@ -29,10 +29,13 @@ public class GlobalExceptionHandler {
     
     /**
      * 处理业务异常
+     * 修复：显式设置HTTP状态为200，确保前端响应拦截器正确处理业务错误
+     * 前端通过response.data.code判断业务错误，需要HTTP 200才能进入成功回调
      */
+    @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.OK)
     @ExceptionHandler(BusinessException.class)
     public Result<Void> handleBusinessException(BusinessException e) {
-        log.warn("业务异常: {}", e.getMessage());
+        log.warn("业务异常: code={}, message={}", e.getCode(), e.getMessage());
         return Result.error(e.getCode(), e.getMessage());
     }
     

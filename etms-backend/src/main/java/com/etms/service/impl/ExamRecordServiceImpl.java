@@ -323,20 +323,44 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
         if (paper.getStatus() == null || paper.getStatus() == 0) {
             throw new BusinessException("试卷尚未发布，无法开始考试");
         }
+        // 修复：只有已发布(状态1)的试卷才能参加考试
+        // Paper状态定义：0草稿 1已发布 2已使用/已停用 3停用
         if (paper.getStatus() != 1) {
-            throw new BusinessException("试卷已停用或下架，无法开始考试");
+            String statusDesc = paper.getStatus() == 0 ? "草稿" : 
+                              paper.getStatus() == 2 ? "已使用" : "已停用";
+            throw new BusinessException("试卷当前状态为" + statusDesc + "，无法开始考试，请联系管理员重新发布");
         }
         
-        // 检查考试时间窗口
+        // 修复：检查考试时间窗口，只在同时设置了开始时间和结束时间时才进行时间校验
+        // 如果只设置了开始时间或只设置了结束时间，也进行对应的单项校验
+        // 如果两个时间都没有设置，则允许在任何时间参加考试
         LocalDateTime now = LocalDateTime.now();
-        if (paper.getStartTime() != null && now.isBefore(paper.getStartTime())) {
-            throw new BusinessException("考试尚未开始，开始时间为：" + 
-                paper.getStartTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+        if (paper.getStartTime() != null && paper.getEndTime() != null) {
+            // 两个时间都设置了，进行完整的时间窗口校验
+            if (now.isBefore(paper.getStartTime())) {
+                throw new BusinessException("考试尚未开始，开始时间为：" + 
+                    paper.getStartTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) +
+                    "，当前时间：" + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            }
+            if (now.isAfter(paper.getEndTime())) {
+                throw new BusinessException("考试已结束，结束时间为：" + 
+                    paper.getEndTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) +
+                    "，当前时间：" + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            }
+        } else if (paper.getStartTime() != null) {
+            // 只设置了开始时间
+            if (now.isBefore(paper.getStartTime())) {
+                throw new BusinessException("考试尚未开始，开始时间为：" + 
+                    paper.getStartTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            }
+        } else if (paper.getEndTime() != null) {
+            // 只设置了结束时间
+            if (now.isAfter(paper.getEndTime())) {
+                throw new BusinessException("考试已结束，结束时间为：" + 
+                    paper.getEndTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            }
         }
-        if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
-            throw new BusinessException("考试已结束，结束时间为：" + 
-                paper.getEndTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-        }
+        // 如果开始时间和结束时间都没有设置，则不进行时间窗口校验，允许在任何时间参加考试
         
         // 修复：检查试卷是否有题目，避免进入空考试页面
         Long questionCount = paperQuestionMapper.selectCount(

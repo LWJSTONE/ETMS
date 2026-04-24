@@ -675,7 +675,7 @@ const handleDelete = async (row: any) => {
 
 // 发布
 const handlePublish = async (row: any) => {
-  // 验证必填字段是否完整
+  // 修复：验证必填字段是否完整，提供更详细的错误信息
   const missingFields: string[] = []
   
   if (!row.planName || row.planName.trim() === '') {
@@ -694,14 +694,10 @@ const handlePublish = async (row: any) => {
     missingFields.push('培训日期')
   }
   
-  // paperId校验：后端TrainingPlan实体已包含paperId字段，
-  // 数据库schema也已有paper_id列，无需前端额外校验，后端会在发布时进行完整验证
-
   if (!row.targetType) {
     missingFields.push('目标类型')
   } else {
     // 验证目标选择
-    // 修复：与handleEdit保持一致，先判断数据类型再解析JSON字符串
     const parseJsonSafe = (val: any): any[] => {
       if (!val) return []
       if (Array.isArray(val)) return val
@@ -737,15 +733,21 @@ const handlePublish = async (row: any) => {
   }
   
   try {
-    await ElMessageBox.confirm('确定要发布该培训计划吗？发布后将无法修改。', '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确定要发布该培训计划吗？发布后该计划将对目标用户生效。', '提示', { type: 'warning' })
+  } catch {
+    return // 用户取消
+  }
+  
+  try {
+    // 修复：使用明确的错误提示，帮助定位发布失败原因
     await publishPlan(row.id)
     ElMessage.success('发布成功')
     getList()
   } catch (error: any) {
-    if (error !== 'cancel') {
-      console.error(error)
-      ElMessage.error(error.message || '发布失败')
-    }
+    console.error('发布培训计划失败:', error)
+    // 修复：显示后端返回的具体错误信息，而不是通用的'发布失败'
+    const errMsg = error?.message || error?.data?.message || '发布失败，请检查必填字段是否完整'
+    ElMessage.error(errMsg)
   }
 }
 

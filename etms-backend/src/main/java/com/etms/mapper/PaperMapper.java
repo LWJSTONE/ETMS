@@ -20,7 +20,7 @@ public interface PaperMapper extends BaseMapper<Paper> {
      * @param newStatus 新状态
      * @return 影响的行数（0表示更新失败，状态已被其他线程修改）
      */
-    @Update("UPDATE exam_paper SET status = #{newStatus}, update_time = NOW() WHERE id = #{id} AND status = #{expectedStatus}")
+    @Update("UPDATE exam_paper SET status = #{newStatus}, update_time = NOW() WHERE id = #{id} AND status = #{expectedStatus} AND deleted = 0")
     int updateStatusWithOptimisticLock(@Param("id") Long id, @Param("expectedStatus") Integer expectedStatus, @Param("newStatus") Integer newStatus);
     
     /**
@@ -31,6 +31,6 @@ public interface PaperMapper extends BaseMapper<Paper> {
      * @param newStatus 新状态
      * @return 影响的行数（0表示更新失败，状态已被其他线程修改）
      */
-    @Update("UPDATE exam_paper SET status = #{newStatus}, update_time = NOW() WHERE id = #{id} AND status = #{expectedStatus}")
+    @Update("UPDATE exam_paper SET status = #{newStatus}, update_time = NOW() WHERE id = #{id} AND status = #{expectedStatus} AND deleted = 0")
     int disablePaperWithOptimisticLock(@Param("id") Long id, @Param("expectedStatus") Integer expectedStatus, @Param("newStatus") Integer newStatus);
 }
