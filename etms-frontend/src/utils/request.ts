@@ -214,8 +214,10 @@ service.interceptors.response.use(
         return Promise.reject(new Error('未授权'))
       }
       
-      // 获取业务错误消息
-      const message = BUSINESS_ERROR_MESSAGES[res.code] || res.message || '操作失败'
+      // 修复：获取业务错误消息，优先使用后端返回的 message
+      // 后端 BusinessException 默认 code=400，返回的 message 包含具体的业务错误描述
+      // BUSINESS_ERROR_MESSAGES 只在 message 为空时作为兜底
+      const message = res.message || BUSINESS_ERROR_MESSAGES[res.code] || '操作失败'
       ElMessage.error(message)
       
       // 修复：创建包含更多错误信息的错误对象，便于调用方获取详细错误信息

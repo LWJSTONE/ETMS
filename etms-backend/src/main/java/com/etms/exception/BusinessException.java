@@ -15,7 +15,7 @@ public class BusinessException extends RuntimeException {
     
     public BusinessException(String message) {
         super(message);
-        this.code = 500;
+        this.code = 400;  // 修复：业务异常默认code改为400，避免与系统500错误混淆导致前端显示"系统内部错误"
     }
     
     public BusinessException(Integer code, String message) {
@@ -25,6 +25,6 @@ public class BusinessException extends RuntimeException {
     
     public BusinessException(String message, Throwable cause) {
         super(message, cause);
-        this.code = 500;
+        this.code = 400;  // 修复：业务异常默认code改为400，避免与系统500错误混淆
     }
 }

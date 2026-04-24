@@ -167,19 +167,18 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         if (!StringUtils.hasText(plan.getPlanName())) {
             throw new BusinessException("计划名称不能为空");
         }
-        // 修复：planCode可以为空，如果为空则自动生成
+        // 修复：planCode可以为空，如果为空则自动生成唯一编码
+        // 使用 UUID 替代时间戳，避免毫秒级冲突和与已删除记录的UNIQUE KEY冲突
         if (!StringUtils.hasText(plan.getPlanCode())) {
-            plan.setPlanCode("PLAN-" + System.currentTimeMillis());
+            plan.setPlanCode("PLAN-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         }
-        // 修复：计划编码唯一性检查必须考虑软删除的记录
+        // 修复：计划编码唯一性检查
         // @TableLogic只对SELECT生效，但数据库UNIQUE KEY约束对所有记录生效
-        // 所以需要手动查询包含已删除记录的编码冲突
-        // 使用自定义SQL绕过@TableLogic的自动过滤，检查所有记录（包括已删除的）
+        // 先检查未删除记录中的编码冲突
         Long codeCount = baseMapper.selectCount(
             new LambdaQueryWrapper<TrainingPlan>().eq(TrainingPlan::getPlanCode, plan.getPlanCode())
         );
         if (codeCount > 0) {
-            // 非删除记录中已存在该编码
             throw new BusinessException("计划编码已存在，请使用其他编码");
         }
         if (plan.getStartDate() == null) {
@@ -200,14 +199,17 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         }
         
         plan.setStatus(0); // 草稿状态
+        
+        // 修复：移除 try-catch DuplicateKeyException 重试逻辑
+        // 原因：在 @Transactional 内部 catch RuntimeException 子类后再次 insert，
+        // Spring 已经将事务标记为 rollback-only，最终提交时会抛出 UnexpectedRollbackException，
+        // 导致前端显示"系统内部错误"。改为使用 UUID 生成唯一编码，从根源避免冲突。
+        // 如果仍然发生 DuplicateKeyException（极低概率），直接抛出 BusinessException 让前端显示友好错误
         try {
             return baseMapper.insert(plan) > 0;
         } catch (org.springframework.dao.DuplicateKeyException e) {
-            // 修复：如果planCode与软删除记录冲突（selectCount查不到但数据库UNIQUE KEY冲突），
-            // 自动生成新的唯一编码重试
-            log.warn("培训计划编码[{}]与已有记录冲突，自动重新生成", plan.getPlanCode());
-            plan.setPlanCode("PLAN-" + System.currentTimeMillis());
-            return baseMapper.insert(plan) > 0;
+            log.error("培训计划编码[{}]插入时发生唯一键冲突", plan.getPlanCode(), e);
+            throw new BusinessException("计划编码冲突，请更换计划编码后重试");
         }
     }
     
