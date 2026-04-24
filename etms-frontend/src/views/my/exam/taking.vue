@@ -488,14 +488,27 @@ const fetchExamDetail = async () => {
     const res = await getExamRecordDetail(recordId.value)
     const data = res
     
+    // 修复：验证考试记录状态，只有状态为0（考试中）才允许继续答题
+    if (data.status !== undefined && data.status !== 0) {
+      const statusMap: Record<number, string> = {
+        1: '已提交', 2: '已超时', 3: '已批阅', 4: '已放弃'
+      }
+      const statusText = statusMap[data.status] || '已结束'
+      ElMessage.warning(`考试已${statusText}，即将返回考试列表`)
+      setTimeout(() => {
+        router.push('/my/exam')
+      }, 2000)
+      return
+    }
+    
     // 填充考试信息
     Object.assign(examInfo, {
       id: data.id,
       paperId: data.paperId,
-      paperName: data.paperName,
-      totalScore: data.totalScore,
-      passScore: data.passScore,
-      duration: data.duration,
+      paperName: data.paperName || '未知试卷',
+      totalScore: data.totalScore || 100,
+      passScore: data.passScore || 60,
+      duration: data.duration || 60,
       startTime: data.startTime
     })
     
@@ -504,12 +517,21 @@ const fetchExamDetail = async () => {
       questions.value = data.questions
     } else if (data.paperQuestions && data.paperQuestions.length > 0) {
       questions.value = data.paperQuestions.map((pq: any) => pq.question || pq)
+    } else {
+      // 修复：没有题目时不显示空白页面，给用户明确提示
+      ElMessage.error('未获取到考试题目，请联系管理员')
+      setTimeout(() => {
+        router.push('/my/exam')
+      }, 2000)
+      return
     }
     
     // 初始化答案（多选题需要数组）
     questions.value.forEach(q => {
       if (q.questionType === 2) {
-        answers[q.id] = []
+        if (!Array.isArray(answers[q.id])) {
+          answers[q.id] = []
+        }
       }
     })
     
@@ -519,38 +541,45 @@ const fetchExamDetail = async () => {
       ElMessage.success('已恢复之前保存的答题进度')
     }
     
-    // 修复：计算剩余时间时增加类型检查和默认值，处理各种异常情况
+    // 修复：计算剩余时间 - 使用安全的日期解析方式，兼容所有浏览器
     const duration = Number(data.duration) || 60  // 默认60分钟
     if (data.startTime && duration > 0) {
       try {
-        const startTime = new Date(data.startTime).getTime()
+        // 修复关键BUG：必须将空格替换为T，否则Safari等浏览器无法解析日期
+        // 后端返回格式为 "2024-01-01 10:00:00"，需转为 "2024-01-01T10:00:00"
+        const startTimeStr = String(data.startTime).replace(' ', 'T')
+        const startTime = new Date(startTimeStr).getTime()
         // 验证日期解析结果
         if (isNaN(startTime)) {
           console.error('无法解析考试开始时间:', data.startTime)
-          ElMessage.error('考试时间数据异常，请联系管理员')
-          return
+          // 解析失败时不中断考试，使用默认时长
+          remainingTime.value = duration * 60
+          startTimer()
+          ElMessage.warning('考试时间解析异常，已使用默认考试时长')
+        } else {
+          const endTime = startTime + duration * 60 * 1000
+          const now = Date.now()
+          remainingTime.value = Math.max(0, Math.floor((endTime - now) / 1000))
+          
+          // 如果剩余时间已经为0，说明考试已超时
+          if (remainingTime.value === 0) {
+            ElMessage.warning('考试时间已到，请尽快提交试卷')
+          }
+          
+          // 启动计时器
+          startTimer()
         }
-        const endTime = startTime + duration * 60 * 1000
-        const now = Date.now()
-        remainingTime.value = Math.max(0, Math.floor((endTime - now) / 1000))
-        
-        // 如果剩余时间已经为0，说明考试已超时
-        if (remainingTime.value === 0) {
-          ElMessage.warning('考试时间已到，请尽快提交试卷')
-        }
-        
-        // 启动计时器
-        startTimer()
       } catch (e) {
         console.error('解析考试时间失败:', e)
-        ElMessage.error('考试时间数据异常，请联系管理员')
-        return
+        // 解析异常时不中断考试，使用默认时长
+        remainingTime.value = duration * 60
+        startTimer()
+        ElMessage.warning('考试时间解析异常，已使用默认考试时长')
       }
     } else {
-      // 修复：如果没有开始时间或时长，使用默认值
+      // 如果没有开始时间或时长，使用默认值
       remainingTime.value = duration * 60  // 默认给足考试时间
       startTimer()
-      ElMessage.info('未获取到考试开始时间，已使用默认时长')
     }
   } catch (error: any) {
     console.error('获取考试详情失败:', error)

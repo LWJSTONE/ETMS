@@ -64,6 +64,26 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
             PaperVO vo = new PaperVO();
             BeanUtils.copyProperties(paper, vo);
             vo.setDuration(paper.getExamDuration());
+            
+            // 修复：如果试卷的planId为空，尝试从培训计划中查找关联此试卷的计划
+            // 培训计划表的paper_id字段关联试卷，但试卷表的plan_id可能未同步
+            if (paper.getPlanId() == null) {
+                try {
+                    TrainingPlan associatedPlan = trainingPlanMapper.selectOne(
+                        new LambdaQueryWrapper<TrainingPlan>()
+                            .eq(TrainingPlan::getPaperId, paper.getId())
+                            .in(TrainingPlan::getStatus, 1, 2) // 只查找已发布或进行中的计划
+                            .last("LIMIT 1")
+                    );
+                    if (associatedPlan != null) {
+                        vo.setPlanId(associatedPlan.getId());
+                        vo.setPlanName(associatedPlan.getPlanName());
+                    }
+                } catch (Exception e) {
+                    log.warn("查找试卷[{}]关联的培训计划失败: {}", paper.getId(), e.getMessage());
+                }
+            }
+            
             return vo;
         }).collect(Collectors.toList());
         voPage.setRecords(voList);

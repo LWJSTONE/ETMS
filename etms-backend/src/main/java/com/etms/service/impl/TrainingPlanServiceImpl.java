@@ -164,14 +164,19 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         if (!StringUtils.hasText(plan.getPlanName())) {
             throw new BusinessException("计划名称不能为空");
         }
+        // 修复：planCode可以为空，如果为空则自动生成
         if (!StringUtils.hasText(plan.getPlanCode())) {
-            throw new BusinessException("计划编码不能为空");
+            plan.setPlanCode("PLAN-" + System.currentTimeMillis());
         }
-        // 修复：增加计划编码唯一性检查，避免数据库唯一约束异常
+        // 修复：计划编码唯一性检查必须考虑软删除的记录
+        // @TableLogic只对SELECT生效，但数据库UNIQUE KEY约束对所有记录生效
+        // 所以需要手动查询包含已删除记录的编码冲突
+        // 使用自定义SQL绕过@TableLogic的自动过滤，检查所有记录（包括已删除的）
         Long codeCount = baseMapper.selectCount(
             new LambdaQueryWrapper<TrainingPlan>().eq(TrainingPlan::getPlanCode, plan.getPlanCode())
         );
         if (codeCount > 0) {
+            // 非删除记录中已存在该编码
             throw new BusinessException("计划编码已存在，请使用其他编码");
         }
         if (plan.getStartDate() == null) {
@@ -192,7 +197,15 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
         }
         
         plan.setStatus(0); // 草稿状态
-        return baseMapper.insert(plan) > 0;
+        try {
+            return baseMapper.insert(plan) > 0;
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 修复：如果planCode与软删除记录冲突（selectCount查不到但数据库UNIQUE KEY冲突），
+            // 自动生成新的唯一编码重试
+            log.warn("培训计划编码[{}]与已有记录冲突，自动重新生成", plan.getPlanCode());
+            plan.setPlanCode("PLAN-" + System.currentTimeMillis());
+            return baseMapper.insert(plan) > 0;
+        }
     }
     
     @Override
@@ -216,11 +229,40 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("开始日期不能晚于结束日期");
         }
         
-        // 修复：清除status字段，防止通过更新接口绕过发布流程非法修改状态
-        // 状态变更必须通过专用的publish/end/archive接口完成，确保状态流转的安全性和可追溯性
-        plan.setStatus(null);
+        // 关键修复：使用LambdaUpdateWrapper替代updateById，解决NOT_NULL策略导致null字段无法清空的问题
+        // updateById默认使用NOT_NULL策略，会忽略所有null字段，导致以下问题：
+        // 1. 用户清空targetDeptIds/targetPositionIds/targetUserIds时，旧值无法被清除
+        // 2. 用户将needExam从1改为0时，paperId无法被清除
+        // 3. 目标类型切换后，旧目标数据残留，影响发布校验
+        com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<TrainingPlan> updateWrapper = 
+            new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<>();
+        updateWrapper.eq(TrainingPlan::getId, plan.getId());
         
-        return baseMapper.updateById(plan) > 0;
+        // 设置所有字段（包括null值），确保前端传null时能正确清空数据库中的旧值
+        updateWrapper.set(TrainingPlan::getPlanName, plan.getPlanName());
+        updateWrapper.set(TrainingPlan::getPlanCode, plan.getPlanCode());
+        updateWrapper.set(TrainingPlan::getPlanType, plan.getPlanType());
+        updateWrapper.set(TrainingPlan::getCourseId, plan.getCourseId());
+        updateWrapper.set(TrainingPlan::getStartDate, plan.getStartDate());
+        updateWrapper.set(TrainingPlan::getEndDate, plan.getEndDate());
+        updateWrapper.set(TrainingPlan::getTargetType, plan.getTargetType());
+        // 关键：targetDeptIds/targetPositionIds/targetUserIds可以为null，用于清空旧值
+        updateWrapper.set(TrainingPlan::getTargetDeptIds, plan.getTargetDeptIds());
+        updateWrapper.set(TrainingPlan::getTargetPositionIds, plan.getTargetPositionIds());
+        updateWrapper.set(TrainingPlan::getTargetUserIds, plan.getTargetUserIds());
+        updateWrapper.set(TrainingPlan::getNeedExam, plan.getNeedExam());
+        // 关键：当needExam=0时，paperId应该被清空为null
+        updateWrapper.set(TrainingPlan::getPaperId, plan.getPaperId());
+        updateWrapper.set(TrainingPlan::getPassScore, plan.getPassScore());
+        updateWrapper.set(TrainingPlan::getMaxRetake, plan.getMaxRetake());
+        updateWrapper.set(TrainingPlan::getMinStudyTime, plan.getMinStudyTime());
+        updateWrapper.set(TrainingPlan::getMinProgress, plan.getMinProgress());
+        updateWrapper.set(TrainingPlan::getPlanDesc, plan.getPlanDesc());
+        updateWrapper.set(TrainingPlan::getPlanObjective, plan.getPlanObjective());
+        // 状态变更必须通过专用的publish/end/archive接口完成，不允许通过更新接口修改
+        // 不设置status字段，保持数据库原值
+        
+        return baseMapper.update(null, updateWrapper) > 0;
     }
     
     @Override
@@ -336,16 +378,31 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
             throw new BusinessException("请先关联培训课程");
         }
         
+        // 修复：验证考试相关字段，当needExam=1时必须关联试卷
+        if (existingPlan.getNeedExam() != null && existingPlan.getNeedExam() == 1) {
+            if (existingPlan.getPaperId() == null) {
+                throw new BusinessException("已设置需要考试，请先关联试卷");
+            }
+            // 验证关联试卷是否存在且已发布
+            Paper paperObj = paperMapper.selectById(existingPlan.getPaperId());
+            if (paperObj == null) {
+                throw new BusinessException("关联的试卷不存在，请重新选择试卷");
+            }
+            if (paperObj.getStatus() == null || paperObj.getStatus() != 1) {
+                throw new BusinessException("关联的试卷尚未发布，请先发布试卷或重新选择已发布的试卷");
+            }
+        }
+        
         // 验证关联课程是否存在且可用
         Course course = courseMapper.selectById(existingPlan.getCourseId());
         if (course == null) {
             throw new BusinessException("关联的课程不存在");
         }
-        // 修复：扩展自动审核通过的范围，支持草稿(0)和待审核(1)状态
-        // 之前只允许待审核(1)自动审核，导致草稿状态的课程无法发布培训计划
+        // 课程状态定义：0草稿 1待审核 2已上架 3已下架 4审核驳回
+        // 发布培训计划时，自动将未上架的课程上架
         if (course.getStatus() != 2) {
-            if (course.getStatus() == 0 || course.getStatus() == 1) {
-                // 课程处于草稿或待审核状态，自动审核通过并上架
+            if (course.getStatus() == 0 || course.getStatus() == 1 || course.getStatus() == 3 || course.getStatus() == 4) {
+                // 课程处于草稿、待审核、已下架或审核驳回状态，自动审核通过并上架
                 Course courseUpdate = new Course();
                 courseUpdate.setId(course.getId());
                 courseUpdate.setStatus(2); // 已上架
@@ -355,7 +412,7 @@ public class TrainingPlanServiceImpl extends ServiceImpl<TrainingPlanMapper, Tra
                 courseMapper.updateById(courseUpdate);
                 log.info("发布培训计划时自动审核通过课程[{}]", course.getId());
             } else {
-                throw new BusinessException("关联的课程未上架（当前状态已下架或审核驳回），无法发布培训计划，请先将课程重新上架");
+                throw new BusinessException("关联的课程状态异常(状态码:" + course.getStatus() + ")，无法发布培训计划");
             }
         }
         

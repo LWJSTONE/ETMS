@@ -675,63 +675,6 @@ const handleDelete = async (row: any) => {
 
 // 发布
 const handlePublish = async (row: any) => {
-  // 修复：验证必填字段是否完整，提供更详细的错误信息
-  const missingFields: string[] = []
-  
-  if (!row.planName || row.planName.trim() === '') {
-    missingFields.push('计划名称')
-  }
-  if (!row.planCode || row.planCode.trim() === '') {
-    missingFields.push('计划编码')
-  }
-  if (!row.planType) {
-    missingFields.push('计划类型')
-  }
-  if (!row.courseId) {
-    missingFields.push('关联课程')
-  }
-  if (!row.startDate || !row.endDate) {
-    missingFields.push('培训日期')
-  }
-  
-  if (!row.targetType) {
-    missingFields.push('目标类型')
-  } else {
-    // 验证目标选择
-    const parseJsonSafe = (val: any): any[] => {
-      if (!val) return []
-      if (Array.isArray(val)) return val
-      try {
-        const parsed = JSON.parse(val)
-        return Array.isArray(parsed) ? parsed : []
-      } catch (e) {
-        console.warn('JSON解析失败:', e)
-        return []
-      }
-    }
-    if (row.targetType === 1) {
-      const targetDeptIds = parseJsonSafe(row.targetDeptIds)
-      if (targetDeptIds.length === 0) {
-        missingFields.push('目标部门')
-      }
-    } else if (row.targetType === 2) {
-      const targetPositionIds = parseJsonSafe(row.targetPositionIds)
-      if (targetPositionIds.length === 0) {
-        missingFields.push('目标岗位')
-      }
-    } else if (row.targetType === 3) {
-      const targetUserIds = parseJsonSafe(row.targetUserIds)
-      if (targetUserIds.length === 0) {
-        missingFields.push('目标人员')
-      }
-    }
-  }
-  
-  if (missingFields.length > 0) {
-    ElMessage.warning(`以下必填字段未完善：${missingFields.join('、')}，请先编辑完善后再发布`)
-    return
-  }
-  
   try {
     await ElMessageBox.confirm('确定要发布该培训计划吗？发布后该计划将对目标用户生效。', '提示', { type: 'warning' })
   } catch {
@@ -739,14 +682,13 @@ const handlePublish = async (row: any) => {
   }
   
   try {
-    // 修复：使用明确的错误提示，帮助定位发布失败原因
     await publishPlan(row.id)
     ElMessage.success('发布成功')
     getList()
   } catch (error: any) {
     console.error('发布培训计划失败:', error)
-    // 修复：显示后端返回的具体错误信息，而不是通用的'发布失败'
-    const errMsg = error?.message || error?.data?.message || '发布失败，请检查必填字段是否完整'
+    // 显示后端返回的具体错误信息，让用户知道哪里需要完善
+    const errMsg = error?.message || '发布失败，请检查必填字段是否完整'
     ElMessage.error(errMsg)
   }
 }
@@ -804,10 +746,12 @@ const handleSubmit = async () => {
       startDate: form.dateRange?.[0] || null,
       endDate: form.dateRange?.[1] || null,
       targetType: form.targetType,
-      targetDeptIds: form.targetDeptIds.length > 0 ? JSON.stringify(form.targetDeptIds) : null,
-      targetPositionIds: form.targetPositionIds.length > 0 ? JSON.stringify(form.targetPositionIds) : null,
-      targetUserIds: form.targetUserIds.length > 0 ? JSON.stringify(form.targetUserIds) : null,
+      // 修复：当目标类型切换时，必须清空其他类型的字段，避免残留数据影响发布校验
+      targetDeptIds: form.targetType === 1 && form.targetDeptIds.length > 0 ? JSON.stringify(form.targetDeptIds) : null,
+      targetPositionIds: form.targetType === 2 && form.targetPositionIds.length > 0 ? JSON.stringify(form.targetPositionIds) : null,
+      targetUserIds: form.targetType === 3 && form.targetUserIds.length > 0 ? JSON.stringify(form.targetUserIds) : null,
       needExam: form.needExam,
+      // 修复：当needExam=0时，必须传null清空paperId，否则后端publishPlan校验会失败
       paperId: form.needExam === 1 ? form.paperId : null,
       passScore: form.passScore,
       maxRetake: form.maxRetake,
@@ -868,12 +812,21 @@ const getUserListAll = async () => {
 watch(() => form.targetType, (newType, oldType) => {
   // 仅在类型实际变化时清空（排除初始化和编辑加载的情况）
   if (oldType !== undefined && newType !== oldType && dialogVisible.value) {
-    // 清空所有目标选择
+    // 修复：清空所有目标选择，确保切换目标类型后不会残留旧数据
+    // 这对于后端updatePlan的LambdaUpdateWrapper能正确清空null字段至关重要
     form.targetDeptIds = []
     form.targetPositionIds = []
     form.targetUserIds = []
     // 清除目标选择的验证错误
     formRef.value?.clearValidate('targetSelection')
+  }
+})
+
+// 监听needExam变化，清空试卷选择
+watch(() => form.needExam, (newVal, oldVal) => {
+  // 当needExam从1变为0时，清空paperId
+  if (oldVal === 1 && newVal === 0 && dialogVisible.value) {
+    form.paperId = null
   }
 })
 

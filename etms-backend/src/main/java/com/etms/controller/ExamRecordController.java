@@ -65,16 +65,17 @@ public class ExamRecordController {
     @ApiOperation(value = "开始考试")
     @PostMapping("/start/{paperId}")
     @PreAuthorize("isAuthenticated()")  // 修复：添加权限控制
-    public Result<ExamRecord> startExam(
+    public Result<ExamRecordVO> startExam(
             @PathVariable Long paperId,
             @RequestParam(required = false) Long planId) {
+        // 修复：返回ExamRecordVO而非ExamRecord，确保前端能获取到paperName、passScore、duration等关键字段
         // 资格校验已在 startExam 方法内部完成，包括：
         // - 试卷存在性和状态校验
         // - 考试时间窗口校验
         // - 是否有进行中的考试校验
         // - 考试次数限制校验
-        ExamRecord record = examRecordService.startExam(paperId, planId);
-        return Result.success(record);
+        ExamRecordVO vo = examRecordService.startExamVO(paperId, planId);
+        return Result.success(vo);
     }
     
     @ApiOperation(value = "提交试卷")

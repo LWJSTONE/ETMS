@@ -306,6 +306,34 @@ public class ExamRecordServiceImpl extends ServiceImpl<ExamRecordMapper, ExamRec
     
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public ExamRecordVO startExamVO(Long paperId, Long planId) {
+        ExamRecord record = startExam(paperId, planId);
+        // 修复：返回ExamRecordVO而非ExamRecord，确保前端能获取到paperName、passScore、duration等关键字段
+        ExamRecordVO vo = new ExamRecordVO();
+        BeanUtils.copyProperties(record, vo);
+        
+        // 填充试卷信息
+        Paper paper = paperMapper.selectById(paperId);
+        if (paper != null) {
+            vo.setPaperName(paper.getPaperName());
+            vo.setTotalScore(paper.getTotalScore());
+            vo.setPassScore(paper.getPassScore());
+            vo.setDuration(paper.getExamDuration());
+        }
+        
+        // 填充用户信息
+        User user = userMapper.selectById(record.getUserId());
+        if (user != null) {
+            vo.setUserName(user.getUsername());
+            vo.setRealName(user.getRealName());
+        }
+        
+        return vo;
+    }
+    
+    // 保留原方法签名以兼容接口
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public ExamRecord startExam(Long paperId, Long planId) {
         // 获取当前用户
         User currentUser = userService.getCurrentUser();

@@ -35,6 +35,11 @@ public interface ExamRecordService {
     ExamRecord startExam(Long paperId, Long planId);
     
     /**
+     * 开始考试（返回VO版本，包含试卷名称、及格分等前端需要的字段）
+     */
+    ExamRecordVO startExamVO(Long paperId, Long planId);
+    
+    /**
      * 提交试卷
      */
     void submitExam(Long recordId, String answers);

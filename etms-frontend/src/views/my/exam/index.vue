@@ -330,8 +330,6 @@ const getOngoingRecord = (exam: any) => {
 }
 
 // 判断是否可以开始考试
-// 修复：完善时间窗口检查和试卷状态校验
-// 与后端startExam方法保持一致的判断逻辑
 const canStartExam = (exam: any) => {
   // 试卷必须存在
   if (!exam.id) {
@@ -343,29 +341,24 @@ const canStartExam = (exam: any) => {
   }
 
   const now = new Date().getTime()
-  // 修复：增加日期解析异常保护，防止无效日期格式导致判断异常
   let startTime: number | null = null
   let endTime: number | null = null
   try {
     if (exam.startTime) {
-      // 修复：将日期字符串中的空格替换为T，确保跨浏览器兼容性
-      // 某些浏览器对"yyyy-MM-dd HH:mm:ss"格式的解析可能不一致
-      const dateStr = exam.startTime.replace(' ', 'T')
+      const dateStr = String(exam.startTime).replace(' ', 'T')
       startTime = new Date(dateStr).getTime()
-      // 验证解析结果是否有效
       if (isNaN(startTime)) startTime = null
     }
     if (exam.endTime) {
-      const dateStr = exam.endTime.replace(' ', 'T')
+      const dateStr = String(exam.endTime).replace(' ', 'T')
       endTime = new Date(dateStr).getTime()
       if (isNaN(endTime)) endTime = null
     }
   } catch (e) {
     console.warn('解析考试时间失败:', e)
-    return false
+    // 时间解析失败不阻止考试，由后端做最终校验
   }
 
-  // 修复：与后端保持一致的时间窗口校验逻辑
   // 只有设置了时间才进行校验，如果两个时间都没有设置则允许参加考试
   if (startTime !== null && now < startTime) {
     return false
@@ -374,7 +367,7 @@ const canStartExam = (exam: any) => {
     return false
   }
 
-  // 修复：使用全量进行中考试记录进行检查，避免分页遗漏
+  // 检查是否有进行中的考试
   const hasOngoingExam = allOngoingRecords.value.some(record => 
     record.paperId === exam.id && record.status === 0
   )
@@ -523,16 +516,21 @@ const handleStartExam = async (exam: any) => {
     
     exam.starting = true
     // 修复：传递planId参数，用于考试次数限制校验
-    const planId = exam.planId || null
-    const res = await startExam(exam.id, planId || undefined)
+    // planId来自试卷关联的培训计划，如果没有关联计划则为undefined
+    const planId = exam.planId || undefined
+    const res = await startExam(exam.id, planId)
     ElMessage.success('考试已开始，请认真作答！')
     
-    // 跳转到考试答题页面
-    const examRecordId = res.id
+    // 修复：兼容ExamRecordVO和ExamRecord两种响应格式
+    // 后端startExam现在返回ExamRecordVO，包含id字段
+    const examRecordId = res?.id
     if (examRecordId) {
       router.push(`/my/exam/taking/${examRecordId}`)
     } else {
-      ElMessage.error('考试启动失败，请重试')
+      ElMessage.error('考试启动失败，未获取到考试记录ID，请重试')
+      // 刷新列表恢复状态
+      await fetchAllOngoingRecords()
+      fetchAvailableExams()
     }
     
     // 刷新进行中记录和历史记录
@@ -540,8 +538,13 @@ const handleStartExam = async (exam: any) => {
     getHistoryRecords()
   } catch (error: any) {
     if (error !== 'cancel') {
-      console.error(error)
-      ElMessage.error(error.message || '开始考试失败')
+      console.error('开始考试失败:', error)
+      // 修复：显示后端返回的具体错误信息
+      const errMsg = error?.message || '开始考试失败，请稍后重试'
+      ElMessage.error(errMsg)
+      // 刷新列表状态
+      await fetchAllOngoingRecords()
+      fetchAvailableExams()
     }
   } finally {
     exam.starting = false
